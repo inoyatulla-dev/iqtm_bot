@@ -1,0 +1,36 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ── Maxfiy / sozlama ────────────────────────────────────
+.env
+*.env
+!.env.example
+
+# ── Baza ────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Node / Frontend ─────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# ── IDE / OS ────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ── Loglar ──────────────────────────────────────────────
+*.log
+
+# ── Eski kod (legacy, ko'chirilgandan keyin o'chiriladi) ─
+# legacy/

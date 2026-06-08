@@ -1,0 +1,22 @@
+# ── Web framework ───────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# ── Baza (ORM + drayverlar) ─────────────────────────────
+sqlalchemy[asyncio]==2.0.36
+aiosqlite==0.20.0
+alembic==1.14.0
+# PostgreSQL uchun (prod):
+# asyncpg==0.30.0
+
+# ── Sozlama va validatsiya ──────────────────────────────
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+
+# ── Auth ────────────────────────────────────────────────
+pyjwt==2.10.1
+
+# ── Telegram bot + scheduler ────────────────────────────
+python-telegram-bot==21.9
+APScheduler==3.11.0
