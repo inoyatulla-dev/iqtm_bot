@@ -26,6 +26,11 @@ export async function authenticate(): Promise<{ token: string; user: User }> {
   return data;
 }
 
+export async function updateProfile(first_name: string, last_name: string): Promise<User> {
+  const { data } = await api.post<User>("/auth/profile", { first_name, last_name });
+  return data;
+}
+
 // ── Tasks ──────────────────────────────────────────────
 export const tasksApi = {
   list: () => api.get<Task[]>("/tasks").then((r) => r.data),

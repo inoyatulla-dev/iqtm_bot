@@ -71,6 +71,6 @@ export const STATUS_EMOJI: Record<TaskStatus, string> = {
 export const STATUS_ORDER: TaskStatus[] = ["new", "in_progress", "review", "done"];
 
 export const ROLE_LABEL: Record<Role, string> = {
-  boss: "Boshliq",
+  boss: "Admin",
   worker: "Xodim",
 };

@@ -107,11 +107,11 @@ export function SettingsPage() {
         </button>
       </div>
 
-      <div className="section-title">👑 Boshliqlar</div>
+      <div className="section-title">👑 Adminlar</div>
       <div className="sheet__pad">
         <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
-          Bir nechta boshliq bo'lishi mumkin. Xodimlar bo'limida xodimni tanlab{" "}
-          <b>"Boshliq qilish"</b> orqali yangi boshliq tayinlang.
+          Bir nechta admin bo'lishi mumkin. Xodimlar bo'limida xodimni tanlab{" "}
+          <b>"Admin qilish"</b> orqali yangi admin tayinlang.
         </p>
       </div>
     </div>

@@ -11,7 +11,7 @@ class Role(str, Enum):
 
     @property
     def label(self) -> str:
-        return {"boss": "Boshliq", "worker": "Xodim"}[self.value]
+        return {"boss": "Admin", "worker": "Xodim"}[self.value]
 
 
 class UserStatus(str, Enum):

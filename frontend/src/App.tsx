@@ -6,6 +6,7 @@ import { UsersPage } from "./pages/UsersPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { RegisterForm } from "./pages/RegisterForm";
 import { Logo } from "./components/Logo";
 
 export function App() {
@@ -34,15 +35,7 @@ export function App() {
   }
 
   if (!user || user.status === "pending") {
-    return (
-      <div className="center-screen">
-        <Logo />
-        <h3>⏳ Ariza ko'rib chiqilmoqda</h3>
-        <p style={{ color: "var(--hint)" }}>
-          Boshliq tasdiqlagunicha kuting. Tasdiqlangач, ilovani qayta oching.
-        </p>
-      </div>
-    );
+    return <RegisterForm />;
   }
 
   if (user.status === "blocked") {

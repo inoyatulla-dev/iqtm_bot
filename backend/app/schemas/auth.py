@@ -10,3 +10,8 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user: UserOut
+
+
+class ProfileUpdate(BaseModel):
+    first_name: str
+    last_name: str = ""

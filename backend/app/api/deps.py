@@ -13,10 +13,7 @@ from app.models import User
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-async def get_current_user(
-    session: SessionDep,
-    authorization: Annotated[str | None, Header()] = None,
-) -> User:
+async def _user_from_token(session: AsyncSession, authorization: str | None) -> User:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, "Avtorizatsiya talab qilinadi"
@@ -32,6 +29,15 @@ async def get_current_user(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Foydalanuvchi topilmadi")
     if user.status == UserStatus.BLOCKED:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Kirishingiz bloklangan")
+    return user
+
+
+async def get_current_user(
+    session: SessionDep,
+    authorization: Annotated[str | None, Header()] = None,
+) -> User:
+    """Faol foydalanuvchi (pending rad etiladi)."""
+    user = await _user_from_token(session, authorization)
     if user.status == UserStatus.PENDING:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN, "Arizangiz hali tasdiqlanmagan"
@@ -39,7 +45,16 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_any(
+    session: SessionDep,
+    authorization: Annotated[str | None, Header()] = None,
+) -> User:
+    """Pending bo'lsa ham ruxsat (profil to'ldirish uchun)."""
+    return await _user_from_token(session, authorization)
+
+
 CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUserAny = Annotated[User, Depends(get_current_user_any)]
 
 
 async def require_boss(user: CurrentUser) -> User:

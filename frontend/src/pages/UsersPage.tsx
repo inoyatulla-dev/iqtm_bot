@@ -110,7 +110,7 @@ export function UsersPage() {
           {sel.role === "worker" ? (
             <ActionRow
               icon="👑"
-              label="Boshliq qilish"
+              label="Admin qilish"
               onClick={() => patch(sel.id, { role: "boss" })}
             />
           ) : (
