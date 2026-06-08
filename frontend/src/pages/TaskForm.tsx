@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import {
-  Button, Input, Textarea, Select, Section,
-} from "@telegram-apps/telegram-ui";
 import { tasksApi, usersApi } from "../api/client";
 import type { Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
+import { Sheet } from "../components/Sheet";
 
 interface Props {
   task: Task | null; // null = yangi
@@ -18,23 +16,26 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
   const [name, setName] = useState(task?.name || "");
   const [desc, setDesc] = useState(task?.description || "");
   const [depId, setDepId] = useState(task?.dep_id || "");
-  const [masulId, setMasulId] = useState<string>(
-    task?.masul_id ? String(task.masul_id) : ""
-  );
+  const [masulId, setMasulId] = useState(task?.masul_id ? String(task.masul_id) : "");
   const [deadline, setDeadline] = useState(task?.deadline || "");
   const [workers, setWorkers] = useState<User[]>([]);
   const [saving, setSaving] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     if (isBoss) usersApi.list("active").then(setWorkers);
   }, [isBoss]);
 
+  const canEdit = !task || isBoss || task.created_by === user?.id;
+
   async function save() {
     if (name.trim().length < 3) {
-      alert("Nom kamida 3 harf bo'lsin");
+      setErr("Nom kamida 3 harf bo'lsin");
       return;
     }
     setSaving(true);
+    setErr("");
     try {
       const body: Partial<Task> = {
         name: name.trim(),
@@ -50,99 +51,101 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
         body.type = "standalone";
         await tasksApi.create(body);
       } else {
-        // Xodim — shaxsiy vazifa
         body.type = "personal";
         await tasksApi.create(body);
       }
       onSaved();
     } catch (e: any) {
-      alert(e?.response?.data?.detail || "Xatolik");
+      setErr(e?.response?.data?.detail || "Xatolik");
     } finally {
       setSaving(false);
     }
   }
 
   async function remove() {
-    if (!task || !confirm("Vazifa o'chirilsinmi?")) return;
+    if (!task) return;
     await tasksApi.remove(task.id);
     onSaved();
   }
 
-  const canEdit = !task || isBoss || task.created_by === user?.id;
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-        <Section header={task ? `Vazifa #${task.id}` : "Yangi vazifa"}>
-          <Input
-            header="Nomi"
-            placeholder="Vazifa nomi"
+    <Sheet title={task ? `Vazifa #${task.id}` : "Yangi vazifa"} onClose={onClose}>
+      <div className="sheet__pad">
+        <div className="field">
+          <label>Nomi</label>
+          <input
             value={name}
+            placeholder="Vazifa nomi"
+            disabled={!canEdit}
             onChange={(e) => setName(e.target.value)}
-            disabled={!canEdit}
           />
-          <Textarea
-            header="Tavsif"
-            placeholder="Ixtiyoriy"
+        </div>
+        <div className="field">
+          <label>Tavsif</label>
+          <textarea
             value={desc}
-            onChange={(e) => setDesc(e.target.value)}
+            placeholder="Ixtiyoriy"
             disabled={!canEdit}
+            onChange={(e) => setDesc(e.target.value)}
           />
-          {isBoss && (
-            <>
-              <Select
-                header="Bo'lim"
-                value={depId}
-                onChange={(e) => setDepId(e.target.value)}
-              >
+        </div>
+        {isBoss && (
+          <>
+            <div className="field">
+              <label>Bo'lim</label>
+              <select value={depId} onChange={(e) => setDepId(e.target.value)}>
                 <option value="">— tanlanmagan —</option>
                 {deps.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.emoji} {d.name}
                   </option>
                 ))}
-              </Select>
-              <Select
-                header="Mas'ul xodim"
-                value={masulId}
-                onChange={(e) => setMasulId(e.target.value)}
-              >
+              </select>
+            </div>
+            <div className="field">
+              <label>Mas'ul xodim</label>
+              <select value={masulId} onChange={(e) => setMasulId(e.target.value)}>
                 <option value="">— tanlanmagan —</option>
                 {workers.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name}
                   </option>
                 ))}
-              </Select>
-            </>
-          )}
-          <Input
-            header="Muddat"
+              </select>
+            </div>
+          </>
+        )}
+        <div className="field">
+          <label>Muddat</label>
+          <input
             type="date"
             value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
             disabled={!canEdit}
+            onChange={(e) => setDeadline(e.target.value)}
           />
-        </Section>
-
-        <div style={{ display: "flex", gap: 8, padding: "0 16px 16px" }}>
-          <Button stretched onClick={onClose} mode="outline">
-            Yopish
-          </Button>
-          {canEdit && (
-            <Button stretched onClick={save} loading={saving}>
-              Saqlash
-            </Button>
-          )}
         </div>
-        {task && canEdit && (
-          <div style={{ padding: "0 16px 16px" }}>
-            <Button stretched mode="outline" onClick={remove}>
-              🗑 O'chirish
-            </Button>
-          </div>
+
+        {err && <div className="form-error">{err}</div>}
+
+        {canEdit && (
+          <button className="btn btn--primary" onClick={save} disabled={saving}>
+            {saving ? "Saqlanmoqda…" : "Saqlash"}
+          </button>
         )}
+        {task && canEdit && !confirmDel && (
+          <button className="btn btn--danger" onClick={() => setConfirmDel(true)}>
+            🗑 O'chirish
+          </button>
+        )}
+        {confirmDel && (
+          <button className="btn btn--danger" onClick={remove}>
+            🗑 Rostdan o'chirilsinmi? (bosing)
+          </button>
+        )}
+        <button className="btn btn--ghost" onClick={onClose}>
+          Yopish
+        </button>
       </div>
-    </div>
+    </Sheet>
   );
 }

@@ -67,6 +67,19 @@ export const depsApi = {
   remove: (id: string) => api.delete(`/departments/${id}`),
 };
 
+// ── Settings ───────────────────────────────────────────
+export interface AppSettings {
+  group_chat_id: string;
+  topic_tasks: string;
+  topic_reports: string;
+}
+
+export const settingsApi = {
+  get: () => api.get<AppSettings>("/settings").then((r) => r.data),
+  update: (body: Partial<AppSettings>) =>
+    api.put<AppSettings>("/settings", body).then((r) => r.data),
+};
+
 // ── Stats ──────────────────────────────────────────────
 export const statsApi = {
   me: () => api.get<StatusCounts>("/stats/me").then((r) => r.data),

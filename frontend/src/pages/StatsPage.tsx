@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Section, Cell, Spinner } from "@telegram-apps/telegram-ui";
 import { statsApi } from "../api/client";
 import type { RatingRow, StatusCounts } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -19,34 +18,49 @@ export function StatsPage() {
     })();
   }, [isBoss]);
 
-  if (loading || !counts)
-    return <div className="center-screen"><Spinner size="l" /></div>;
+  if (loading || !counts) return <div className="center-screen">Yuklanmoqda…</div>;
 
+  const cards = [
+    { num: counts.total, label: "Jami", color: "var(--text)" },
+    { num: counts.new, label: "🆕 Yangi", color: "#64748b" },
+    { num: counts.in_progress, label: "🔄 Jarayonda", color: "#f59e0b" },
+    { num: counts.review, label: "🔍 Tekshiruvda", color: "#8b5cf6" },
+    { num: counts.done, label: "✅ Bajarildi", color: "#10b981" },
+    { num: counts.overdue, label: "⚠️ Kechikkan", color: "#ff5a5a" },
+  ];
   const medal = (i: number) => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
 
   return (
-    <div style={{ paddingBottom: 80 }}>
-      <Section header={isBoss ? "📊 Umumiy statistika" : "📊 Mening statistikam"}>
-        <Cell after={String(counts.total)}>Jami vazifalar</Cell>
-        <Cell after={String(counts.new)}>🆕 Yangi</Cell>
-        <Cell after={String(counts.in_progress)}>🔄 Jarayonda</Cell>
-        <Cell after={String(counts.review)}>🔍 Tekshiruvda</Cell>
-        <Cell after={String(counts.done)}>✅ Bajarildi</Cell>
-        <Cell after={String(counts.overdue)}>⚠️ Kechikkan</Cell>
-      </Section>
+    <div style={{ paddingBottom: 90 }}>
+      <div className="section-title">
+        {isBoss ? "📊 Umumiy statistika" : "📊 Mening statistikam"}
+      </div>
+      <div className="stat-grid">
+        {cards.map((c) => (
+          <div className="stat-card" key={c.label}>
+            <div className="stat-card__num" style={{ color: c.color }}>
+              {c.num}
+            </div>
+            <div className="stat-card__label">{c.label}</div>
+          </div>
+        ))}
+      </div>
 
       {isBoss && rating.length > 0 && (
-        <Section header="🏆 Xodimlar reytingi">
+        <>
+          <div className="section-title">🏆 Xodimlar reytingi</div>
           {rating.map((r, i) => (
-            <Cell
-              key={r.user_id}
-              before={<span style={{ fontSize: 18 }}>{medal(i)}</span>}
-              subtitle={`✅ ${r.done} · 🔄 ${r.active} · ⚠️ ${r.overdue}`}
-            >
-              {r.name}
-            </Cell>
+            <div className="list-item" key={r.user_id}>
+              <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{medal(i)}</span>
+              <div className="list-item__body">
+                <div className="list-item__title">{r.name}</div>
+                <div className="list-item__sub">
+                  ✅ {r.done} · 🔄 {r.active} · ⚠️ {r.overdue}
+                </div>
+              </div>
+            </div>
           ))}
-        </Section>
+        </>
       )}
     </div>
   );

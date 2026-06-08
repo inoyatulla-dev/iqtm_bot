@@ -76,7 +76,9 @@ async def create_task(
     )
     if task.description:
         text += f"\n📄 {task.description}"
-    topic_id = dep.topic_id if dep else None
+    from app.services.settings_service import get_topic
+
+    topic_id = (dep.topic_id if dep else None) or await get_topic("topic_tasks")
     await notify.send_to_group(text, topic_id)
     if masul:
         await notify.send_dm(masul.id, text)

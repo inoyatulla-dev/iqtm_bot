@@ -39,15 +39,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Guruhda yuborilsa — guruh va mavzu ID larini ko'rsatadi (sozlash uchun)."""
+    """Guruhda yuborilsa — guruh ID ni DB ga saqlaydi va mavzu ID ni ko'rsatadi."""
     chat = update.effective_chat
     if chat.type == "private":
         await update.message.reply_text("Bu komandani guruhda yuboring.")
         return
     thread_id = update.message.message_thread_id
+
+    # Guruh ID ni DB ga avtomatik saqlash
+    from app.db.base import SessionFactory
+    from app.services.settings_service import set_setting
+
+    async with SessionFactory() as session:
+        await set_setting(session, "group_chat_id", str(chat.id))
+        await session.commit()
+
     await update.message.reply_text(
-        f"📡 Guruh ID: <code>{chat.id}</code>\n"
-        f"🧵 Mavzu (topic) ID: <code>{thread_id or 'yo‘q'}</code>\n\n"
-        "Bularni ilovaning sozlamalariga yoki .env ga kiriting.",
+        f"✅ Guruh ID saqlandi: <code>{chat.id}</code>\n"
+        f"🧵 Bu mavzu (topic) ID: <code>{thread_id or 'yo‘q'}</code>\n\n"
+        "Topic ID larni ilova → Sozlama bo'limiga kiriting.",
         parse_mode="HTML",
     )

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   DndContext, DragEndEvent, PointerSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
-import { Spinner } from "@telegram-apps/telegram-ui";
 import { tasksApi } from "../api/client";
 import type { Task, TaskStatus } from "../api/types";
 import { STATUS_ORDER } from "../api/types";
@@ -53,11 +52,7 @@ export function BoardPage() {
   }
 
   if (loading) {
-    return (
-      <div className="center-screen">
-        <Spinner size="l" />
-      </div>
-    );
+    return <div className="center-screen">Yuklanmoqda…</div>;
   }
 
   return (

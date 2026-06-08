@@ -56,7 +56,9 @@ async def check_overdue():
         lines = ["🚨 <b>Kechikkan vazifalar:</b>", ""]
         for t in tasks:
             lines.append(f"• #{t.id} {t.name} — muddat {t.deadline}")
-        await notify.send_to_group("\n".join(lines))
+        from app.services.settings_service import get_topic
+
+        await notify.send_to_group("\n".join(lines), await get_topic("topic_reports"))
 
 
 async def weekly_report():
@@ -73,7 +75,9 @@ async def weekly_report():
             f"📈 <b>Haftalik hisobot — {date.today()}</b>\n\n"
             f"Jami: {total} | ✅ {done} | {prog}%"
         )
-        await notify.send_to_group(text)
+        from app.services.settings_service import get_topic
+
+        await notify.send_to_group(text, await get_topic("topic_reports"))
 
 
 def setup_scheduler() -> AsyncIOScheduler:

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Spinner, Placeholder, Button } from "@telegram-apps/telegram-ui";
 import { useAuth } from "./store/auth";
 import { Layout, type Tab } from "./components/Layout";
 import { BoardPage } from "./pages/BoardPage";
 import { UsersPage } from "./pages/UsersPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { StatsPage } from "./pages/StatsPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { Logo } from "./components/Logo";
 
 export function App() {
   const { user, loading, error } = useAuth();
@@ -14,39 +15,52 @@ export function App() {
   if (loading) {
     return (
       <div className="center-screen">
-        <Spinner size="l" />
-        <div>Yuklanmoqda…</div>
+        <Logo />
+        <div style={{ color: "var(--hint)" }}>Yuklanmoqda…</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Placeholder header="Xatolik" description={error}>
-        <Button onClick={() => location.reload()}>Qayta urinish</Button>
-      </Placeholder>
+      <div className="center-screen">
+        <h3>Xatolik</h3>
+        <p style={{ color: "var(--hint)" }}>{error}</p>
+        <button className="btn btn--primary" onClick={() => location.reload()} style={{ maxWidth: 200 }}>
+          Qayta urinish
+        </button>
+      </div>
     );
   }
 
   if (!user || user.status === "pending") {
     return (
-      <Placeholder
-        header="⏳ Ariza ko'rib chiqilmoqda"
-        description="Boshliq tasdiqlagunicha kuting. Tasdiqlangач, ilovani qayta oching."
-      />
+      <div className="center-screen">
+        <Logo />
+        <h3>⏳ Ariza ko'rib chiqilmoqda</h3>
+        <p style={{ color: "var(--hint)" }}>
+          Boshliq tasdiqlagunicha kuting. Tasdiqlangач, ilovani qayta oching.
+        </p>
+      </div>
     );
   }
 
   if (user.status === "blocked") {
-    return <Placeholder header="🚫 Bloklangan" description="Kirishingiz cheklangan." />;
+    return (
+      <div className="center-screen">
+        <h3>🚫 Bloklangan</h3>
+        <p style={{ color: "var(--hint)" }}>Kirishingiz cheklangan.</p>
+      </div>
+    );
   }
 
   return (
-    <Layout tab={tab} onTab={setTab} isBoss={user.role === "boss"}>
+    <Layout tab={tab} onTab={setTab} user={user}>
       {tab === "board" && <BoardPage />}
       {tab === "users" && <UsersPage />}
       {tab === "departments" && <DepartmentsPage />}
       {tab === "stats" && <StatsPage />}
+      {tab === "settings" && <SettingsPage />}
     </Layout>
   );
 }

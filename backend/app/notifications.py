@@ -26,10 +26,16 @@ def get_bot() -> Bot | None:
 
 async def send_to_group(text: str, topic_id: int | None = None) -> None:
     bot = get_bot()
-    if not bot or not settings.group_chat_id:
+    if not bot:
+        return
+    # Guruh ID — DB sozlamasidan (bo'lmasa .env dan)
+    from app.services.settings_service import get_group_chat_id
+
+    group_id = await get_group_chat_id()
+    if not group_id:
         return
     kwargs = {
-        "chat_id": settings.group_chat_id,
+        "chat_id": group_id,
         "text": text,
         "parse_mode": ParseMode.HTML,
     }

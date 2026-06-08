@@ -15,7 +15,7 @@ export function TaskCard({ task, dep, onClick }: Props) {
   const style = {
     transform: CSS.Translate.toString(transform),
     opacity: isDragging ? 0.4 : 1,
-    "--card-color": dep?.color || "#2481cc",
+    "--card-color": dep?.color || "#3390ec",
   } as React.CSSProperties;
 
   return (
@@ -33,14 +33,14 @@ export function TaskCard({ task, dep, onClick }: Props) {
       </div>
       <div className="task-card__meta">
         {dep && (
-          <span>
-            {dep.emoji} {dep.name}
+          <span className="chip chip--dep">
+            <span className="dep-dot" style={{ background: dep.color }} />
+            {dep.name}
           </span>
         )}
         {task.deadline && (
-          <span className={task.is_overdue ? "task-card__overdue" : ""}>
-            ⏰ {task.deadline}
-            {task.is_overdue ? " ⚠️" : ""}
+          <span className={`chip${task.is_overdue ? " chip--overdue" : ""}`}>
+            {task.is_overdue ? "⚠️" : "⏰"} {task.deadline}
           </span>
         )}
       </div>
