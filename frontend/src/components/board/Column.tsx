@@ -1,24 +1,16 @@
 import { useDroppable } from "@dnd-kit/core";
 import type { ReactNode } from "react";
-import type { TaskStatus } from "../../api/types";
-import { STATUS_EMOJI } from "../../api/types";
+import type { BoardColumn } from "../../api/types";
 import { useI18n } from "../../i18n";
 
-const STATUS_COLOR: Record<TaskStatus, string> = {
-  new: "#64748b",
-  in_progress: "#f59e0b",
-  review: "#8b5cf6",
-  done: "#10b981",
-};
-
 interface Props {
-  status: TaskStatus;
+  column: BoardColumn;
   count: number;
   children: ReactNode;
 }
 
-export function Column({ status, count, children }: Props) {
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+export function Column({ column, count, children }: Props) {
+  const { setNodeRef, isOver } = useDroppable({ id: column.key });
   const { t } = useI18n();
 
   return (
@@ -28,9 +20,9 @@ export function Column({ status, count, children }: Props) {
       style={isOver ? { outline: "2px dashed var(--accent)" } : undefined}
     >
       <div className="board-column__header">
-        <span className="board-column__dot" style={{ background: STATUS_COLOR[status] }} />
+        <span className="board-column__dot" style={{ background: column.color }} />
         <span>
-          {STATUS_EMOJI[status]} {t(`status.${status}`)}
+          {column.emoji} {column.name}
         </span>
         <span className="board-column__count">{count}</span>
       </div>

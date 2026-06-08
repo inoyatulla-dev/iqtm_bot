@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
+from app import notifications as notify
 from app.api.deps import BossUser, CurrentUser, SessionDep
 from app.core.constants import Role, UserStatus
 from app.models import Log, User
@@ -58,10 +59,17 @@ async def approve_user(
     role: Role = Role.WORKER, dep_id: str | None = None,
 ):
     user = await _get_or_404(session, user_id)
+    was_pending = user.status == UserStatus.PENDING
     user.status = UserStatus.ACTIVE
     user.role = role
     user.dep_id = dep_id
     session.add(Log(user_id=boss.id, action=f"Ariza tasdiqlandi: {user_id}"))
+    if was_pending:
+        await notify.send_dm(
+            user.id,
+            "🎉 <b>Arizangiz tasdiqlandi!</b>\n"
+            "Ilovani qayta oching — endi to'liq foydalanishingiz mumkin.",
+        )
     return user
 
 

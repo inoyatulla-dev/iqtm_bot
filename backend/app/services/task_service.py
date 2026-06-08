@@ -9,9 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import notifications as notify
-from app.core.constants import TaskStatus
-from app.models import Department, Log, Reminder, Task, User
+from app.models import BoardColumn, Comment, Department, Log, Reminder, Task, User
 from app.schemas.task import TaskCreate
+from app.services import board_service, settings_service
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,7 @@ async def create_task(
         created_by=created_by,
         deadline=data.deadline,
         type=data.type,
+        status=await board_service.get_initial_key(session),
     )
     session.add(task)
     await session.flush()  # task.id olish uchun
@@ -76,9 +77,10 @@ async def create_task(
     )
     if task.description:
         text += f"\n📄 {task.description}"
-    from app.services.settings_service import get_topic
 
-    topic_id = (dep.topic_id if dep else None) or await get_topic("topic_tasks")
+    topic_id = (dep.topic_id if dep else None) or await settings_service.get_routed_topic(
+        session, "new_task"
+    )
     await notify.send_to_group(text, topic_id)
     if masul:
         await notify.send_dm(masul.id, text)
@@ -87,35 +89,66 @@ async def create_task(
 
 
 async def change_status(
-    session: AsyncSession, task: Task, new_status: TaskStatus, actor: User
+    session: AsyncSession, task: Task, column: BoardColumn, actor: User
 ) -> Task:
-    task.status = new_status
-    await _log(
-        session, actor.id, f"Vazifa holati: #{task.id} → {new_status.value}"
-    )
+    task.status = column.key
+    await _log(session, actor.id, f"Vazifa holati: #{task.id} → {column.key}")
 
     dep = await _dep(session, task.dep_id)
     masul = await _user(session, task.masul_id)
 
-    if new_status == TaskStatus.DONE:
+    if column.is_done:
+        event = "done"
         creator = await _user(session, task.created_by)
         text = (
-            f"✅ <b>Vazifa bajarildi #{task.id}</b>\n"
+            f"✅ <b>Vazifa tasdiqlandi #{task.id}</b>\n"
             f"🏢 {_dep_label(dep)}\n"
             f"📝 {task.name}\n"
             f"👤 Bajaruvchi: {_mention(masul)}\n"
-            f"📣 Qo'ygan: {_mention(creator)}"
+            f"📣 Qo'ygan: {_mention(creator)}\n"
+            f"🔎 Tekshirdi: {actor.name}"
         )
+        last_comment = await session.scalar(
+            select(Comment)
+            .where(Comment.task_id == task.id)
+            .order_by(Comment.created_at.desc())
+            .limit(1)
+        )
+        if last_comment:
+            text += f"\n💬 {last_comment.text}"
     else:
+        event = "status_change"
         text = (
             f"📌 <b>Vazifa holati o'zgardi</b>\n"
             f"🏢 {_dep_label(dep)}\n"
             f"📝 #{task.id} {task.name}\n"
-            f"➡️ {new_status.emoji} {new_status.label}\n"
+            f"➡️ {column.emoji} {column.name}\n"
             f"👤 O'zgartirdi: {actor.name}"
         )
-    await notify.send_to_group(text, dep.topic_id if dep else None)
+    topic_id = (dep.topic_id if dep else None) or await settings_service.get_routed_topic(
+        session, event
+    )
+    await notify.send_to_group(text, topic_id)
+    if masul and masul.id != actor.id:
+        await notify.send_dm(masul.id, text)
     return task
+
+
+async def notify_comment(
+    session: AsyncSession, task: Task, author: User, text: str
+) -> None:
+    """Vazifaga izoh qoldirilganda — mas'ul va yaratuvchiga (yozuvchidan tashqari) xabar."""
+    recipients = {task.masul_id, task.created_by} - {author.id, None}
+    if not recipients:
+        return
+    msg = (
+        f"💬 <b>Yangi izoh — vazifa #{task.id}</b>\n"
+        f"📝 {task.name}\n"
+        f"👤 {author.name}:\n"
+        f"{text}"
+    )
+    for uid in recipients:
+        await notify.send_dm(uid, msg)
 
 
 async def get_board_tasks(

@@ -1,11 +1,109 @@
 import { useEffect, useState } from "react";
-import { depsApi, settingsApi, type AppSettings } from "../api/client";
+import { depsApi, settingsApi, updateProfile, type AppSettings } from "../api/client";
 import { useAuth } from "../store/auth";
 import { useI18n, LANGS, type Lang } from "../i18n";
+import { BoardColumnsSection } from "../components/BoardColumnsSection";
+import { TopicsSection } from "../components/TopicsSection";
+
+function splitName(name?: string): [string, string] {
+  if (!name) return ["", ""];
+  const [first, ...rest] = name.trim().split(/\s+/);
+  return [first || "", rest.join(" ")];
+}
 
 export function SettingsPage() {
-  const { deps, reload } = useAuth();
+  const { deps, isBoss, reload } = useAuth();
   const { t, lang, setLang } = useI18n();
+
+  return (
+    <div style={{ paddingBottom: 90 }}>
+      <ProfileSection />
+
+      <div className="section-title">{t("settings.language")}</div>
+      <div className="sheet__pad">
+        <div style={{ display: "flex", gap: 8 }}>
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => setLang(l.code as Lang)}
+              className={`btn ${lang === l.code ? "btn--primary" : "btn--ghost"}`}
+              style={{ fontSize: 14 }}
+            >
+              {l.flag} {l.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isBoss && <AdminSection deps={deps} reload={reload} />}
+    </div>
+  );
+}
+
+function ProfileSection() {
+  const { user, reload } = useAuth();
+  const { t } = useI18n();
+  const [first0, last0] = splitName(user?.name);
+  const [firstName, setFirstName] = useState(first0);
+  const [lastName, setLastName] = useState(last0);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    const [f, l] = splitName(user?.name);
+    setFirstName(f);
+    setLastName(l);
+  }, [user?.name]);
+
+  async function save() {
+    if (firstName.trim().length < 1) {
+      setErr(t("register.nameErr"));
+      return;
+    }
+    setSaving(true);
+    setErr("");
+    try {
+      await updateProfile(firstName.trim(), lastName.trim());
+      await reload();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch (e: any) {
+      setErr(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="section-title">{t("settings.profile")}</div>
+      <div className="sheet__pad">
+        <div className="field">
+          <label>{t("register.firstName")}</label>
+          <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>{t("register.lastName")}</label>
+          <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+        </div>
+        {err && <div className="form-error">{err}</div>}
+        <button className="btn btn--primary" onClick={save} disabled={saving}>
+          {saved ? t("settings.profileSaved") : t("common.save")}
+        </button>
+      </div>
+    </>
+  );
+}
+
+function AdminSection({
+  deps,
+  reload,
+}: {
+  deps: ReturnType<typeof useAuth>["deps"];
+  reload: () => void;
+}) {
+  const { t } = useI18n();
   const [s, setS] = useState<AppSettings | null>(null);
   const [depTopics, setDepTopics] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
@@ -24,11 +122,7 @@ export function SettingsPage() {
   if (loading || !s) return <div className="center-screen">{t("common.loading")}</div>;
 
   async function saveGroup() {
-    await settingsApi.update({
-      group_chat_id: s!.group_chat_id,
-      topic_tasks: s!.topic_tasks,
-      topic_reports: s!.topic_reports,
-    });
+    await settingsApi.update({ group_chat_id: s!.group_chat_id });
     flash();
   }
 
@@ -50,24 +144,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div style={{ paddingBottom: 90 }}>
-      {/* Til */}
-      <div className="section-title">{t("settings.language")}</div>
-      <div className="sheet__pad">
-        <div style={{ display: "flex", gap: 8 }}>
-          {LANGS.map((l) => (
-            <button
-              key={l.code}
-              onClick={() => setLang(l.code as Lang)}
-              className={`btn ${lang === l.code ? "btn--primary" : "btn--ghost"}`}
-              style={{ fontSize: 14 }}
-            >
-              {l.flag} {l.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <>
       <div className="section-title">{t("settings.group")}</div>
       <div className="sheet__pad">
         <div className="field">
@@ -79,30 +156,12 @@ export function SettingsPage() {
           />
         </div>
         <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>{t("settings.groupHint")}</p>
-      </div>
-
-      <div className="section-title">{t("settings.topics")}</div>
-      <div className="sheet__pad">
-        <div className="field">
-          <label>{t("settings.topicTasks")}</label>
-          <input
-            value={s.topic_tasks}
-            placeholder="5"
-            onChange={(e) => setS({ ...s, topic_tasks: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label>{t("settings.topicReports")}</label>
-          <input
-            value={s.topic_reports}
-            placeholder="8"
-            onChange={(e) => setS({ ...s, topic_reports: e.target.value })}
-          />
-        </div>
         <button className="btn btn--primary" onClick={saveGroup}>
           {saved ? t("common.saved") : t("common.save")}
         </button>
       </div>
+
+      <TopicsSection />
 
       <div className="section-title">{t("settings.deptTopics")}</div>
       <div className="sheet__pad">
@@ -123,10 +182,12 @@ export function SettingsPage() {
         </button>
       </div>
 
+      <BoardColumnsSection />
+
       <div className="section-title">{t("settings.admins")}</div>
       <div className="sheet__pad">
         <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>{t("settings.adminsHint")}</p>
       </div>
-    </div>
+    </>
   );
 }

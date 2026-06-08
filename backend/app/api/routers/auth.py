@@ -10,6 +10,7 @@ from app.core.security import create_access_token, validate_init_data
 from app.models import User
 from app.schemas.auth import AuthRequest, AuthResponse, LangUpdate, ProfileUpdate
 from app.schemas.user import UserOut
+from app.services import settings_service
 from app import notifications as notify
 
 logger = logging.getLogger(__name__)
@@ -45,8 +46,8 @@ async def auth_telegram(body: AuthRequest, session: SessionDep):
         await session.flush()
         await _notify_bosses(session, user)
     else:
-        # Ism/username yangilanadi
-        user.name = name
+        # Username Telegram'dan sinxronlanadi; ismni esa foydalanuvchi
+        # ro'yxatdan o'tish formasi/Sozlamada o'zi belgilaydi — qayta yozilmaydi
         user.username = username
 
     token = create_access_token(user.id, user.role.value)
@@ -91,3 +92,7 @@ async def _notify_bosses(session, new_user: User) -> None:
     )
     for boss in result.scalars().all():
         await notify.send_dm(boss.id, text)
+
+    topic_id = await settings_service.get_routed_topic(session, "application")
+    if topic_id:
+        await notify.send_to_group(text, topic_id)

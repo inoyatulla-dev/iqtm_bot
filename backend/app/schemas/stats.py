@@ -1,11 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class StatusCounts(BaseModel):
-    new: int = 0
-    in_progress: int = 0
-    review: int = 0
-    done: int = 0
+    counts: dict[str, int] = Field(default_factory=dict)
     overdue: int = 0
     total: int = 0
 

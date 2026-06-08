@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
-import { tasksApi, usersApi } from "../api/client";
-import type { Task, User } from "../api/types";
+import { commentsApi, tasksApi, usersApi } from "../api/client";
+import type { BoardColumn, Comment, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
-import { Sheet } from "../components/Sheet";
+import { Sheet, ActionRow } from "../components/Sheet";
 
 interface Props {
   task: Task | null; // null = yangi
   isBoss: boolean;
   onClose: () => void;
   onSaved: () => void;
+  onStatusChanged?: (task: Task) => void;
 }
 
-export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
-  const { deps, user } = useAuth();
+export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Props) {
+  const { deps, columns, user } = useAuth();
   const { t } = useI18n();
   const [name, setName] = useState(task?.name || "");
   const [desc, setDesc] = useState(task?.description || "");
@@ -25,11 +26,31 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
   const [confirmDel, setConfirmDel] = useState(false);
   const [err, setErr] = useState("");
 
+  // ── Holat ──
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [pendingDone, setPendingDone] = useState<BoardColumn | null>(null);
+  const [doneComment, setDoneComment] = useState("");
+
+  // ── Izohlar ──
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [commentBusy, setCommentBusy] = useState(false);
+
   useEffect(() => {
     if (isBoss) usersApi.list("active").then(setWorkers);
   }, [isBoss]);
 
+  useEffect(() => {
+    if (task) commentsApi.list(task.id).then(setComments);
+  }, [task?.id]);
+
   const canEdit = !task || isBoss || task.created_by === user?.id;
+  const canChangeStatus =
+    !!task &&
+    (isBoss ||
+      task.masul_id === user?.id ||
+      (task.type === "personal" && task.created_by === user?.id));
+  const targetColumns = columns.filter((c) => isBoss || !c.is_done);
 
   async function save() {
     if (name.trim().length < 3) {
@@ -68,6 +89,62 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
     if (!task) return;
     await tasksApi.remove(task.id);
     onSaved();
+  }
+
+  async function changeStatus(col: BoardColumn) {
+    if (!task || statusBusy || task.status === col.key) return;
+    if (col.is_done) {
+      setPendingDone(col);
+      setDoneComment("");
+      return;
+    }
+    setStatusBusy(true);
+    setErr("");
+    try {
+      const updated = await tasksApi.setStatus(task.id, col.key);
+      onStatusChanged?.(updated);
+    } catch (e: any) {
+      setErr(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  async function confirmDone() {
+    if (!task || !pendingDone) return;
+    setStatusBusy(true);
+    setErr("");
+    try {
+      const text = doneComment.trim();
+      if (text) {
+        const c = await commentsApi.add(task.id, text);
+        setComments((prev) => [...prev, c]);
+      }
+      const updated = await tasksApi.setStatus(task.id, pendingDone.key);
+      onStatusChanged?.(updated);
+      setPendingDone(null);
+    } catch (e: any) {
+      setErr(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  async function sendComment() {
+    if (!task) return;
+    const text = commentText.trim();
+    if (!text) return;
+    setCommentBusy(true);
+    setErr("");
+    try {
+      const c = await commentsApi.add(task.id, text);
+      setComments((prev) => [...prev, c]);
+      setCommentText("");
+    } catch (e: any) {
+      setErr(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setCommentBusy(false);
+    }
   }
 
   return (
@@ -144,10 +221,99 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
             {t("task.confirmDelete")}
           </button>
         )}
+      </div>
+
+      {task && canChangeStatus && (
+        <>
+          <div className="section-title">{t("task.statusSection")}</div>
+          <div style={{ borderTop: "1px solid var(--line)" }}>
+            {targetColumns.map((col) => (
+              <ActionRow
+                key={col.key}
+                icon={col.emoji}
+                label={col.name}
+                checked={task.status === col.key}
+                onClick={() => changeStatus(col)}
+              />
+            ))}
+          </div>
+          {pendingDone && (
+            <div className="sheet__pad">
+              <div style={{ fontWeight: 600 }}>{t("task.confirmDoneTitle")}</div>
+              <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
+                {t("task.confirmDoneHint")}
+              </p>
+              <textarea
+                value={doneComment}
+                placeholder={t("comment.placeholder")}
+                onChange={(e) => setDoneComment(e.target.value)}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="btn btn--ghost"
+                  onClick={() => setPendingDone(null)}
+                  disabled={statusBusy}
+                >
+                  {t("common.cancel")}
+                </button>
+                <button className="btn btn--primary" onClick={confirmDone} disabled={statusBusy}>
+                  {t("task.confirmDoneBtn")}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {task && (
+        <>
+          <div className="section-title">{t("comment.title")}</div>
+          <div className="sheet__pad">
+            <div className="comment-list">
+              {comments.length === 0 && <div className="comment-empty">{t("comment.empty")}</div>}
+              {comments.map((c) => (
+                <div className="comment" key={c.id}>
+                  <div className="comment__head">
+                    <span className="comment__author">{c.user_name}</span>
+                    <span>{formatDateTime(c.created_at)}</span>
+                  </div>
+                  <div className="comment__text">{c.text}</div>
+                </div>
+              ))}
+            </div>
+            <div className="comment-input">
+              <textarea
+                value={commentText}
+                placeholder={t("comment.placeholder")}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <button
+                className="btn btn--primary"
+                style={{ width: "auto", padding: "12px 16px" }}
+                onClick={sendComment}
+                disabled={commentBusy || !commentText.trim()}
+              >
+                {t("comment.send")}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="sheet__pad">
         <button className="btn btn--ghost" onClick={onClose}>
           {t("common.close")}
         </button>
       </div>
     </Sheet>
   );
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString(undefined, {
+    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+  });
 }

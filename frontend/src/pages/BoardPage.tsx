@@ -3,8 +3,7 @@ import {
   DndContext, DragEndEvent, PointerSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
 import { tasksApi } from "../api/client";
-import type { Task, TaskStatus } from "../api/types";
-import { STATUS_ORDER } from "../api/types";
+import type { Task } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { haptic } from "../telegram";
@@ -13,7 +12,7 @@ import { TaskCard } from "../components/board/TaskCard";
 import { TaskForm } from "./TaskForm";
 
 export function BoardPage() {
-  const { deps, isBoss } = useAuth();
+  const { deps, columns, isBoss } = useAuth();
   const { t } = useI18n();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,15 +32,11 @@ export function BoardPage() {
     load();
   }, []);
 
-  async function onDragEnd(e: DragEndEvent) {
-    const newStatus = e.over?.id as TaskStatus | undefined;
-    const taskId = Number(e.active.id);
-    if (!newStatus) return;
+  async function moveTask(taskId: number, newStatus: string) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === newStatus) return;
 
     haptic();
-    // Optimistik yangilash
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
@@ -53,6 +48,12 @@ export function BoardPage() {
     }
   }
 
+  async function onDragEnd(e: DragEndEvent) {
+    const newStatus = e.over?.id as string | undefined;
+    if (!newStatus) return;
+    await moveTask(Number(e.active.id), newStatus);
+  }
+
   if (loading) {
     return <div className="center-screen">{t("common.loading")}</div>;
   }
@@ -61,10 +62,10 @@ export function BoardPage() {
     <>
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <div className="board">
-          {STATUS_ORDER.map((status) => {
-            const colTasks = tasks.filter((t) => t.status === status);
+          {columns.map((col) => {
+            const colTasks = tasks.filter((t) => t.status === col.key);
             return (
-              <Column key={status} status={status} count={colTasks.length}>
+              <Column key={col.key} column={col} count={colTasks.length}>
                 {colTasks.map((t) => (
                   <TaskCard
                     key={t.id}
@@ -100,6 +101,10 @@ export function BoardPage() {
           onSaved={() => {
             setFormOpen(false);
             load();
+          }}
+          onStatusChanged={(updated) => {
+            setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+            setEditing(updated);
           }}
         />
       )}

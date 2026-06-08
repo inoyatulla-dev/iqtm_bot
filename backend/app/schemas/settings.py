@@ -1,13 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SettingsOut(BaseModel):
     group_chat_id: str = ""
-    topic_tasks: str = ""
-    topic_reports: str = ""
+    routes: dict[str, int | None] = Field(default_factory=dict)
 
 
 class SettingsUpdate(BaseModel):
     group_chat_id: str | None = None
-    topic_tasks: str | None = None
-    topic_reports: str | None = None
+    routes: dict[str, int | None] | None = None

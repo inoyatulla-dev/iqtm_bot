@@ -1,10 +1,17 @@
-"""Sozlamalar (key/value) — guruh va topic ID lari shu yerda saqlanadi."""
+"""Sozlamalar (key/value) — guruh ID va voqea→mavzu yo'naltirishlari shu yerda saqlanadi."""
 from app.config import settings as env_settings
 from app.db.base import SessionFactory
-from app.models import Setting
+from app.models import Setting, Topic
 
 # Bot /set_group orqali ham, ilova orqali ham sozlanadigan kalitlar
-KNOWN_KEYS = ["group_chat_id", "topic_tasks", "topic_reports"]
+KNOWN_KEYS = ["group_chat_id"]
+
+# Har bir voqea turi — admin uni nomlangan mavzuga (Topic) yo'naltira oladi.
+# Saqlash kaliti: f"route_{event}", qiymati — Topic.id (DB primary key)
+ROUTE_EVENTS = [
+    "new_task", "status_change", "done",
+    "overdue", "weekly", "reminder", "application",
+]
 
 
 async def get_setting(session, key: str, default=None):
@@ -32,9 +39,16 @@ async def get_group_chat_id() -> int:
     return env_settings.group_chat_id
 
 
-async def get_topic(key: str) -> int | None:
-    async with SessionFactory() as session:
-        val = await get_setting(session, key)
-    if val and str(val).lstrip("-").isdigit():
-        return int(val)
-    return None
+async def get_route(session, event: str) -> int | None:
+    """`route_<event>` sozlamasidagi Topic.id'ni o'qiydi (frontend dropdown uchun)."""
+    val = await get_setting(session, f"route_{event}")
+    return int(val) if val and val.isdigit() else None
+
+
+async def get_routed_topic(session, event: str) -> int | None:
+    """`route_<event>` → Topic → Telegram forum-mavzu ID (xabar yuborish uchun)."""
+    topic_pk = await get_route(session, event)
+    if topic_pk is None:
+        return None
+    topic = await session.get(Topic, topic_pk)
+    return topic.topic_id if topic else None

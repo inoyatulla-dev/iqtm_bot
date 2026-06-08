@@ -1,14 +1,15 @@
 import {
   createContext, useContext, useEffect, useState, type ReactNode,
 } from "react";
-import { authenticate, depsApi, updateLang } from "../api/client";
-import type { Department, User } from "../api/types";
+import { authenticate, boardColumnsApi, depsApi, updateLang } from "../api/client";
+import type { BoardColumn, Department, User } from "../api/types";
 import { I18nProvider, type Lang } from "../i18n";
 import { tg } from "../telegram";
 
 interface AuthState {
   user: User | null;
   deps: Department[];
+  columns: BoardColumn[];
   loading: boolean;
   error: string | null;
   isBoss: boolean;
@@ -28,6 +29,7 @@ function detectLang(): Lang {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [deps, setDeps] = useState<Department[]>([]);
+  const [columns, setColumns] = useState<BoardColumn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lang, setLangState] = useState<Lang>(detectLang());
@@ -40,7 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       if (user.lang) setLangState(user.lang as Lang);
       if (user.status === "active") {
-        setDeps(await depsApi.list());
+        const [deps, columns] = await Promise.all([depsApi.list(), boardColumnsApi.list()]);
+        setDeps(deps);
+        setColumns(columns);
       }
     } catch (e: any) {
       setError(e?.response?.data?.detail || e.message || "Xatolik");
@@ -61,7 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthCtx.Provider
-      value={{ user, deps, loading, error, isBoss: user?.role === "boss", reload: load }}
+      value={{
+        user, deps, columns, loading, error,
+        isBoss: user?.role === "boss", reload: load,
+      }}
     >
       <I18nProvider lang={lang} setLang={setLang}>
         {children}

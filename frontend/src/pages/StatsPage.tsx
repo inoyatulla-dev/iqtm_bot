@@ -5,7 +5,7 @@ import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 
 export function StatsPage() {
-  const { isBoss } = useAuth();
+  const { isBoss, columns } = useAuth();
   const { t } = useI18n();
   const [counts, setCounts] = useState<StatusCounts | null>(null);
   const [rating, setRating] = useState<RatingRow[]>([]);
@@ -24,10 +24,11 @@ export function StatsPage() {
 
   const cards = [
     { num: counts.total, label: t("stats.total"), color: "var(--text)" },
-    { num: counts.new, label: `🆕 ${t("status.new")}`, color: "#64748b" },
-    { num: counts.in_progress, label: `🔄 ${t("status.in_progress")}`, color: "#f59e0b" },
-    { num: counts.review, label: `🔍 ${t("status.review")}`, color: "#8b5cf6" },
-    { num: counts.done, label: `✅ ${t("status.done")}`, color: "#10b981" },
+    ...columns.map((col) => ({
+      num: counts.counts[col.key] || 0,
+      label: `${col.emoji} ${col.name}`,
+      color: col.color,
+    })),
     { num: counts.overdue, label: `⚠️ ${t("stats.overdue")}`, color: "#ff5a5a" },
   ];
   const medal = (i: number) => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;

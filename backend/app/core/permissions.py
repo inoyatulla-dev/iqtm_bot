@@ -3,7 +3,7 @@
 Eski kodda ruxsat har handlerda takrorlanardi; bu yerda bir joyga yig'ilgan.
 """
 from app.core.constants import Role, TaskType
-from app.models import Task, User
+from app.models import BoardColumn, Task, User
 
 
 def is_boss(user: User) -> bool:
@@ -35,10 +35,16 @@ def can_edit_task(user: User, task: Task) -> bool:
     return task.type == TaskType.PERSONAL and task.created_by == user.id
 
 
-def can_change_status(user: User, task: Task) -> bool:
-    """Doskada holatni o'zgartirish (sudrab) — boshliq yoki mas'ul xodim."""
+def can_change_status(user: User, task: Task, target_column: BoardColumn) -> bool:
+    """Doskada holatni o'zgartirish (sudrab/menyudan) — boshliq yoki mas'ul xodim.
+
+    "Yakuniy" (is_done) ustunga faqat boshliq o'tkaza oladi — ish tekshirib
+    tasdiqlangandan keyin "Bajarildi"ga o'tadi.
+    """
     if is_boss(user):
         return True
+    if target_column.is_done:
+        return False
     return task.masul_id == user.id or (
         task.type == TaskType.PERSONAL and task.created_by == user.id
     )

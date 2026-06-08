@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.core.constants import TaskStatus, TaskType
+from app.core.constants import TaskType
 
 
 class TaskOut(BaseModel):
@@ -15,7 +15,7 @@ class TaskOut(BaseModel):
     masul_id: int | None = None
     created_by: int
     deadline: date | None = None
-    status: TaskStatus
+    status: str
     type: TaskType
     project_id: int | None = None
     is_overdue: bool = False
@@ -40,4 +40,4 @@ class TaskUpdate(BaseModel):
 
 
 class TaskStatusUpdate(BaseModel):
-    status: TaskStatus
+    status: str

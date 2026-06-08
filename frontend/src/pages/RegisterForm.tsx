@@ -11,7 +11,8 @@ export function RegisterForm() {
   const parts = (user?.name || "").split(" ");
   const [first, setFirst] = useState(parts[0] || "");
   const [last, setLast] = useState(parts.slice(1).join(" ") || "");
-  const [sent, setSent] = useState(false);
+  const appliedKey = user ? `iqtm_applied_${user.id}` : "";
+  const [sent, setSent] = useState(() => !!user && localStorage.getItem(appliedKey) === "1");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -24,6 +25,7 @@ export function RegisterForm() {
     setErr("");
     try {
       await updateProfile(first.trim(), last.trim());
+      if (appliedKey) localStorage.setItem(appliedKey, "1");
       setSent(true);
     } catch (e: any) {
       setErr(e?.response?.data?.detail || t("common.error"));

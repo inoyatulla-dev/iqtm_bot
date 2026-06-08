@@ -5,9 +5,10 @@ from fastapi import APIRouter
 from sqlalchemy import case, func, select
 
 from app.api.deps import BossUser, CurrentUser, SessionDep
-from app.core.constants import Role, TaskStatus, TaskType
+from app.core.constants import TaskType
 from app.models import Task, User
 from app.schemas.stats import RatingRow, StatusCounts
+from app.services import board_service
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -25,16 +26,19 @@ async def global_stats(_: BossUser, session: SessionDep):
 @router.get("/rating", response_model=list[RatingRow])
 async def rating(_: BossUser, session: SessionDep):
     today = date.today()
+    done_keys = await board_service.get_done_keys(session)
+    is_done = Task.status.in_(done_keys) if done_keys else False
+    is_active = Task.status.not_in(done_keys) if done_keys else True
     result = await session.execute(
         select(
             User.id,
             User.name,
-            func.sum(case((Task.status == TaskStatus.DONE.value, 1), else_=0)).label("done"),
-            func.sum(case((Task.status != TaskStatus.DONE.value, 1), else_=0)).label("active"),
+            func.sum(case((is_done, 1), else_=0)).label("done"),
+            func.sum(case((is_active, 1), else_=0)).label("active"),
             func.sum(
                 case(
                     (
-                        (Task.status != TaskStatus.DONE.value)
+                        is_active
                         & (Task.deadline.is_not(None))
                         & (Task.deadline < today),
                         1,
@@ -59,6 +63,7 @@ async def rating(_: BossUser, session: SessionDep):
 
 
 async def _counts(session: SessionDep, masul_id: int | None = None) -> StatusCounts:
+    done_keys = await board_service.get_done_keys(session)
     stmt = select(Task.status, func.count()).where(Task.type != TaskType.PROJECT.value)
     if masul_id:
         stmt = stmt.where(Task.masul_id == masul_id)
@@ -66,7 +71,7 @@ async def _counts(session: SessionDep, masul_id: int | None = None) -> StatusCou
     result = await session.execute(stmt)
     counts = StatusCounts()
     for st, cnt in result.all():
-        setattr(counts, st.value if hasattr(st, "value") else st, cnt)
+        counts.counts[st] = cnt
         counts.total += cnt
 
     # Kechikkan
@@ -76,7 +81,7 @@ async def _counts(session: SessionDep, masul_id: int | None = None) -> StatusCou
         .select_from(Task)
         .where(
             Task.type != TaskType.PROJECT.value,
-            Task.status != TaskStatus.DONE.value,
+            Task.status.not_in(done_keys) if done_keys else True,
             Task.deadline.is_not(None),
             Task.deadline < today,
         )

@@ -24,7 +24,7 @@ export function Layout({ tab, onTab, user, children }: Props) {
         ] as const)
       : []),
     { id: "stats", text: t("tabs.stats"), icon: "📊" },
-    ...(isBoss ? ([{ id: "settings", text: t("tabs.settings"), icon: "⚙️" }] as const) : []),
+    { id: "settings", text: t("tabs.settings"), icon: "⚙️" },
   ];
 
   return (

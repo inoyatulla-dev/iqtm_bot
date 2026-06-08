@@ -20,38 +20,8 @@ class UserStatus(str, Enum):
     BLOCKED = "blocked"    # Bloklangan
 
 
-class TaskStatus(str, Enum):
-    NEW = "new"                 # 🆕 Yangi
-    IN_PROGRESS = "in_progress" # 🔄 Jarayonda
-    REVIEW = "review"           # 🔍 Tekshiruvda
-    DONE = "done"               # ✅ Bajarildi
-
-    @property
-    def label(self) -> str:
-        return {
-            "new": "Yangi",
-            "in_progress": "Jarayonda",
-            "review": "Tekshiruvda",
-            "done": "Bajarildi",
-        }[self.value]
-
-    @property
-    def emoji(self) -> str:
-        return {
-            "new": "🆕",
-            "in_progress": "🔄",
-            "review": "🔍",
-            "done": "✅",
-        }[self.value]
-
-
-# Kanban ustunlari tartibi
-TASK_STATUS_ORDER = [
-    TaskStatus.NEW,
-    TaskStatus.IN_PROGRESS,
-    TaskStatus.REVIEW,
-    TaskStatus.DONE,
-]
+# Vazifa holati endi qattiq enum emas — BoardColumn jadvalida saqlanadi
+# (admin ustunlarni o'zi qo'shadi/nomlaydi/tartiblaydi). Qarang: app.models.board_column
 
 
 class TaskType(str, Enum):

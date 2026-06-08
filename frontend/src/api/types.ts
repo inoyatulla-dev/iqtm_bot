@@ -1,6 +1,5 @@
 export type Role = "boss" | "worker";
 export type UserStatus = "active" | "pending" | "blocked";
-export type TaskStatus = "new" | "in_progress" | "review" | "done";
 export type TaskType = "standalone" | "personal" | "project";
 
 export interface User {
@@ -22,6 +21,17 @@ export interface Department {
   topic_id: number | null;
 }
 
+export interface BoardColumn {
+  id: number;
+  key: string;
+  name: string;
+  emoji: string;
+  color: string;
+  seq: number;
+  is_initial: boolean;
+  is_done: boolean;
+}
+
 export interface Task {
   id: number;
   name: string;
@@ -30,18 +40,30 @@ export interface Task {
   masul_id: number | null;
   created_by: number;
   deadline: string | null;
-  status: TaskStatus;
+  status: string;
   type: TaskType;
   project_id: number | null;
   is_overdue: boolean;
   created_at?: string;
 }
 
+export interface Comment {
+  id: number;
+  task_id: number;
+  user_id: number;
+  user_name: string;
+  text: string;
+  created_at?: string;
+}
+
+export interface Topic {
+  id: number;
+  name: string;
+  topic_id: number;
+}
+
 export interface StatusCounts {
-  new: number;
-  in_progress: number;
-  review: number;
-  done: number;
+  counts: Record<string, number>;
   overdue: number;
   total: number;
 }
@@ -55,22 +77,6 @@ export interface RatingRow {
 }
 
 // ── UI yorliqlari ──────────────────────────────────────
-export const STATUS_LABEL: Record<TaskStatus, string> = {
-  new: "Yangi",
-  in_progress: "Jarayonda",
-  review: "Tekshiruvda",
-  done: "Bajarildi",
-};
-
-export const STATUS_EMOJI: Record<TaskStatus, string> = {
-  new: "🆕",
-  in_progress: "🔄",
-  review: "🔍",
-  done: "✅",
-};
-
-export const STATUS_ORDER: TaskStatus[] = ["new", "in_progress", "review", "done"];
-
 export const ROLE_LABEL: Record<Role, string> = {
   boss: "Admin",
   worker: "Xodim",

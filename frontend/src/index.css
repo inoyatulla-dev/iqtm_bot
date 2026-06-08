@@ -544,3 +544,93 @@ body {
     opacity: 1;
   }
 }
+
+/* ── Izohlar ────────────────────────────────────────── */
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.comment {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+
+.comment__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--hint);
+  margin-bottom: 4px;
+}
+
+.comment__author {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.comment__text {
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comment-empty {
+  color: var(--hint);
+  font-size: 13px;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.comment-input {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.comment-input textarea {
+  flex: 1;
+  min-height: 40px;
+}
+
+/* ── Doska ustunlarini boshqarish (admin) ───────────── */
+.col-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.col-row__handle {
+  cursor: grab;
+  color: var(--hint);
+  font-size: 18px;
+  touch-action: none;
+}
+
+.col-row__emoji {
+  font-size: 22px;
+}
+
+.col-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.col-row__title {
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.col-row__sub {
+  font-size: 12px;
+  color: var(--hint);
+}

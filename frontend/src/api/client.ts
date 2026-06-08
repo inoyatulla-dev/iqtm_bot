@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getInitData } from "../telegram";
 import type {
-  Department, RatingRow, StatusCounts, Task, TaskStatus, User,
+  BoardColumn, Comment, Department, RatingRow, StatusCounts, Task, Topic, User,
 } from "./types";
 
 export const api = axios.create({ baseURL: "/api" });
@@ -42,9 +42,31 @@ export const tasksApi = {
     api.post<Task>("/tasks", body).then((r) => r.data),
   update: (id: number, body: Partial<Task>) =>
     api.patch<Task>(`/tasks/${id}`, body).then((r) => r.data),
-  setStatus: (id: number, status: TaskStatus) =>
+  setStatus: (id: number, status: string) =>
     api.patch<Task>(`/tasks/${id}/status`, { status }).then((r) => r.data),
   remove: (id: number) => api.delete(`/tasks/${id}`),
+};
+
+// ── Izohlar ────────────────────────────────────────────
+export const commentsApi = {
+  list: (taskId: number) =>
+    api.get<Comment[]>(`/tasks/${taskId}/comments`).then((r) => r.data),
+  add: (taskId: number, text: string) =>
+    api.post<Comment>(`/tasks/${taskId}/comments`, { text }).then((r) => r.data),
+};
+
+// ── Doska ustunlari ────────────────────────────────────
+export const boardColumnsApi = {
+  list: () => api.get<BoardColumn[]>("/board-columns").then((r) => r.data),
+  create: (body: Partial<BoardColumn>) =>
+    api.post<BoardColumn>("/board-columns", body).then((r) => r.data),
+  update: (key: string, body: Partial<BoardColumn>) =>
+    api.patch<BoardColumn>(`/board-columns/${key}`, body).then((r) => r.data),
+  makeInitial: (key: string) =>
+    api.post<BoardColumn>(`/board-columns/${key}/make-initial`).then((r) => r.data),
+  reorder: (keys: string[]) =>
+    api.put<BoardColumn[]>("/board-columns/reorder", { keys }).then((r) => r.data),
+  remove: (key: string) => api.delete(`/board-columns/${key}`),
 };
 
 // ── Users ──────────────────────────────────────────────
@@ -79,14 +101,23 @@ export const depsApi = {
 // ── Settings ───────────────────────────────────────────
 export interface AppSettings {
   group_chat_id: string;
-  topic_tasks: string;
-  topic_reports: string;
+  routes: Record<string, number | null>;
 }
 
 export const settingsApi = {
   get: () => api.get<AppSettings>("/settings").then((r) => r.data),
   update: (body: Partial<AppSettings>) =>
     api.put<AppSettings>("/settings", body).then((r) => r.data),
+};
+
+// ── Topics (bildirishnoma mavzulari) ───────────────────
+export const topicsApi = {
+  list: () => api.get<Topic[]>("/topics").then((r) => r.data),
+  create: (body: { name: string; topic_id: number }) =>
+    api.post<Topic>("/topics", body).then((r) => r.data),
+  update: (id: number, body: Partial<{ name: string; topic_id: number }>) =>
+    api.patch<Topic>(`/topics/${id}`, body).then((r) => r.data),
+  remove: (id: number) => api.delete(`/topics/${id}`),
 };
 
 // ── Stats ──────────────────────────────────────────────
