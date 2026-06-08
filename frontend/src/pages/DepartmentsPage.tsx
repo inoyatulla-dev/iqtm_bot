@@ -2,6 +2,7 @@ import { useState } from "react";
 import { depsApi } from "../api/client";
 import type { Department } from "../api/types";
 import { useAuth } from "../store/auth";
+import { useI18n } from "../i18n";
 import { Sheet } from "../components/Sheet";
 
 const EMOJIS = ["🔌", "💻", "📐", "🔧", "🎨", "🏢", "📦", "🔬", "⚙️", "📊"];
@@ -9,6 +10,7 @@ const COLORS = ["#3b82f6", "#f59e0b", "#8b5cf6", "#10b981", "#ef4444", "#ec4899"
 
 export function DepartmentsPage() {
   const { deps, reload } = useAuth();
+  const { t } = useI18n();
   const [edit, setEdit] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -16,17 +18,19 @@ export function DepartmentsPage() {
     <div style={{ paddingBottom: 90 }}>
       <div className="sheet__pad" style={{ paddingTop: 16 }}>
         <button className="btn btn--primary" onClick={() => setCreating(true)}>
-          ➕ Bo'lim qo'shish
+          {t("dept.add")}
         </button>
       </div>
 
-      <div className="section-title">🏢 Bo'limlar ({deps.length})</div>
+      <div className="section-title">
+        {t("dept.list")} ({deps.length})
+      </div>
       {deps.map((d) => (
         <div className="list-item" key={d.id} onClick={() => setEdit(d)}>
           <span style={{ fontSize: 24 }}>{d.emoji}</span>
           <div className="list-item__body">
             <div className="list-item__title">{d.name}</div>
-            <div className="list-item__sub">kod: {d.id}</div>
+            <div className="list-item__sub">{d.id}</div>
           </div>
           <span className="dep-dot" style={{ background: d.color, width: 14, height: 14 }} />
         </div>
@@ -64,6 +68,7 @@ function DeptForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useI18n();
   const [id, setId] = useState(dep?.id || "");
   const [name, setName] = useState(dep?.name || "");
   const [emoji, setEmoji] = useState(dep?.emoji || "🏢");
@@ -72,11 +77,11 @@ function DeptForm({
 
   async function save() {
     if (!dep && !/^[a-z0-9]{2,10}$/.test(id)) {
-      setErr("Kod: 2-10 ta kichik harf/raqam (masalan: it)");
+      setErr(t("dept.codeErr"));
       return;
     }
     if (name.trim().length < 2) {
-      setErr("Nom kamida 2 harf");
+      setErr(t("dept.nameErr"));
       return;
     }
     try {
@@ -84,7 +89,7 @@ function DeptForm({
       else await depsApi.create({ id, name, emoji, color });
       onSaved();
     } catch (e: any) {
-      setErr(e?.response?.data?.detail || "Xatolik");
+      setErr(e?.response?.data?.detail || t("common.error"));
     }
   }
 
@@ -94,25 +99,25 @@ function DeptForm({
       await depsApi.remove(dep.id);
       onSaved();
     } catch (e: any) {
-      setErr(e?.response?.data?.detail || "Xatolik");
+      setErr(e?.response?.data?.detail || t("common.error"));
     }
   }
 
   return (
-    <Sheet title={dep ? "Bo'limni tahrirlash" : "Yangi bo'lim"} onClose={onClose}>
+    <Sheet title={dep ? t("dept.editTitle") : t("dept.newTitle")} onClose={onClose}>
       <div className="sheet__pad">
         {!dep && (
           <div className="field">
-            <label>Kod (lotin, masalan: it)</label>
+            <label>{t("dept.codeLabel")}</label>
             <input value={id} onChange={(e) => setId(e.target.value.toLowerCase())} />
           </div>
         )}
         <div className="field">
-          <label>Nomi</label>
+          <label>{t("dept.name")}</label>
           <input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="field">
-          <label>Emoji</label>
+          <label>{t("dept.emoji")}</label>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {EMOJIS.map((e) => (
               <button
@@ -133,7 +138,7 @@ function DeptForm({
           </div>
         </div>
         <div className="field">
-          <label>Rang</label>
+          <label>{t("dept.color")}</label>
           <div style={{ display: "flex", gap: 10 }}>
             {COLORS.map((c) => (
               <button
@@ -155,11 +160,11 @@ function DeptForm({
         {err && <div className="form-error">{err}</div>}
 
         <button className="btn btn--primary" onClick={save}>
-          Saqlash
+          {t("common.save")}
         </button>
         {dep && (
           <button className="btn btn--danger" onClick={remove}>
-            🗑 O'chirish
+            🗑 {t("common.delete")}
           </button>
         )}
       </div>

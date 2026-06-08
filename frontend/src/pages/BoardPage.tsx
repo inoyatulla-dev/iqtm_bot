@@ -6,6 +6,7 @@ import { tasksApi } from "../api/client";
 import type { Task, TaskStatus } from "../api/types";
 import { STATUS_ORDER } from "../api/types";
 import { useAuth } from "../store/auth";
+import { useI18n } from "../i18n";
 import { haptic } from "../telegram";
 import { Column } from "../components/board/Column";
 import { TaskCard } from "../components/board/TaskCard";
@@ -13,6 +14,7 @@ import { TaskForm } from "./TaskForm";
 
 export function BoardPage() {
   const { deps, isBoss } = useAuth();
+  const { t } = useI18n();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
@@ -52,7 +54,7 @@ export function BoardPage() {
   }
 
   if (loading) {
-    return <div className="center-screen">Yuklanmoqda…</div>;
+    return <div className="center-screen">{t("common.loading")}</div>;
   }
 
   return (

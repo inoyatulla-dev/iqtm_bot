@@ -10,6 +10,7 @@ export interface User {
   role: Role;
   dep_id: string | null;
   status: UserStatus;
+  lang?: string;
   created_at?: string;
 }
 

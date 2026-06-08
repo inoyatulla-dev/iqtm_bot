@@ -20,9 +20,17 @@ DEFAULT_DEPARTMENTS = [
 
 
 async def init_models() -> None:
-    """Dev rejim uchun jadvallarni yaratish (prod'da Alembic ishlatiladi)."""
+    """Jadvallarni yaratish + yengil migratsiyalar."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Migratsiya: yangi ustunlarni qo'shish (mavjud bazada bo'lmasa)
+        for stmt in [
+            "ALTER TABLE users ADD COLUMN lang VARCHAR(2) DEFAULT 'uz'",
+        ]:
+            try:
+                await conn.exec_driver_sql(stmt)
+            except Exception:
+                pass  # ustun allaqachon mavjud
     logger.info("Jadvallar tayyor.")
 
 

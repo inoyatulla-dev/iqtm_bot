@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { depsApi, settingsApi, type AppSettings } from "../api/client";
 import { useAuth } from "../store/auth";
+import { useI18n, LANGS, type Lang } from "../i18n";
 
 export function SettingsPage() {
   const { deps, reload } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const [s, setS] = useState<AppSettings | null>(null);
   const [depTopics, setDepTopics] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
@@ -19,7 +21,7 @@ export function SettingsPage() {
     );
   }, [deps]);
 
-  if (loading || !s) return <div className="center-screen">Yuklanmoqda…</div>;
+  if (loading || !s) return <div className="center-screen">{t("common.loading")}</div>;
 
   async function saveGroup() {
     await settingsApi.update({
@@ -49,46 +51,60 @@ export function SettingsPage() {
 
   return (
     <div style={{ paddingBottom: 90 }}>
-      <div className="section-title">📡 Guruh</div>
+      {/* Til */}
+      <div className="section-title">{t("settings.language")}</div>
+      <div className="sheet__pad">
+        <div style={{ display: "flex", gap: 8 }}>
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => setLang(l.code as Lang)}
+              className={`btn ${lang === l.code ? "btn--primary" : "btn--ghost"}`}
+              style={{ fontSize: 14 }}
+            >
+              {l.flag} {l.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="section-title">{t("settings.group")}</div>
       <div className="sheet__pad">
         <div className="field">
-          <label>Guruh chat ID (manfiy, -100…)</label>
+          <label>{t("settings.groupId")}</label>
           <input
             value={s.group_chat_id}
             placeholder="-1001234567890"
             onChange={(e) => setS({ ...s, group_chat_id: e.target.value })}
           />
         </div>
-        <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
-          💡 Guruhga botni admin qiling va guruhda <b>/set_group</b> yuboring — ID avtomatik
-          aniqlanadi.
-        </p>
+        <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>{t("settings.groupHint")}</p>
       </div>
 
-      <div className="section-title">🧵 Umumiy mavzular (topic ID)</div>
+      <div className="section-title">{t("settings.topics")}</div>
       <div className="sheet__pad">
         <div className="field">
-          <label>📋 Vazifalar mavzusi</label>
+          <label>{t("settings.topicTasks")}</label>
           <input
             value={s.topic_tasks}
-            placeholder="masalan: 5"
+            placeholder="5"
             onChange={(e) => setS({ ...s, topic_tasks: e.target.value })}
           />
         </div>
         <div className="field">
-          <label>📊 Hisobotlar mavzusi</label>
+          <label>{t("settings.topicReports")}</label>
           <input
             value={s.topic_reports}
-            placeholder="masalan: 8"
+            placeholder="8"
             onChange={(e) => setS({ ...s, topic_reports: e.target.value })}
           />
         </div>
         <button className="btn btn--primary" onClick={saveGroup}>
-          {saved ? "✅ Saqlandi" : "Saqlash"}
+          {saved ? t("common.saved") : t("common.save")}
         </button>
       </div>
 
-      <div className="section-title">🏢 Bo'lim mavzulari</div>
+      <div className="section-title">{t("settings.deptTopics")}</div>
       <div className="sheet__pad">
         {deps.map((d) => (
           <div className="field" key={d.id}>
@@ -103,16 +119,13 @@ export function SettingsPage() {
           </div>
         ))}
         <button className="btn btn--primary" onClick={saveDepTopics}>
-          {saved ? "✅ Saqlandi" : "Bo'lim mavzularini saqlash"}
+          {saved ? t("common.saved") : t("settings.deptTopicsSave")}
         </button>
       </div>
 
-      <div className="section-title">👑 Adminlar</div>
+      <div className="section-title">{t("settings.admins")}</div>
       <div className="sheet__pad">
-        <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
-          Bir nechta admin bo'lishi mumkin. Xodimlar bo'limida xodimni tanlab{" "}
-          <b>"Admin qilish"</b> orqali yangi admin tayinlang.
-        </p>
+        <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>{t("settings.adminsHint")}</p>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ class UserOut(BaseModel):
     role: Role
     dep_id: str | None = None
     status: UserStatus
+    lang: str = "uz"
     created_at: datetime | None = None
 
 

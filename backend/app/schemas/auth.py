@@ -15,3 +15,7 @@ class AuthResponse(BaseModel):
 class ProfileUpdate(BaseModel):
     first_name: str
     last_name: str = ""
+
+
+class LangUpdate(BaseModel):
+    lang: str  # uz | ru | en

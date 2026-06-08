@@ -4,9 +4,9 @@ Ishga tushirish:  python -m app.bot.run
 """
 import logging
 
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler
 
-from app.bot.handlers import set_group, start
+from app.bot.handlers import lang_selected, set_group, start
 from app.bot.scheduler import setup_scheduler
 from app.config import settings
 
@@ -36,9 +36,10 @@ def main():
     )
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("set_group", set_group))
+    app.add_handler(CallbackQueryHandler(lang_selected, pattern="^lang:"))
 
     logger.info("IQTM bot polling boshlandi…")
-    app.run_polling(allowed_updates=["message"])
+    app.run_polling(allowed_updates=["message", "callback_query"])
 
 
 if __name__ == "__main__":

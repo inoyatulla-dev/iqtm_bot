@@ -8,7 +8,7 @@ from app.api.deps import CurrentUser, CurrentUserAny, SessionDep
 from app.core.constants import Role, UserStatus
 from app.core.security import create_access_token, validate_init_data
 from app.models import User
-from app.schemas.auth import AuthRequest, AuthResponse, ProfileUpdate
+from app.schemas.auth import AuthRequest, AuthResponse, LangUpdate, ProfileUpdate
 from app.schemas.user import UserOut
 from app import notifications as notify
 
@@ -67,6 +67,14 @@ async def update_profile(
     if len(name) < 3:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ism kamida 3 harf bo'lsin")
     user.name = name
+    return UserOut.model_validate(user)
+
+
+@router.post("/lang", response_model=UserOut)
+async def set_lang(body: LangUpdate, user: CurrentUserAny, session: SessionDep):
+    if body.lang not in ("uz", "ru", "en"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Til noto'g'ri")
+    user.lang = body.lang
     return UserOut.model_validate(user)
 
 

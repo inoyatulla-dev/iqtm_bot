@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { tasksApi, usersApi } from "../api/client";
 import type { Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
+import { useI18n } from "../i18n";
 import { Sheet } from "../components/Sheet";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 
 export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
   const { deps, user } = useAuth();
+  const { t } = useI18n();
   const [name, setName] = useState(task?.name || "");
   const [desc, setDesc] = useState(task?.description || "");
   const [depId, setDepId] = useState(task?.dep_id || "");
@@ -31,7 +33,7 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
 
   async function save() {
     if (name.trim().length < 3) {
-      setErr("Nom kamida 3 harf bo'lsin");
+      setErr(t("task.nameErr"));
       return;
     }
     setSaving(true);
@@ -69,22 +71,22 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
   }
 
   return (
-    <Sheet title={task ? `Vazifa #${task.id}` : "Yangi vazifa"} onClose={onClose}>
+    <Sheet title={task ? `#${task.id}` : t("task.new")} onClose={onClose}>
       <div className="sheet__pad">
         <div className="field">
-          <label>Nomi</label>
+          <label>{t("task.name")}</label>
           <input
             value={name}
-            placeholder="Vazifa nomi"
+            placeholder={t("task.namePh")}
             disabled={!canEdit}
             onChange={(e) => setName(e.target.value)}
           />
         </div>
         <div className="field">
-          <label>Tavsif</label>
+          <label>{t("task.desc")}</label>
           <textarea
             value={desc}
-            placeholder="Ixtiyoriy"
+            placeholder={t("task.descPh")}
             disabled={!canEdit}
             onChange={(e) => setDesc(e.target.value)}
           />
@@ -92,9 +94,9 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
         {isBoss && (
           <>
             <div className="field">
-              <label>Bo'lim</label>
+              <label>{t("task.dept")}</label>
               <select value={depId} onChange={(e) => setDepId(e.target.value)}>
-                <option value="">— tanlanmagan —</option>
+                <option value="">{t("task.unassigned")}</option>
                 {deps.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.emoji} {d.name}
@@ -103,9 +105,9 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
               </select>
             </div>
             <div className="field">
-              <label>Mas'ul xodim</label>
+              <label>{t("task.masul")}</label>
               <select value={masulId} onChange={(e) => setMasulId(e.target.value)}>
-                <option value="">— tanlanmagan —</option>
+                <option value="">{t("task.unassigned")}</option>
                 {workers.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name}
@@ -116,7 +118,7 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
           </>
         )}
         <div className="field">
-          <label>Muddat</label>
+          <label>{t("task.deadline")}</label>
           <input
             type="date"
             value={deadline}
@@ -129,21 +131,21 @@ export function TaskForm({ task, isBoss, onClose, onSaved }: Props) {
 
         {canEdit && (
           <button className="btn btn--primary" onClick={save} disabled={saving}>
-            {saving ? "Saqlanmoqda…" : "Saqlash"}
+            {saving ? t("task.saving") : t("common.save")}
           </button>
         )}
         {task && canEdit && !confirmDel && (
           <button className="btn btn--danger" onClick={() => setConfirmDel(true)}>
-            🗑 O'chirish
+            {t("task.delete")}
           </button>
         )}
         {confirmDel && (
           <button className="btn btn--danger" onClick={remove}>
-            🗑 Rostdan o'chirilsinmi? (bosing)
+            {t("task.confirmDelete")}
           </button>
         )}
         <button className="btn btn--ghost" onClick={onClose}>
-          Yopish
+          {t("common.close")}
         </button>
       </div>
     </Sheet>

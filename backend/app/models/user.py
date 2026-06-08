@@ -19,6 +19,7 @@ class User(Base):
         ForeignKey("departments.id"), default=None
     )
     status: Mapped[UserStatus] = mapped_column(EnumCol(UserStatus), default=UserStatus.PENDING)
+    lang: Mapped[str] = mapped_column(String(2), default="uz")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     department: Mapped["Department"] = relationship(  # noqa: F821

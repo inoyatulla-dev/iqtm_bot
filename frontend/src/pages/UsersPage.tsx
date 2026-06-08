@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { usersApi } from "../api/client";
 import type { Department, User } from "../api/types";
-import { ROLE_LABEL } from "../api/types";
 import { useAuth } from "../store/auth";
+import { useI18n } from "../i18n";
 import { copyText, inviteLink, shareInvite } from "../telegram";
 import { Sheet, ActionRow } from "../components/Sheet";
 
 export function UsersPage() {
   const { deps, user: me } = useAuth();
+  const { t } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState<User | null>(null);
@@ -31,28 +32,30 @@ export function UsersPage() {
       setSel(null);
       load();
     } catch (e: any) {
-      alert(e?.response?.data?.detail || "Xatolik");
+      alert(e?.response?.data?.detail || t("common.error"));
     }
   }
 
-  if (loading) return <div className="center-screen">Yuklanmoqda…</div>;
+  if (loading) return <div className="center-screen">{t("common.loading")}</div>;
 
   const pending = users.filter((u) => u.status === "pending");
   const active = users.filter((u) => u.status !== "pending");
-  const depName = (id: string | null) => deps.find((d) => d.id === id)?.name || "Bo'limsiz";
+  const depName = (id: string | null) => deps.find((d) => d.id === id)?.name || t("users.noDept");
   const initials = (n: string) => n.trim().charAt(0).toUpperCase();
 
   return (
     <div style={{ paddingBottom: 90 }}>
       <div className="sheet__pad" style={{ paddingTop: 16 }}>
         <button className="btn btn--primary" onClick={() => setInvite(true)}>
-          ➕ Xodim taklif qilish
+          {t("users.invite")}
         </button>
       </div>
 
       {pending.length > 0 && (
         <>
-          <div className="section-title">🔔 Yangi arizalar ({pending.length})</div>
+          <div className="section-title">
+            {t("users.pending")} ({pending.length})
+          </div>
           {pending.map((u) => (
             <div className="list-item" key={u.id}>
               <div className="list-item__avatar">{initials(u.name)}</div>
@@ -66,7 +69,7 @@ export function UsersPage() {
                   style={{ width: "auto", padding: "8px 14px", fontSize: 14 }}
                   onClick={() => patch(u.id, { status: "active", role: "worker" })}
                 >
-                  Tasdiqlash
+                  {t("users.approve")}
                 </button>
               </div>
             </div>
@@ -74,7 +77,9 @@ export function UsersPage() {
         </>
       )}
 
-      <div className="section-title">👥 Xodimlar ({active.length})</div>
+      <div className="section-title">
+        {t("users.list")} ({active.length})
+      </div>
       {active.map((u) => (
         <div
           className="list-item"
@@ -91,61 +96,43 @@ export function UsersPage() {
               {u.name}
             </div>
             <div className="list-item__sub">
-              {ROLE_LABEL[u.role]} · {depName(u.dep_id)}
+              {t(`role.${u.role}`)} · {depName(u.dep_id)}
             </div>
           </div>
           <div className="list-item__after">
-            {u.status === "blocked" && <span className="badge badge--danger">blok</span>}
+            {u.status === "blocked" && <span className="badge badge--danger">{t("users.blocked")}</span>}
           </div>
         </div>
       ))}
 
-      {/* ── Amallar sheet (tugmali) ── */}
       {sel && view === "actions" && (
         <Sheet
           title={sel.name}
-          subtitle={`${ROLE_LABEL[sel.role]} · ${depName(sel.dep_id)}`}
+          subtitle={`${t(`role.${sel.role}`)} · ${depName(sel.dep_id)}`}
           onClose={() => setView(null)}
         >
           {sel.role === "worker" ? (
-            <ActionRow
-              icon="👑"
-              label="Admin qilish"
-              onClick={() => patch(sel.id, { role: "boss" })}
-            />
+            <ActionRow icon="👑" label={t("users.makeAdmin")} onClick={() => patch(sel.id, { role: "boss" })} />
           ) : (
-            <ActionRow
-              icon="👤"
-              label="Xodim qilish"
-              onClick={() => patch(sel.id, { role: "worker" })}
-            />
+            <ActionRow icon="👤" label={t("users.makeWorker")} onClick={() => patch(sel.id, { role: "worker" })} />
           )}
-          <ActionRow icon="🏢" label="Bo'lim biriktirish" onClick={() => setView("dep")} />
+          <ActionRow icon="🏢" label={t("users.assignDept")} onClick={() => setView("dep")} />
           {sel.status === "blocked" ? (
-            <ActionRow
-              icon="✅"
-              label="Blokdan chiqarish"
-              onClick={() => patch(sel.id, { status: "active" })}
-            />
+            <ActionRow icon="✅" label={t("users.unblock")} onClick={() => patch(sel.id, { status: "active" })} />
           ) : (
-            <ActionRow
-              icon="🚫"
-              label="Bloklash"
-              onClick={() => patch(sel.id, { status: "blocked" })}
-            />
+            <ActionRow icon="🚫" label={t("users.block")} onClick={() => patch(sel.id, { status: "blocked" })} />
           )}
           {sel.id !== me?.id && (
-            <ActionRow icon="🗑" label="O'chirish" danger onClick={() => setView("delete")} />
+            <ActionRow icon="🗑" label={t("users.delete")} danger onClick={() => setView("delete")} />
           )}
         </Sheet>
       )}
 
-      {/* ── Bo'lim tanlash sheet ── */}
       {sel && view === "dep" && (
-        <Sheet title="Bo'lim biriktirish" onClose={() => setView("actions")}>
+        <Sheet title={t("users.assignDept")} onClose={() => setView("actions")}>
           <ActionRow
             icon="—"
-            label="Bo'limsiz"
+            label={t("users.noDept")}
             checked={!sel.dep_id}
             onClick={() => patch(sel.id, { dep_id: null })}
           />
@@ -161,9 +148,8 @@ export function UsersPage() {
         </Sheet>
       )}
 
-      {/* ── O'chirish tasdiqlash ── */}
       {sel && view === "delete" && (
-        <Sheet title="O'chirishni tasdiqlang" subtitle={sel.name} onClose={() => setView("actions")}>
+        <Sheet title={t("users.confirmDelTitle")} subtitle={sel.name} onClose={() => setView("actions")}>
           <div className="sheet__pad">
             <button
               className="btn btn--danger"
@@ -174,33 +160,28 @@ export function UsersPage() {
                   setSel(null);
                   load();
                 } catch (e: any) {
-                  alert(e?.response?.data?.detail || "Xatolik");
+                  alert(e?.response?.data?.detail || t("common.error"));
                 }
               }}
             >
-              🗑 Ha, o'chirish
+              {t("users.confirmDelBtn")}
             </button>
             <button className="btn btn--ghost" onClick={() => setView("actions")}>
-              Bekor qilish
+              {t("common.cancel")}
             </button>
           </div>
         </Sheet>
       )}
 
-      {/* ── Taklif sheet (copy / share) ── */}
       {invite && (
-        <Sheet
-          title="Xodim taklif qilish"
-          subtitle="Havolani yuboring — xodim botni ochib ariza qoldiradi, keyin uni tasdiqlaysiz"
-          onClose={() => setInvite(false)}
-        >
+        <Sheet title={t("users.inviteTitle")} subtitle={t("users.inviteSub")} onClose={() => setInvite(false)}>
           <div className="sheet__pad">
             <div className="field">
-              <label>Taklif havolasi</label>
+              <label>{t("users.linkLabel")}</label>
               <input readOnly value={inviteLink()} onFocus={(e) => e.target.select()} />
             </div>
             <button className="btn btn--primary" onClick={() => shareInvite()}>
-              📤 Telegram orqali ulashish
+              {t("users.share")}
             </button>
             <button
               className="btn btn--ghost"
@@ -210,7 +191,7 @@ export function UsersPage() {
                 setTimeout(() => setCopied(false), 1500);
               }}
             >
-              {copied ? "✅ Nusxalandi" : "📋 Nusxalash"}
+              {copied ? t("users.copied") : t("users.copy")}
             </button>
           </div>
         </Sheet>

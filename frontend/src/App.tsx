@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "./store/auth";
+import { useI18n } from "./i18n";
 import { Layout, type Tab } from "./components/Layout";
 import { BoardPage } from "./pages/BoardPage";
 import { UsersPage } from "./pages/UsersPage";
@@ -11,13 +12,14 @@ import { Logo } from "./components/Logo";
 
 export function App() {
   const { user, loading, error } = useAuth();
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("board");
 
   if (loading) {
     return (
       <div className="center-screen">
         <Logo />
-        <div style={{ color: "var(--hint)" }}>Yuklanmoqda…</div>
+        <div style={{ color: "var(--hint)" }}>{t("common.loading")}</div>
       </div>
     );
   }
@@ -25,10 +27,10 @@ export function App() {
   if (error) {
     return (
       <div className="center-screen">
-        <h3>Xatolik</h3>
+        <h3>{t("common.error")}</h3>
         <p style={{ color: "var(--hint)" }}>{error}</p>
         <button className="btn btn--primary" onClick={() => location.reload()} style={{ maxWidth: 200 }}>
-          Qayta urinish
+          {t("common.retry")}
         </button>
       </div>
     );
@@ -41,8 +43,8 @@ export function App() {
   if (user.status === "blocked") {
     return (
       <div className="center-screen">
-        <h3>🚫 Bloklangan</h3>
-        <p style={{ color: "var(--hint)" }}>Kirishingiz cheklangan.</p>
+        <h3>{t("blocked.title")}</h3>
+        <p style={{ color: "var(--hint)" }}>{t("blocked.msg")}</p>
       </div>
     );
   }

@@ -31,6 +31,10 @@ export async function updateProfile(first_name: string, last_name: string): Prom
   return data;
 }
 
+export async function updateLang(lang: string): Promise<void> {
+  await api.post("/auth/lang", { lang });
+}
+
 // ── Tasks ──────────────────────────────────────────────
 export const tasksApi = {
   list: () => api.get<Task[]>("/tasks").then((r) => r.data),

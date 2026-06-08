@@ -1,5 +1,6 @@
 """Bot handlerlari — yengil. Asosiy ish Mini App ichida."""
 import logging
+from datetime import datetime
 
 from telegram import (
     InlineKeyboardButton,
@@ -13,29 +14,73 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# ── Bot matnlari (3 til) ────────────────────────────────
+WELCOME = {
+    "uz": "🤖 <b>IQTM Workspace</b>\n\nICT Markaz jamoasini boshqarish ilovasi.\nQuyidagi tugma orqali oching 👇",
+    "ru": "🤖 <b>IQTM Workspace</b>\n\nПриложение для управления командой ICT Markaz.\nОткройте по кнопке ниже 👇",
+    "en": "🤖 <b>IQTM Workspace</b>\n\nICT Markaz team management app.\nOpen it with the button below 👇",
+}
+OPEN_BTN = {"uz": "🚀 Ilovani ochish", "ru": "🚀 Открыть приложение", "en": "🚀 Open app"}
+NO_URL = {
+    "uz": "⚠️ Ilova manzili sozlanmagan. Administrator bilan bog'laning.",
+    "ru": "⚠️ Адрес приложения не настроен. Свяжитесь с администратором.",
+    "en": "⚠️ App URL is not configured. Contact the administrator.",
+}
+CHOOSE = "🌐 Tilni tanlang / Выберите язык / Choose language:"
 
-def _open_app_kb() -> InlineKeyboardMarkup | None:
+
+def _lang_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🇺🇿 O'zbekcha", callback_data="lang:uz"),
+            InlineKeyboardButton("🇷🇺 Русский", callback_data="lang:ru"),
+            InlineKeyboardButton("🇬🇧 English", callback_data="lang:en"),
+        ]
+    ])
+
+
+def _open_kb(lang: str) -> InlineKeyboardMarkup | None:
     if not settings.webapp_url:
         return None
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("🚀 Ilovani ochish", web_app=WebAppInfo(url=settings.webapp_url))]]
+        [[InlineKeyboardButton(OPEN_BTN[lang], web_app=WebAppInfo(url=settings.webapp_url))]]
     )
+
+
+async def _save_lang(user, lang: str):
+    """Foydalanuvchi tilini DB ga saqlash (yangi bo'lsa pending yaratish)."""
+    from app.core.constants import UserStatus
+    from app.db.base import SessionFactory
+    from app.models import User
+
+    async with SessionFactory() as session:
+        db_user = await session.get(User, user.id)
+        if db_user:
+            db_user.lang = lang
+        else:
+            name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "Foydalanuvchi"
+            session.add(User(
+                id=user.id, name=name, username=user.username,
+                status=UserStatus.PENDING, lang=lang,
+                created_at=datetime.now(),
+            ))
+        await session.commit()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    kb = _open_app_kb()
-    text = (
-        "🤖 <b>IQTM Workspace</b>\n\n"
-        "ICT Markaz jamoasini boshqarish ilovasi.\n"
-        "Quyidagi tugma orqali ilovani oching 👇"
-    )
-    if not kb:
-        text = (
-            "🤖 <b>IQTM Workspace</b>\n\n"
-            "⚠️ Ilova manzili (WEBAPP_URL) sozlanmagan. "
-            "Administrator sozlamasini kutib turing."
-        )
-    await update.message.reply_text(text, parse_mode="HTML", reply_markup=kb)
+    """Til tanlash tugmalarini ko'rsatadi."""
+    await update.message.reply_text(CHOOSE, reply_markup=_lang_kb())
+
+
+async def lang_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    lang = query.data.split(":")[1]
+    await _save_lang(query.from_user, lang)
+
+    kb = _open_kb(lang)
+    text = WELCOME[lang] if kb else NO_URL[lang]
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 async def set_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -46,7 +91,6 @@ async def set_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     thread_id = update.message.message_thread_id
 
-    # Guruh ID ni DB ga avtomatik saqlash
     from app.db.base import SessionFactory
     from app.services.settings_service import set_setting
 

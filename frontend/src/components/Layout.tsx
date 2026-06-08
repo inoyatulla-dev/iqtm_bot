@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { User } from "../api/types";
-import { ROLE_LABEL } from "../api/types";
+import { useI18n } from "../i18n";
 import { Logo } from "./Logo";
 
 export type Tab = "board" | "users" | "departments" | "stats" | "settings";
@@ -13,17 +13,18 @@ interface Props {
 }
 
 export function Layout({ tab, onTab, user, children }: Props) {
+  const { t } = useI18n();
   const isBoss = user.role === "boss";
   const tabs: { id: Tab; text: string; icon: string }[] = [
-    { id: "board", text: "Doska", icon: "📋" },
+    { id: "board", text: t("tabs.board"), icon: "📋" },
     ...(isBoss
       ? ([
-          { id: "users", text: "Xodimlar", icon: "👥" },
-          { id: "departments", text: "Bo'limlar", icon: "🏢" },
+          { id: "users", text: t("tabs.users"), icon: "👥" },
+          { id: "departments", text: t("tabs.departments"), icon: "🏢" },
         ] as const)
       : []),
-    { id: "stats", text: "Statistika", icon: "📊" },
-    ...(isBoss ? ([{ id: "settings", text: "Sozlama", icon: "⚙️" }] as const) : []),
+    { id: "stats", text: t("tabs.stats"), icon: "📊" },
+    ...(isBoss ? ([{ id: "settings", text: t("tabs.settings"), icon: "⚙️" }] as const) : []),
   ];
 
   return (
@@ -34,7 +35,7 @@ export function Layout({ tab, onTab, user, children }: Props) {
         </div>
         <div className="app-header__user">
           <div className="name">{user.name}</div>
-          <div className="role">{ROLE_LABEL[user.role]}</div>
+          <div className="role">{t(`role.${user.role}`)}</div>
         </div>
       </header>
 
