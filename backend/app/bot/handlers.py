@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 # ── Bot matnlari (3 til) ────────────────────────────────
 WELCOME = {
-    "uz": "🤖 <b>IQTM Workspace</b>\n\nICT Markaz jamoasini boshqarish ilovasi.\nQuyidagi tugma orqali oching 👇",
-    "ru": "🤖 <b>IQTM Workspace</b>\n\nПриложение для управления командой ICT Markaz.\nОткройте по кнопке ниже 👇",
-    "en": "🤖 <b>IQTM Workspace</b>\n\nICT Markaz team management app.\nOpen it with the button below 👇",
+    "uz": "🤖 <b>IQTM Workspace</b>\n\nInnovatsiyalarni qo'llab quvvatlash va tijoratlashtirish markazi jamoasini boshqarish ilovasi.\nQuyidagi tugma orqali oching 👇",
+    "ru": "🤖 <b>IQTM Workspace</b>\n\nПриложение для управления командой Центра поддержки инноваций и коммерциализации.\nОткройте по кнопке ниже 👇",
+    "en": "🤖 <b>IQTM Workspace</b>\n\nInnovation Support and Commercialization Center team management app.\nOpen it with the button below 👇",
 }
 OPEN_BTN = {"uz": "🚀 Ilovani ochish", "ru": "🚀 Открыть приложение", "en": "🚀 Open app"}
 NO_URL = {

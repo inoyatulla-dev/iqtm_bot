@@ -46,9 +46,5 @@ async def get_route(session, event: str) -> int | None:
 
 
 async def get_routed_topic(session, event: str) -> int | None:
-    """`route_<event>` → Topic → Telegram forum-mavzu ID (xabar yuborish uchun)."""
-    topic_pk = await get_route(session, event)
-    if topic_pk is None:
-        return None
-    topic = await session.get(Topic, topic_pk)
-    return topic.topic_id if topic else None
+    """`route_<event>` → to'g'ridan-to'g'ri Telegram forum-mavzu ID."""
+    return await get_route(session, event)
