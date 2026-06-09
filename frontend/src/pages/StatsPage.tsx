@@ -34,7 +34,7 @@ export function StatsPage() {
   const medal = (i: number) => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
 
   return (
-    <div style={{ paddingBottom: 90 }}>
+    <div className="page-content">
       <div className="section-title">
         {isBoss ? t("stats.titleGlobal") : t("stats.titleMy")}
       </div>

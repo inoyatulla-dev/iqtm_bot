@@ -16,7 +16,7 @@ export function SettingsPage() {
   const { t, lang, setLang } = useI18n();
 
   return (
-    <div style={{ paddingBottom: 90 }}>
+    <div className="page-content">
       <ProfileSection />
 
       <div className="section-title">{t("settings.language")}</div>

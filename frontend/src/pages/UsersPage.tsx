@@ -44,7 +44,7 @@ export function UsersPage() {
   const initials = (n: string) => n.trim().charAt(0).toUpperCase();
 
   return (
-    <div style={{ paddingBottom: 90 }}>
+    <div className="page-content">
       <div className="sheet__pad" style={{ paddingTop: 16 }}>
         <button className="btn btn--primary" onClick={() => setInvite(true)}>
           {t("users.invite")}

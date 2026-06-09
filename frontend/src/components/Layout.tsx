@@ -29,19 +29,12 @@ export function Layout({ tab, onTab, user, children }: Props) {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div className="app-header__brand">
-          <Logo />
-        </div>
-        <div className="app-header__user">
-          <div className="name">{user.name}</div>
-          <div className="role">{t(`role.${user.role}`)}</div>
-        </div>
-      </header>
-
-      <div className="app-content">{children}</div>
-
+      {/* Sidebar (desktop) / Bottom tabbar (mobile) */}
       <nav className="tabbar">
+        <div className="tabbar__brand">
+          <Logo />
+          <span className="tabbar__brand-name">IQTM</span>
+        </div>
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -53,6 +46,20 @@ export function Layout({ tab, onTab, user, children }: Props) {
           </button>
         ))}
       </nav>
+
+      {/* Main: header + content */}
+      <div className="app-main">
+        <header className="app-header">
+          <div className="app-header__brand">
+            <Logo />
+          </div>
+          <div className="app-header__user">
+            <div className="name">{user.name}</div>
+            <div className="role">{t(`role.${user.role}`)}</div>
+          </div>
+        </header>
+        <div className="app-content">{children}</div>
+      </div>
     </div>
   );
 }

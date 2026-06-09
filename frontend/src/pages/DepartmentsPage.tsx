@@ -15,7 +15,7 @@ export function DepartmentsPage() {
   const [creating, setCreating] = useState(false);
 
   return (
-    <div style={{ paddingBottom: 90 }}>
+    <div className="page-content">
       <div className="sheet__pad" style={{ paddingTop: 16 }}>
         <button className="btn btn--primary" onClick={() => setCreating(true)}>
           {t("dept.add")}

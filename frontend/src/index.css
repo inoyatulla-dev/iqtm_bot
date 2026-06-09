@@ -1,12 +1,13 @@
 :root {
-  --bg: var(--tg-theme-bg-color, #1c2733);
-  --secondary-bg: var(--tg-theme-secondary-bg-color, #141d26);
-  --text: var(--tg-theme-text-color, #f4f6f8);
-  --hint: var(--tg-theme-hint-color, #8a9aa9);
-  --accent: var(--tg-theme-button-color, #3390ec);
+  --bg: var(--tg-theme-bg-color, #1e293b);
+  --secondary-bg: var(--tg-theme-secondary-bg-color, #0f172a);
+  --text: var(--tg-theme-text-color, #f1f5f9);
+  --hint: var(--tg-theme-hint-color, #94a3b8);
+  --accent: var(--tg-theme-button-color, #3b82f6);
   --accent-text: var(--tg-theme-button-text-color, #ffffff);
-  --danger: #ff5a5a;
-  --line: rgba(140, 150, 160, 0.16);
+  --danger: #f87171;
+  --line: rgba(148, 163, 184, 0.18);
+  --surface: rgba(255, 255, 255, 0.04);
 }
 
 * {
@@ -38,13 +39,29 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 }
+
+/* Mobile: app-main is transparent — header+content become flex items */
+.app-main {
+  display: contents;
+}
+
+/* Mobile order: header=1 top, content=2 middle, tabbar=3 bottom */
+.app-header  { order: 1; }
+.app-content { order: 2; }
+.tabbar      { order: 3; }
 
 .app-content {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--secondary-bg);
+}
+
+/* ── Page wrapper (replaces paddingBottom: 90 inline) ── */
+.page-content {
+  padding-bottom: 88px; /* mobile: tabbar height */
 }
 
 /* ── Header (logo + foydalanuvchi) ──────────────────── */
@@ -83,12 +100,22 @@ body {
   display: block;
 }
 
-/* ── Tabbar (pastki menyu) ──────────────────────────── */
+/* ── Tabbar (mobile: pastki / desktop: chap sidebar) ── */
 .tabbar {
   display: flex;
   background: var(--bg);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tabbar__brand {
+  display: none; /* mobile: yashirin */
+}
+
+.tabbar__brand-name {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.5px;
 }
 
 .tabbar__item {
@@ -633,4 +660,234 @@ body {
 .col-row__sub {
   font-size: 12px;
   color: var(--hint);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — Desktop (≥ 768px)
+   ═══════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  html, body, #root {
+    overflow: hidden;
+    height: 100%;
+  }
+
+  /* ── App shell: flex-row — sidebar | main ── */
+  .app-shell {
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Cancel mobile order overrides */
+  .app-header,
+  .app-content,
+  .tabbar {
+    order: unset;
+  }
+
+  /* ── Left sidebar ── */
+  .tabbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 220px;
+    min-width: 220px;
+    flex-shrink: 0;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    padding: 16px 10px;
+    height: 100vh;
+    overflow-y: auto;
+    gap: 2px;
+  }
+
+  .tabbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px 16px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .tabbar__brand-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .tabbar__item {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    text-align: left;
+    width: 100%;
+    transition: background 0.12s;
+  }
+
+  .tabbar__item.active {
+    background: rgba(59, 130, 246, 0.18);
+    color: var(--accent);
+  }
+
+  .tabbar__item:hover:not(.active) {
+    background: var(--surface);
+  }
+
+  .tabbar__icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .tabbar__text {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ── app-main: proper flex column (not contents) ── */
+  .app-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .app-header__brand {
+    display: none; /* logo is in sidebar */
+  }
+
+  .app-header {
+    padding: 12px 24px;
+    flex-shrink: 0;
+  }
+
+  .app-header__user {
+    text-align: left;
+  }
+
+  .app-header__user .name {
+    font-size: 15px;
+  }
+
+  /* ── Content area ── */
+  .app-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  /* ── Page content: no bottom tabbar space ── */
+  .page-content {
+    padding-bottom: 32px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── Section titles / list padding ── */
+  .section-title {
+    padding: 20px 24px 10px;
+    font-size: 12px;
+  }
+
+  .sheet__pad {
+    padding: 12px 24px 8px;
+  }
+
+  /* ── List items ── */
+  .list-item {
+    padding: 14px 24px;
+  }
+
+  /* ── Board ── */
+  .board {
+    padding: 20px;
+    gap: 16px;
+    align-items: flex-start;
+    height: 100%;
+  }
+
+  .board-column {
+    flex: 0 0 300px;
+    min-width: 280px;
+    scroll-snap-align: none;
+  }
+
+  /* ── Stats ── */
+  .stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+    padding: 20px 24px;
+    gap: 14px;
+  }
+
+  .stat-card {
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+
+  .stat-card__num {
+    font-size: 30px;
+  }
+
+  /* Rating list */
+  .page-content .list-item:last-child {
+    border-bottom: none;
+  }
+
+  /* ── FAB ── */
+  .fab {
+    right: 28px;
+    bottom: 28px;
+  }
+
+  /* ── Modal: centered dialog on desktop ── */
+  .sheet-overlay {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sheet {
+    width: 520px;
+    max-width: calc(100vw - 280px);
+    border-radius: 20px;
+    max-height: 88vh;
+    animation: fadeInScale 0.18s ease;
+  }
+}
+
+/* ── Katta ekran (≥ 1200px) ── */
+@media (min-width: 1200px) {
+  .tabbar {
+    width: 240px;
+    min-width: 240px;
+  }
+
+  .page-content {
+    max-width: 960px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .board-column {
+    flex: 0 0 310px;
+  }
+
+  .sheet {
+    width: 560px;
+  }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
 }
