@@ -75,6 +75,9 @@ async def init_models() -> None:
         # Migratsiya: yangi ustunlarni qo'shish (mavjud bazada bo'lmasa)
         for stmt in [
             "ALTER TABLE users ADD COLUMN lang VARCHAR(2) DEFAULT 'uz'",
+            "ALTER TABLE board_columns ADD COLUMN notify BOOLEAN DEFAULT 1",
+            "ALTER TABLE comments ADD COLUMN target_user_id BIGINT",
+            "ALTER TABLE comments ADD COLUMN parent_id INTEGER",
         ]:
             try:
                 await conn.exec_driver_sql(stmt)

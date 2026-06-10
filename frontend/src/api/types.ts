@@ -30,6 +30,7 @@ export interface BoardColumn {
   seq: number;
   is_initial: boolean;
   is_done: boolean;
+  notify: boolean;
 }
 
 export interface Task {
@@ -53,6 +54,10 @@ export interface Comment {
   user_id: number;
   user_name: string;
   text: string;
+  target_user_id?: number | null;
+  target_name?: string | null;
+  parent_id?: number | null;
+  reply_to?: string | null;
   created_at?: string;
 }
 

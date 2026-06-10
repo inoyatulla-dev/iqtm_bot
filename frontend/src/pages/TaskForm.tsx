@@ -35,6 +35,8 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
+  const [commentTarget, setCommentTarget] = useState("");
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
   useEffect(() => {
     if (isBoss) usersApi.list("active").then(setWorkers);
@@ -137,9 +139,16 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
     setCommentBusy(true);
     setErr("");
     try {
-      const c = await commentsApi.add(task.id, text);
+      const target = commentTarget
+        ? Number(commentTarget)
+        : replyTo
+          ? replyTo.user_id
+          : null;
+      const c = await commentsApi.add(task.id, text, target, replyTo?.id ?? null);
       setComments((prev) => [...prev, c]);
       setCommentText("");
+      setReplyTo(null);
+      setCommentTarget("");
     } catch (e: any) {
       setErr(e?.response?.data?.detail || t("common.error"));
     } finally {
@@ -274,13 +283,82 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
               {comments.map((c) => (
                 <div className="comment" key={c.id}>
                   <div className="comment__head">
-                    <span className="comment__author">{c.user_name}</span>
+                    <span className="comment__author">
+                      {c.user_name}
+                      {c.target_name ? ` → ${c.target_name}` : ""}
+                    </span>
                     <span>{formatDateTime(c.created_at)}</span>
                   </div>
+                  {c.reply_to && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "var(--hint)",
+                        borderLeft: "2px solid var(--line)",
+                        paddingLeft: 8,
+                        margin: "2px 0",
+                      }}
+                    >
+                      ↩ {c.reply_to}
+                    </div>
+                  )}
                   <div className="comment__text">{c.text}</div>
+                  <button
+                    onClick={() => setReplyTo(c)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--accent)",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      padding: "2px 0",
+                    }}
+                  >
+                    {t("comment.reply")}
+                  </button>
                 </div>
               ))}
             </div>
+
+            {replyTo && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  background: "var(--secondary-bg)",
+                  borderRadius: 8,
+                  padding: "6px 10px",
+                  fontSize: 13,
+                  marginBottom: 6,
+                }}
+              >
+                <span style={{ color: "var(--hint)" }}>
+                  ↩ {replyTo.user_name}: {replyTo.text.slice(0, 40)}
+                </span>
+                <button
+                  onClick={() => setReplyTo(null)}
+                  style={{ background: "none", border: "none", color: "var(--hint)", cursor: "pointer" }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {workers.length > 0 && (
+              <div className="field" style={{ marginBottom: 8 }}>
+                <label>{t("comment.target")}</label>
+                <select value={commentTarget} onChange={(e) => setCommentTarget(e.target.value)}>
+                  <option value="">{t("comment.toAll")}</option>
+                  {workers.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="comment-input">
               <textarea
                 value={commentText}

@@ -92,8 +92,10 @@ async def list_comments(task_id: int, user: CurrentUser, session: SessionDep):
         select(Comment).where(Comment.task_id == task_id).order_by(Comment.created_at)
     )
     comments = list(result.scalars().all())
-    names = await _author_names(session, {c.user_id for c in comments})
-    return [_comment_out(c, names) for c in comments]
+    ids = {c.user_id for c in comments} | {c.target_user_id for c in comments if c.target_user_id}
+    names = await _author_names(session, ids)
+    texts = {c.id: c.text for c in comments}
+    return [_comment_out(c, names, texts) for c in comments]
 
 
 @router.post(
@@ -108,11 +110,21 @@ async def add_comment(
     text = body.text.strip()
     if not text:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Izoh bo'sh bo'lishi mumkin emas")
-    comment = Comment(task_id=task_id, user_id=user.id, text=text)
+    parent_text = ""
+    if body.parent_id:
+        parent = await session.get(Comment, body.parent_id)
+        if parent and parent.task_id == task_id:
+            parent_text = parent.text
+    comment = Comment(
+        task_id=task_id, user_id=user.id, text=text,
+        target_user_id=body.target_user_id, parent_id=body.parent_id,
+    )
     session.add(comment)
     await session.flush()
-    await task_service.notify_comment(session, task, user, text)
-    return _comment_out(comment, {user.id: user.name})
+    await task_service.notify_comment(session, task, user, text, body.target_user_id)
+    names = await _author_names(session, {user.id, body.target_user_id} - {None})
+    texts = {body.parent_id: parent_text} if body.parent_id else {}
+    return _comment_out(comment, names, texts)
 
 
 # ── helpers ──────────────────────────────────────────────
@@ -136,7 +148,14 @@ async def _author_names(session: SessionDep, user_ids: set[int]) -> dict[int, st
     return dict(result.all())
 
 
-def _comment_out(comment: Comment, names: dict[int, str]) -> CommentOut:
+def _comment_out(
+    comment: Comment, names: dict[int, str], texts: dict[int, str] | None = None
+) -> CommentOut:
     out = CommentOut.model_validate(comment)
     out.user_name = names.get(comment.user_id, "—")
+    if comment.target_user_id:
+        out.target_name = names.get(comment.target_user_id)
+    if comment.parent_id and texts:
+        rt = texts.get(comment.parent_id, "")
+        out.reply_to = (rt[:60] + "…") if len(rt) > 60 else rt
     return out

@@ -51,8 +51,14 @@ export const tasksApi = {
 export const commentsApi = {
   list: (taskId: number) =>
     api.get<Comment[]>(`/tasks/${taskId}/comments`).then((r) => r.data),
-  add: (taskId: number, text: string) =>
-    api.post<Comment>(`/tasks/${taskId}/comments`, { text }).then((r) => r.data),
+  add: (taskId: number, text: string, targetUserId?: number | null, parentId?: number | null) =>
+    api
+      .post<Comment>(`/tasks/${taskId}/comments`, {
+        text,
+        target_user_id: targetUserId ?? null,
+        parent_id: parentId ?? null,
+      })
+      .then((r) => r.data),
 };
 
 // ── Doska ustunlari ────────────────────────────────────

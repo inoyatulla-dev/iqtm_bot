@@ -12,6 +12,7 @@ class BoardColumnOut(BaseModel):
     seq: int
     is_initial: bool
     is_done: bool
+    notify: bool = True
 
 
 class BoardColumnCreate(BaseModel):
@@ -20,6 +21,7 @@ class BoardColumnCreate(BaseModel):
     emoji: str = "📋"
     color: str = "#64748b"
     is_done: bool = False
+    notify: bool = True
 
 
 class BoardColumnUpdate(BaseModel):
@@ -27,6 +29,7 @@ class BoardColumnUpdate(BaseModel):
     emoji: str | None = None
     color: str | None = None
     is_done: bool | None = None
+    notify: bool | None = None
 
 
 class BoardColumnReorder(BaseModel):

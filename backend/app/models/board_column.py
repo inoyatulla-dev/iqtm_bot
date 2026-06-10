@@ -20,3 +20,5 @@ class BoardColumn(Base):
     is_initial: Mapped[bool] = mapped_column(Boolean, default=False)
     # "Yakuniy/tasdiqlangan" ustun — faqat boshliq o'tkaza oladi (statistikada "bajarilgan" sanaladi)
     is_done: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Vazifa shu ustunga tushganda guruhga/xodimga xabar yuborilsinmi
+    notify: Mapped[bool] = mapped_column(Boolean, default=True)

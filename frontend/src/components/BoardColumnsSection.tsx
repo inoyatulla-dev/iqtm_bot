@@ -133,6 +133,7 @@ function ColumnForm({
   const [emoji, setEmoji] = useState(column?.emoji || EMOJIS[0]);
   const [color, setColor] = useState(column?.color || COLORS[0]);
   const [isDone, setIsDone] = useState(column?.is_done || false);
+  const [notify, setNotify] = useState(column?.notify ?? true);
   const [confirmDel, setConfirmDel] = useState(false);
   const [err, setErr] = useState("");
 
@@ -147,9 +148,9 @@ function ColumnForm({
     }
     try {
       if (column) {
-        await boardColumnsApi.update(column.key, { name, emoji, color, is_done: isDone });
+        await boardColumnsApi.update(column.key, { name, emoji, color, is_done: isDone, notify });
       } else {
-        await boardColumnsApi.create({ key, name, emoji, color, is_done: isDone });
+        await boardColumnsApi.create({ key, name, emoji, color, is_done: isDone, notify });
       }
       onSaved();
     } catch (e: any) {
@@ -192,16 +193,24 @@ function ColumnForm({
         </div>
         <div className="field">
           <label>{t("boards.emoji")}</label>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input
+            value={emoji}
+            maxLength={4}
+            placeholder="📋"
+            onChange={(e) => setEmoji(e.target.value)}
+            style={{ fontSize: 22, width: 80, textAlign: "center" }}
+          />
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
             {EMOJIS.map((e) => (
               <button
                 key={e}
+                type="button"
                 onClick={() => setEmoji(e)}
                 style={{
-                  fontSize: 22,
-                  padding: 6,
-                  borderRadius: 10,
-                  border: emoji === e ? "2px solid var(--accent)" : "1px solid var(--line)",
+                  fontSize: 18,
+                  padding: 4,
+                  borderRadius: 8,
+                  border: "1px solid var(--line)",
                   background: "var(--secondary-bg)",
                   cursor: "pointer",
                 }}
@@ -238,6 +247,15 @@ function ColumnForm({
             style={{ width: "auto" }}
           />
           {t("boards.isDone")}
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={notify}
+            onChange={(e) => setNotify(e.target.checked)}
+            style={{ width: "auto" }}
+          />
+          {t("boards.notify")}
         </label>
 
         {err && <div className="form-error">{err}</div>}

@@ -78,10 +78,13 @@ async def create_task(
     if task.description:
         text += f"\n📄 {task.description}"
 
-    topic_id = (dep.topic_id if dep else None) or await settings_service.get_routed_topic(
-        session, "new_task"
-    )
-    await notify.send_to_group(text, topic_id)
+    initial_col = await board_service.get_column(session, task.status)
+    if not initial_col or initial_col.notify:
+        topic_id = (dep.topic_id if dep else None) or await settings_service.get_routed_topic(
+            session, "new_task"
+        )
+        await notify.send_to_group(text, topic_id)
+    # Mas'ulga doim shaxsiy xabar (topshiriq berildi)
     if masul:
         await notify.send_dm(masul.id, text)
 
@@ -125,20 +128,32 @@ async def change_status(
             f"➡️ {column.emoji} {column.name}\n"
             f"👤 O'zgartirdi: {actor.name}"
         )
-    topic_id = (dep.topic_id if dep else None) or await settings_service.get_routed_topic(
-        session, event
-    )
-    await notify.send_to_group(text, topic_id)
-    if masul and masul.id != actor.id:
-        await notify.send_dm(masul.id, text)
+    # Ustunда bildirishnoma o'chirilган bo'lsa — xabar yuborilmaydi
+    if column.notify:
+        topic_id = (dep.topic_id if dep else None) or await settings_service.get_routed_topic(
+            session, event
+        )
+        await notify.send_to_group(text, topic_id)
+        if masul and masul.id != actor.id:
+            await notify.send_dm(masul.id, text)
     return task
 
 
 async def notify_comment(
-    session: AsyncSession, task: Task, author: User, text: str
+    session: AsyncSession,
+    task: Task,
+    author: User,
+    text: str,
+    target_user_id: int | None = None,
 ) -> None:
-    """Vazifaga izoh qoldirilganda — mas'ul va yaratuvchiga (yozuvchidan tashqari) xabar."""
-    recipients = {task.masul_id, task.created_by} - {author.id, None}
+    """Izoh qoldirilganda DM yuborish.
+
+    target_user_id berilgan bo'lsa — faqat o'shaga; aks holda mas'ul + yaratuvchiga.
+    """
+    if target_user_id:
+        recipients = {target_user_id} - {author.id}
+    else:
+        recipients = {task.masul_id, task.created_by} - {author.id, None}
     if not recipients:
         return
     msg = (

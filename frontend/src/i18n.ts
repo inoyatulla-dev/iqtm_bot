@@ -56,6 +56,10 @@ const uz: Dict = {
   "comment.empty": "Hali izoh yo'q",
   "comment.placeholder": "Izoh yozing…",
   "comment.send": "Yuborish",
+  "comment.reply": "Javob berish",
+  "comment.target": "Kimga (shaxsiy xabar yuboriladi)",
+  "comment.toAll": "Hammaga (umumiy)",
+  "boards.notify": "Bu ustunga tushganda xabar yuborilsin",
 
   "users.invite": "➕ Xodim taklif qilish",
   "users.inviteTitle": "Xodim taklif qilish",
@@ -205,6 +209,10 @@ const ru: Dict = {
   "comment.empty": "Пока нет комментариев",
   "comment.placeholder": "Напишите комментарий…",
   "comment.send": "Отправить",
+  "comment.reply": "Ответить",
+  "comment.target": "Кому (отправится личное сообщение)",
+  "comment.toAll": "Всем (общий)",
+  "boards.notify": "Уведомлять при попадании в эту колонку",
 
   "users.invite": "➕ Пригласить сотрудника",
   "users.inviteTitle": "Пригласить сотрудника",
@@ -354,6 +362,10 @@ const en: Dict = {
   "comment.empty": "No comments yet",
   "comment.placeholder": "Write a comment…",
   "comment.send": "Send",
+  "comment.reply": "Reply",
+  "comment.target": "To whom (DM will be sent)",
+  "comment.toAll": "Everyone (general)",
+  "boards.notify": "Notify when a task enters this column",
 
   "users.invite": "➕ Invite employee",
   "users.inviteTitle": "Invite employee",
