@@ -55,6 +55,23 @@ fi
 
 echo
 echo "############################################################"
+echo "# [3.5] Bazani zaxiralash (deploy oldidan xavfsizlik nusxasi)..."
+echo "############################################################"
+BACKUP_DIR="$PROJECT_DIR/backend/backups"
+mkdir -p "$BACKUP_DIR"
+DB_FILE=$(find "$PROJECT_DIR/backend" -maxdepth 1 -iname "*.db" | head -1)
+if [ -n "$DB_FILE" ]; then
+  STAMP=$(date +%Y%m%d_%H%M%S)
+  cp "$DB_FILE" "$BACKUP_DIR/$(basename "$DB_FILE" .db)_deploy_${STAMP}.db"
+  echo "  -> Zaxira: $BACKUP_DIR/$(basename "$DB_FILE" .db)_deploy_${STAMP}.db"
+  # Faqat oxirgi 10 ta deploy-zaxira saqlanadi
+  ls -1t "$BACKUP_DIR"/*_deploy_*.db 2>/dev/null | tail -n +11 | xargs -r rm -f
+else
+  echo "  -> Baza fayli topilmadi (birinchi ishga tushirish bo'lishi mumkin) — o'tkazib yuborildi"
+fi
+
+echo
+echo "############################################################"
 echo "# [4] Yangi kodni olish (git pull)..."
 echo "############################################################"
 cd "$PROJECT_DIR"

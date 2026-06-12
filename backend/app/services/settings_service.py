@@ -10,8 +10,14 @@ KNOWN_KEYS = ["group_chat_id"]
 # Saqlash kaliti: f"route_{event}", qiymati — Topic.id (DB primary key)
 ROUTE_EVENTS = [
     "new_task", "status_change", "done",
-    "overdue", "weekly", "reminder", "application",
+    "overdue", "weekly", "reminder", "application", "birthday",
 ]
+
+# Fayl/ombor va brend sozlamalari — standart qiymatlar
+DEFAULT_MAX_FILE_MB = 10
+DEFAULT_STORAGE_LIMIT_GB = 3
+DEFAULT_LOGO_PATH = "/logo.png"
+DEFAULT_LOGO_SIZE = 40
 
 
 async def get_setting(session, key: str, default=None):
@@ -48,3 +54,30 @@ async def get_route(session, event: str) -> int | None:
 async def get_routed_topic(session, event: str) -> int | None:
     """`route_<event>` → to'g'ridan-to'g'ri Telegram forum-mavzu ID."""
     return await get_route(session, event)
+
+
+async def get_max_file_mb(session) -> int:
+    val = await get_setting(session, "max_file_mb")
+    return int(val) if val and val.isdigit() else DEFAULT_MAX_FILE_MB
+
+
+async def get_storage_limit_gb(session) -> int:
+    val = await get_setting(session, "storage_limit_gb")
+    return int(val) if val and val.isdigit() else DEFAULT_STORAGE_LIMIT_GB
+
+
+async def get_archive_channel_id(session) -> int | None:
+    val = await get_setting(session, "archive_channel_id")
+    try:
+        return int(val) if val else None
+    except ValueError:
+        return None
+
+
+async def get_logo_path(session) -> str:
+    return await get_setting(session, "logo_path") or DEFAULT_LOGO_PATH
+
+
+async def get_logo_size(session) -> int:
+    val = await get_setting(session, "logo_size")
+    return int(val) if val and val.isdigit() else DEFAULT_LOGO_SIZE

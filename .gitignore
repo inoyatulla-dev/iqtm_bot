@@ -15,6 +15,11 @@ env/
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
+backend/backups/
+
+# ── Yuklangan fayllar (vazifa biriktirmalari, profil rasmlari) ──
+backend/uploads/
 
 # ── Node / Frontend ─────────────────────────────────────
 node_modules/

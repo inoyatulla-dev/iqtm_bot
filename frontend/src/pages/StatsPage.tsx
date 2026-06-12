@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { statsApi } from "../api/client";
+import { reportsApi, statsApi } from "../api/client";
+import type { ReportFormat, ReportPeriod } from "../api/client";
 import type { RatingRow, StatusCounts } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
+
+const PERIODS: ReportPeriod[] = ["week", "month", "year"];
 
 export function StatsPage() {
   const { isBoss, columns } = useAuth();
@@ -10,6 +13,8 @@ export function StatsPage() {
   const [counts, setCounts] = useState<StatusCounts | null>(null);
   const [rating, setRating] = useState<RatingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<ReportPeriod>("week");
+  const [reportBusy, setReportBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -19,6 +24,21 @@ export function StatsPage() {
       setLoading(false);
     })();
   }, [isBoss]);
+
+  async function downloadReport(fmt: ReportFormat) {
+    setReportBusy(true);
+    try {
+      const blob = await reportsApi.download(period, fmt);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hisobot_${period}.${fmt}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setReportBusy(false);
+    }
+  }
 
   if (loading || !counts) return <div className="center-screen">{t("common.loading")}</div>;
 
@@ -63,6 +83,36 @@ export function StatsPage() {
               </div>
             </div>
           ))}
+        </>
+      )}
+
+      {isBoss && (
+        <>
+          <div className="section-title">{t("stats.reports")}</div>
+          <div className="report-controls">
+            <div className="report-row">
+              {PERIODS.map((p) => (
+                <button
+                  key={p}
+                  className={`btn ${period === p ? "btn--primary" : "btn--ghost"}`}
+                  onClick={() => setPeriod(p)}
+                >
+                  {t(`stats.period.${p}`)}
+                </button>
+              ))}
+            </div>
+            <div className="report-row">
+              <button className="btn btn--ghost" onClick={() => downloadReport("pdf")} disabled={reportBusy}>
+                📄 {t("stats.downloadPdf")}
+              </button>
+              <button className="btn btn--ghost" onClick={() => downloadReport("docx")} disabled={reportBusy}>
+                📝 {t("stats.downloadDocx")}
+              </button>
+              <button className="btn btn--ghost" onClick={() => downloadReport("xlsx")} disabled={reportBusy}>
+                📊 {t("stats.downloadExcel")}
+              </button>
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -13,12 +13,14 @@ class TaskOut(BaseModel):
     description: str | None = None
     dep_id: str | None = None
     masul_id: int | None = None
+    masul_name: str | None = None
     created_by: int
-    deadline: date | None = None
+    deadline: datetime | None = None
     status: str
     type: TaskType
     project_id: int | None = None
     is_overdue: bool = False
+    attachments_count: int = 0
     created_at: datetime | None = None
 
 
@@ -27,7 +29,7 @@ class TaskCreate(BaseModel):
     description: str | None = None
     dep_id: str | None = None
     masul_id: int | None = None
-    deadline: date | None = None
+    deadline: datetime | None = None
     type: TaskType = TaskType.STANDALONE
 
 
@@ -36,7 +38,7 @@ class TaskUpdate(BaseModel):
     description: str | None = None
     dep_id: str | None = None
     masul_id: int | None = None
-    deadline: date | None = None
+    deadline: datetime | None = None
 
 
 class TaskStatusUpdate(BaseModel):

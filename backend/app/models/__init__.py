@@ -1,4 +1,5 @@
 """Barcha modellar shu yerdan import qilinadi (Alembic va metadata uchun)."""
+from app.models.attachment import Attachment
 from app.models.board_column import BoardColumn
 from app.models.comment import Comment
 from app.models.department import Department
@@ -14,6 +15,7 @@ __all__ = [
     "Task",
     "BoardColumn",
     "Comment",
+    "Attachment",
     "Project",
     "ProjectStage",
     "Reminder",

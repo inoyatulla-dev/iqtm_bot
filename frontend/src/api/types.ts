@@ -10,6 +10,9 @@ export interface User {
   dep_id: string | null;
   status: UserStatus;
   lang?: string;
+  photo?: string | null;
+  birthday?: string | null;
+  birthday_in_days?: number | null;
   created_at?: string;
 }
 
@@ -39,12 +42,14 @@ export interface Task {
   description: string | null;
   dep_id: string | null;
   masul_id: number | null;
+  masul_name?: string | null;
   created_by: number;
   deadline: string | null;
   status: string;
   type: TaskType;
   project_id: number | null;
   is_overdue: boolean;
+  attachments_count: number;
   created_at?: string;
 }
 
@@ -58,6 +63,18 @@ export interface Comment {
   target_name?: string | null;
   parent_id?: number | null;
   reply_to?: string | null;
+  created_at?: string;
+}
+
+export interface Attachment {
+  id: number;
+  task_id: number;
+  uploaded_by: number;
+  uploader_name?: string | null;
+  file_name: string;
+  mime_type: string | null;
+  size: number;
+  url: string | null;
   created_at?: string;
 }
 

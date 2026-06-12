@@ -1,25 +1,39 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { brandingApi } from "../api/client";
 
 /**
- * Brend logo. Avval /logo.png ni sinaydi (agar public/logo.png joylangan bo'lsa),
+ * Brend logo. Sozlamalarda yuklangan logotipni ko'rsatadi (yoki /logo.png),
  * topilmasa — SVG "IQTM" wordmark (brend gradient) ko'rsatadi.
  */
 export function Logo() {
   const [imgOk, setImgOk] = useState(true);
+  const [src, setSrc] = useState("/logo.png");
+  const [size, setSize] = useState(30);
+
+  useEffect(() => {
+    brandingApi
+      .get()
+      .then((b) => {
+        setSrc(b.logo_path || "/logo.png");
+        setSize(b.logo_size || 30);
+      })
+      .catch(() => {});
+  }, []);
 
   if (imgOk) {
     return (
       <img
-        src="/logo.png"
+        src={src}
         alt="IQTM"
         className="brand-logo"
+        style={{ height: size }}
         onError={() => setImgOk(false)}
       />
     );
   }
 
   return (
-    <svg className="brand-logo" viewBox="0 0 168 40" role="img" aria-label="IQTM">
+    <svg className="brand-logo" style={{ height: size }} viewBox="0 0 168 40" role="img" aria-label="IQTM">
       <defs>
         <linearGradient id="iqtm-g" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#1b3b6f" />

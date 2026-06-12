@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # ── Bot matnlari (3 til) ────────────────────────────────
 WELCOME = {
-    "uz": "🤖 <b>IQTM Workspace</b>\n\nInnovatsiyalarni qo'llab quvvatlash va tijoratlashtirish markazi jamoasini boshqarish ilovasi.\nQuyidagi tugma orqali oching 👇",
+    "uz": "🤖 <b>IQTM Workspace</b>\n\nInnovatsiyalarni qo'llab-quvvatlash va tijoratlashtirish markazi jamoasini boshqarish ilovasi.\nQuyidagi tugma orqali oching 👇",
     "ru": "🤖 <b>IQTM Workspace</b>\n\nПриложение для управления командой Центра поддержки инноваций и коммерциализации.\nОткройте по кнопке ниже 👇",
     "en": "🤖 <b>IQTM Workspace</b>\n\nInnovation Support and Commercialization Center team management app.\nOpen it with the button below 👇",
 }
@@ -90,6 +90,7 @@ async def set_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Bu komandani guruhda yuboring.")
         return
     thread_id = update.message.message_thread_id
+    thread_label = str(thread_id) if thread_id else "yo'q"
 
     from app.db.base import SessionFactory
     from app.services.settings_service import set_setting
@@ -100,7 +101,7 @@ async def set_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         f"✅ Guruh ID saqlandi: <code>{chat.id}</code>\n"
-        f"🧵 Bu mavzu (topic) ID: <code>{thread_id or 'yo‘q'}</code>\n\n"
+        f"🧵 Bu mavzu (topic) ID: <code>{thread_label}</code>\n\n"
         "Topic ID larni ilova → Sozlama bo'limiga kiriting.",
         parse_mode="HTML",
     )

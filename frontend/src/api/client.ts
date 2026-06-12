@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getInitData } from "../telegram";
 import type {
-  BoardColumn, Comment, Department, RatingRow, StatusCounts, Task, Topic, User,
+  Attachment, BoardColumn, Comment, Department, RatingRow, StatusCounts, Task, Topic, User,
 } from "./types";
 
 export const api = axios.create({ baseURL: "/api" });
@@ -26,8 +26,19 @@ export async function authenticate(): Promise<{ token: string; user: User }> {
   return data;
 }
 
-export async function updateProfile(first_name: string, last_name: string): Promise<User> {
-  const { data } = await api.post<User>("/auth/profile", { first_name, last_name });
+export async function updateProfile(
+  first_name: string, last_name: string, birthday?: string | null
+): Promise<User> {
+  const { data } = await api.post<User>("/auth/profile", { first_name, last_name, birthday });
+  return data;
+}
+
+export async function uploadProfilePhoto(file: File): Promise<User> {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<User>("/auth/photo", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data;
 }
 
@@ -59,6 +70,27 @@ export const commentsApi = {
         parent_id: parentId ?? null,
       })
       .then((r) => r.data),
+};
+
+// ── Biriktirmalar ──────────────────────────────────────
+export const attachmentsApi = {
+  list: (taskId: number) =>
+    api.get<Attachment[]>(`/tasks/${taskId}/attachments`).then((r) => r.data),
+  upload: (taskId: number, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api
+      .post<Attachment>(`/tasks/${taskId}/attachments`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
+  remove: (taskId: number, attachmentId: number) =>
+    api.delete(`/tasks/${taskId}/attachments/${attachmentId}`),
+  download: (taskId: number, attachmentId: number) =>
+    api
+      .get(`/tasks/${taskId}/attachments/${attachmentId}/download`, { responseType: "blob" })
+      .then((r) => r.data as Blob),
 };
 
 // ── Doska ustunlari ────────────────────────────────────
@@ -108,12 +140,35 @@ export const depsApi = {
 export interface AppSettings {
   group_chat_id: string;
   routes: Record<string, number | null>;
+  max_file_mb: number;
+  storage_limit_gb: number;
+  archive_channel_id: string;
+  logo_path: string;
+  logo_size: number;
 }
+
+export interface Branding {
+  logo_path: string;
+  logo_size: number;
+}
+
+export const brandingApi = {
+  get: () => api.get<Branding>("/settings/branding").then((r) => r.data),
+};
 
 export const settingsApi = {
   get: () => api.get<AppSettings>("/settings").then((r) => r.data),
   update: (body: Partial<AppSettings>) =>
     api.put<AppSettings>("/settings", body).then((r) => r.data),
+  uploadLogo: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api
+      .post<AppSettings>("/settings/logo", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
 };
 
 // ── Topics (bildirishnoma mavzulari) ───────────────────
@@ -131,4 +186,13 @@ export const statsApi = {
   me: () => api.get<StatusCounts>("/stats/me").then((r) => r.data),
   global: () => api.get<StatusCounts>("/stats/global").then((r) => r.data),
   rating: () => api.get<RatingRow[]>("/stats/rating").then((r) => r.data),
+};
+
+// ── Hisobotlar ─────────────────────────────────────────
+export type ReportPeriod = "week" | "month" | "year";
+export type ReportFormat = "pdf" | "docx" | "xlsx";
+
+export const reportsApi = {
+  download: (period: ReportPeriod, fmt: ReportFormat) =>
+    api.get(`/reports/${period}.${fmt}`, { responseType: "blob" }).then((r) => r.data as Blob),
 };

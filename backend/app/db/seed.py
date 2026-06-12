@@ -78,6 +78,8 @@ async def init_models() -> None:
             "ALTER TABLE board_columns ADD COLUMN notify BOOLEAN DEFAULT 1",
             "ALTER TABLE comments ADD COLUMN target_user_id BIGINT",
             "ALTER TABLE comments ADD COLUMN parent_id INTEGER",
+            "ALTER TABLE users ADD COLUMN photo VARCHAR(255)",
+            "ALTER TABLE users ADD COLUMN birthday DATE",
         ]:
             try:
                 await conn.exec_driver_sql(stmt)

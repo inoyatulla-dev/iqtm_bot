@@ -5,6 +5,7 @@ from app.api.routers import (
     auth,
     board_columns,
     departments,
+    reports,
     settings,
     stats,
     tasks,
@@ -21,3 +22,4 @@ api_router.include_router(board_columns.router)
 api_router.include_router(stats.router)
 api_router.include_router(settings.router)
 api_router.include_router(topics.router)
+api_router.include_router(reports.router)

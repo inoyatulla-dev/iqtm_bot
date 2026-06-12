@@ -34,6 +34,14 @@ def _dep_label(dep: Department | None) -> str:
     return f"{dep.emoji} {dep.name}" if dep else "—"
 
 
+def _fmt_deadline(value: datetime | None) -> str:
+    if not value:
+        return "belgilanmagan"
+    if value.hour == 0 and value.minute == 0:
+        return value.strftime("%d.%m.%Y")
+    return value.strftime("%d.%m.%Y %H:%M")
+
+
 async def _log(session: AsyncSession, user_id: int, action: str) -> None:
     session.add(Log(user_id=user_id, action=action))
 
@@ -73,7 +81,7 @@ async def create_task(
         f"🏢 {_dep_label(dep)}\n"
         f"📝 {task.name}\n"
         f"👤 Mas'ul: {_mention(masul)}\n"
-        f"⏰ Muddat: {task.deadline or 'belgilanmagan'}"
+        f"⏰ Muddat: {_fmt_deadline(task.deadline)}"
     )
     if task.description:
         text += f"\n📄 {task.description}"

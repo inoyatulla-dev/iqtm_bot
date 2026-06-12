@@ -3,7 +3,7 @@
 Vazifa holati endi qattiq enum emas, shuning uchun "bajarilgan/kechikkan" kabi
 hisoblar shu yerdagi yordamchilar orqali (BoardColumn.is_done) aniqlanadi.
 """
-from datetime import date
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,5 +38,5 @@ def is_overdue(task: Task, done_keys: set[str]) -> bool:
     return (
         task.deadline is not None
         and task.status not in done_keys
-        and task.deadline < date.today()
+        and task.deadline < datetime.now()
     )

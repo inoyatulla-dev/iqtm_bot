@@ -1,14 +1,21 @@
-"""Vazifalar API — doska, yaratish, tahrirlash, holat, izohlar, o'chirish."""
-from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+"""Vazifalar API — doska, yaratish, tahrirlash, holat, izohlar, biriktirmalar, o'chirish."""
+import io
+import uuid
 
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi.responses import RedirectResponse, StreamingResponse
+from sqlalchemy import func, select
+
+from app import notifications as notify
 from app.api.deps import CurrentUser, SessionDep
 from app.core import permissions
 from app.core.constants import TaskType
-from app.models import Comment, Log, Task, User
+from app.models import Attachment, Comment, Log, Task, User
+from app.schemas.attachment import AttachmentOut
 from app.schemas.comment import CommentCreate, CommentOut
 from app.schemas.task import TaskCreate, TaskOut, TaskStatusUpdate, TaskUpdate
-from app.services import board_service, task_service
+from app.services import board_service, settings_service, task_service
+from app.services.upload_service import delete_file, file_extension, save_file
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -18,7 +25,7 @@ async def list_tasks(user: CurrentUser, session: SessionDep):
     """Doska uchun barcha (mos) vazifalar."""
     tasks = await task_service.get_board_tasks(session, user)
     done_keys = await board_service.get_done_keys(session)
-    return [_to_out(t, done_keys) for t in tasks]
+    return await _to_out_batch(session, tasks, done_keys)
 
 
 @router.get("/{task_id}", response_model=TaskOut)
@@ -27,7 +34,7 @@ async def get_task(task_id: int, user: CurrentUser, session: SessionDep):
     if not permissions.can_view_task(user, task):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
     done_keys = await board_service.get_done_keys(session)
-    return _to_out(task, done_keys)
+    return (await _to_out_batch(session, [task], done_keys))[0]
 
 
 @router.post("", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
@@ -41,7 +48,7 @@ async def create_task(body: TaskCreate, user: CurrentUser, session: SessionDep):
 
     task = await task_service.create_task(session, body, created_by=user.id)
     done_keys = await board_service.get_done_keys(session)
-    return _to_out(task, done_keys)
+    return (await _to_out_batch(session, [task], done_keys))[0]
 
 
 @router.patch("/{task_id}", response_model=TaskOut)
@@ -55,7 +62,7 @@ async def update_task(
         setattr(task, field, value)
     session.add(Log(user_id=user.id, action=f"Vazifa tahrirlandi: #{task.id}"))
     done_keys = await board_service.get_done_keys(session)
-    return _to_out(task, done_keys)
+    return (await _to_out_batch(session, [task], done_keys))[0]
 
 
 @router.patch("/{task_id}/status", response_model=TaskOut)
@@ -70,7 +77,7 @@ async def update_status(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Holatni o'zgartirishga ruxsat yo'q")
     await task_service.change_status(session, task, column, user)
     done_keys = await board_service.get_done_keys(session)
-    return _to_out(task, done_keys)
+    return (await _to_out_batch(session, [task], done_keys))[0]
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -127,6 +134,99 @@ async def add_comment(
     return _comment_out(comment, names, texts)
 
 
+# ── Biriktirmalar (fayllar) ──────────────────────────────
+@router.get("/{task_id}/attachments", response_model=list[AttachmentOut])
+async def list_attachments(task_id: int, user: CurrentUser, session: SessionDep):
+    task = await _get_or_404(session, task_id)
+    if not permissions.can_view_task(user, task):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
+    result = await session.execute(
+        select(Attachment).where(Attachment.task_id == task_id).order_by(Attachment.created_at)
+    )
+    attachments = list(result.scalars().all())
+    names = await _author_names(session, {a.uploaded_by for a in attachments})
+    return [_attachment_out(a, names) for a in attachments]
+
+
+@router.post(
+    "/{task_id}/attachments", response_model=AttachmentOut, status_code=status.HTTP_201_CREATED
+)
+async def upload_attachment(
+    task_id: int, user: CurrentUser, session: SessionDep, file: UploadFile = File(...)
+):
+    task = await _get_or_404(session, task_id)
+    if not permissions.can_view_task(user, task):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
+
+    max_mb = await settings_service.get_max_file_mb(session)
+    ext = file_extension(file.filename, default="")
+    stored_name = f"{uuid.uuid4().hex}{ext}"
+    path, size = await save_file(file, f"attachments/{task_id}", stored_name)
+    if size > max_mb * 1024 * 1024:
+        delete_file(path)
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, f"Fayl hajmi {max_mb}MB dan oshmasligi kerak"
+        )
+
+    attachment = Attachment(
+        task_id=task_id,
+        uploaded_by=user.id,
+        file_name=file.filename or stored_name,
+        mime_type=file.content_type,
+        size=size,
+        file_path=path,
+    )
+    session.add(attachment)
+    await session.flush()
+    names = await _author_names(session, {user.id})
+    return _attachment_out(attachment, names)
+
+
+@router.delete("/{task_id}/attachments/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_attachment(
+    task_id: int, attachment_id: int, user: CurrentUser, session: SessionDep
+):
+    task = await _get_or_404(session, task_id)
+    if not permissions.can_view_task(user, task):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
+    attachment = await session.get(Attachment, attachment_id)
+    if not attachment or attachment.task_id != task_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fayl topilmadi")
+    if not (permissions.is_boss(user) or attachment.uploaded_by == user.id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "O'chirishga ruxsat yo'q")
+    if attachment.file_path:
+        delete_file(attachment.file_path)
+    await session.delete(attachment)
+
+
+@router.get("/{task_id}/attachments/{attachment_id}/download")
+async def download_attachment(
+    task_id: int, attachment_id: int, user: CurrentUser, session: SessionDep
+):
+    """Faylni yuklab olish — mahalliy bo'lsa /uploads ga yo'naltiradi,
+    arxivlangan bo'lsa Telegramdan oqim sifatida uzatadi."""
+    task = await _get_or_404(session, task_id)
+    if not permissions.can_view_task(user, task):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
+    attachment = await session.get(Attachment, attachment_id)
+    if not attachment or attachment.task_id != task_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fayl topilmadi")
+
+    if attachment.file_path:
+        return RedirectResponse(attachment.file_path)
+
+    if not attachment.telegram_file_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fayl topilmadi")
+    data = await notify.download_telegram_file(attachment.telegram_file_id)
+    if data is None:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Faylni yuklab olishda xato")
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type=attachment.mime_type or "application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{attachment.file_name}"'},
+    )
+
+
 # ── helpers ──────────────────────────────────────────────
 async def _get_or_404(session: SessionDep, task_id: int) -> Task:
     task = await session.get(Task, task_id)
@@ -135,10 +235,30 @@ async def _get_or_404(session: SessionDep, task_id: int) -> Task:
     return task
 
 
-def _to_out(task: Task, done_keys: set[str]) -> TaskOut:
-    out = TaskOut.model_validate(task)
-    out.is_overdue = board_service.is_overdue(task, done_keys)
-    return out
+async def _to_out_batch(
+    session: SessionDep, tasks: list[Task], done_keys: set[str]
+) -> list[TaskOut]:
+    masul_ids = {t.masul_id for t in tasks if t.masul_id}
+    names = await _author_names(session, masul_ids)
+
+    counts: dict[int, int] = {}
+    task_ids = [t.id for t in tasks]
+    if task_ids:
+        result = await session.execute(
+            select(Attachment.task_id, func.count())
+            .where(Attachment.task_id.in_(task_ids))
+            .group_by(Attachment.task_id)
+        )
+        counts = dict(result.all())
+
+    out_list = []
+    for task in tasks:
+        out = TaskOut.model_validate(task)
+        out.is_overdue = board_service.is_overdue(task, done_keys)
+        out.masul_name = names.get(task.masul_id) if task.masul_id else None
+        out.attachments_count = counts.get(task.id, 0)
+        out_list.append(out)
+    return out_list
 
 
 async def _author_names(session: SessionDep, user_ids: set[int]) -> dict[int, str]:
@@ -158,4 +278,11 @@ def _comment_out(
     if comment.parent_id and texts:
         rt = texts.get(comment.parent_id, "")
         out.reply_to = (rt[:60] + "…") if len(rt) > 60 else rt
+    return out
+
+
+def _attachment_out(attachment: Attachment, names: dict[int, str]) -> AttachmentOut:
+    out = AttachmentOut.model_validate(attachment)
+    out.uploader_name = names.get(attachment.uploaded_by, "—")
+    out.url = attachment.file_path
     return out

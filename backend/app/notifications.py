@@ -4,6 +4,7 @@ Past darajali: faqat yuboradi. Matn tayyorlash servislarda.
 Xato yuz bersa — log qiladi, lekin API ni to'xtatmaydi.
 """
 import logging
+from pathlib import Path
 
 from telegram import Bot
 from telegram.constants import ParseMode
@@ -57,3 +58,37 @@ async def send_dm(user_id: int, text: str) -> None:
         )
     except Exception as e:
         logger.warning("Shaxsiy xabar yuborilmadi (%s): %s", user_id, e)
+
+
+async def send_document_to_archive(
+    chat_id: int, path: Path, filename: str, caption: str = ""
+) -> tuple[int, str] | None:
+    """Faylni arxiv kanaliga yuboradi. Muvaffaqiyatli bo'lsa (message_id, file_id)."""
+    bot = get_bot()
+    if not bot:
+        return None
+    try:
+        with open(path, "rb") as f:
+            msg = await bot.send_document(
+                chat_id=chat_id, document=f, filename=filename, caption=caption
+            )
+        if not msg.document:
+            return None
+        return msg.message_id, msg.document.file_id
+    except Exception as e:
+        logger.warning("Faylni arxivga yuklashda xato: %s", e)
+        return None
+
+
+async def download_telegram_file(file_id: str) -> bytes | None:
+    """Arxivlangan faylni Telegram serveridan yuklab oladi."""
+    bot = get_bot()
+    if not bot:
+        return None
+    try:
+        tg_file = await bot.get_file(file_id)
+        data = await tg_file.download_as_bytearray()
+        return bytes(data)
+    except Exception as e:
+        logger.warning("Faylni Telegramdan yuklab olishda xato: %s", e)
+        return None

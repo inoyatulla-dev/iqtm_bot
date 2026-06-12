@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, func
+from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import Role, UserStatus
@@ -20,6 +20,8 @@ class User(Base):
     )
     status: Mapped[UserStatus] = mapped_column(EnumCol(UserStatus), default=UserStatus.PENDING)
     lang: Mapped[str] = mapped_column(String(2), default="uz")
+    photo: Mapped[str | None] = mapped_column(String(255), default=None)
+    birthday: Mapped[date | None] = mapped_column(Date, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     department: Mapped["Department"] = relationship(  # noqa: F821

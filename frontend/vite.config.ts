@@ -8,6 +8,7 @@ export default defineConfig({
     // Dev rejimda backendga proxy
     proxy: {
       "/api": "http://localhost:8000",
+      "/uploads": "http://localhost:8000",
     },
   },
 });

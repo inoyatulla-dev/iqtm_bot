@@ -95,6 +95,7 @@ export function BoardPage() {
 
       {formOpen && (
         <TaskForm
+          key={editing?.id ?? "new"}
           task={editing}
           isBoss={isBoss}
           onClose={() => setFormOpen(false)}

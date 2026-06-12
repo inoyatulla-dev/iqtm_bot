@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import datetime
 
-from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.constants import TaskType
@@ -23,7 +23,7 @@ class Task(Base):
     )
     created_by: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
 
-    deadline: Mapped[date | None] = mapped_column(Date, default=None)
+    deadline: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     # Doska ustuni kaliti — BoardColumn.key (moslashtiriladigan, qattiq enum emas)
     status: Mapped[str] = mapped_column(
         String(32), ForeignKey("board_columns.key"), default="new"

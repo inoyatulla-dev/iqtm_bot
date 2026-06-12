@@ -7,8 +7,6 @@ interface TgWebApp {
   initDataUnsafe: {
     user?: { id: number; first_name: string; last_name?: string; username?: string; language_code?: string };
   };
-  colorScheme: "light" | "dark";
-  themeParams: Record<string, string>;
   ready: () => void;
   expand: () => void;
   close: () => void;
@@ -27,13 +25,16 @@ declare global {
 
 export const tg = window.Telegram?.WebApp;
 
+// Ilovaning doimiy fon rangi (index.css dagi --secondary-bg bilan mos)
+const FIXED_BG_COLOR = "#0f172a";
+
 export function initTelegram() {
   if (tg) {
     tg.ready();
     tg.expand();
     try {
-      tg.setHeaderColor?.("secondary_bg_color");
-      tg.setBackgroundColor?.("secondary_bg_color");
+      tg.setHeaderColor?.(FIXED_BG_COLOR);
+      tg.setBackgroundColor?.(FIXED_BG_COLOR);
     } catch {
       // eski Telegram versiyalari bu metodlarni qo'llamasligi mumkin
     }
@@ -76,10 +77,6 @@ export function getInitData(): string {
   if (tg?.initData) return tg.initData;
   // Dev fallback (brauzerda sinash uchun)
   return import.meta.env.VITE_DEV_INIT_DATA || "";
-}
-
-export function getColorScheme(): "light" | "dark" {
-  return tg?.colorScheme || "light";
 }
 
 export function haptic() {

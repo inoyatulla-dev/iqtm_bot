@@ -1,4 +1,4 @@
-"""Scheduler — eslatma, kechikkan vazifa, haftalik hisobot."""
+"""Scheduler — eslatma, kechikkan vazifa, haftalik hisobot, tug'ilgan kun, zaxira."""
 import logging
 from datetime import date, datetime
 
@@ -6,10 +6,12 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import select
 
 from app import notifications as notify
-from app.core.constants import TaskType
+from app.core.constants import TaskType, UserStatus
 from app.db.base import SessionFactory
 from app.models import Department, Reminder, Task, User
-from app.services import board_service, settings_service
+from app.services import board_service, settings_service, task_service
+from app.services.backup_service import backup_database
+from app.services.storage_service import archive_overflow_files
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ async def check_reminders():
             text = (
                 f"🔔 <b>Vazifa eslatmasi!</b>\n"
                 f"📝 #{task.id}: {task.name}\n"
-                f"⏰ Muddat: {task.deadline}"
+                f"⏰ Muddat: {task_service._fmt_deadline(task.deadline)}"
             )
             if task.masul_id:
                 await notify.send_dm(task.masul_id, text)
@@ -46,14 +48,14 @@ async def check_reminders():
 async def check_overdue():
     """Kechikkan vazifalar bo'yicha kunlik guruh xabari."""
     async with SessionFactory() as session:
-        today = date.today()
+        now = datetime.now()
         done_keys = await board_service.get_done_keys(session)
         result = await session.execute(
             select(Task).where(
                 Task.type != TaskType.PROJECT,
                 Task.status.not_in(done_keys) if done_keys else True,
                 Task.deadline.is_not(None),
-                Task.deadline < today,
+                Task.deadline < now,
             )
         )
         tasks = list(result.scalars().all())
@@ -61,9 +63,32 @@ async def check_overdue():
             return
         lines = ["🚨 <b>Kechikkan vazifalar:</b>", ""]
         for t in tasks:
-            lines.append(f"• #{t.id} {t.name} — muddat {t.deadline}")
+            lines.append(f"• #{t.id} {t.name} — muddat {task_service._fmt_deadline(t.deadline)}")
         topic_id = await settings_service.get_routed_topic(session, "overdue")
         await notify.send_to_group("\n".join(lines), topic_id)
+
+
+async def check_birthdays():
+    """Bugun tug'ilgan kuni bo'lgan xodimlarni tabriklash — guruh + shaxsiy."""
+    async with SessionFactory() as session:
+        today = date.today()
+        result = await session.execute(
+            select(User).where(User.status == UserStatus.ACTIVE, User.birthday.is_not(None))
+        )
+        for u in result.scalars().all():
+            if u.birthday.month == today.month and u.birthday.day == today.day:
+                text = f"🎉🎂 <b>Tug'ilgan kun tabriklari!</b>\n\nBugun {u.name}ning tug'ilgan kuni — tabriklaymiz! 🎁"
+                topic_id = await settings_service.get_routed_topic(session, "birthday")
+                await notify.send_to_group(text, topic_id)
+                await notify.send_dm(u.id, "🎉🎂 <b>Tug'ilgan kuningiz bilan!</b>\n\nSizga sog'lik, omad va yutuqlar tilaymiz! 🎁")
+
+
+async def daily_backup():
+    """Bazadan har kuni avtomatik zaxira nusxa olish (oxirgi 7 kun saqlanadi)."""
+    try:
+        backup_database()
+    except Exception:
+        logger.exception("Zaxira nusxa olishda xato")
 
 
 async def weekly_report():
@@ -92,4 +117,7 @@ def setup_scheduler() -> AsyncIOScheduler:
     scheduler.add_job(
         weekly_report, "cron", day_of_week="fri", hour=18, minute=0, id="weekly"
     )
+    scheduler.add_job(check_birthdays, "cron", hour=8, minute=0, id="birthdays")
+    scheduler.add_job(daily_backup, "cron", hour=3, minute=0, id="daily_backup")
+    scheduler.add_job(archive_overflow_files, "cron", hour=4, minute=0, id="archive_overflow")
     return scheduler

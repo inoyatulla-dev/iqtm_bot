@@ -1,13 +1,18 @@
 """FastAPI ilovasi — kirish nuqtasi."""
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.config import settings
 from app.db.seed import init_models, seed_data
+from app.services.backup_service import backup_database
+
+UPLOADS_DIR = Path(__file__).resolve().parents[1] / "uploads"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    try:
+        backup_database()  # migratsiyalardan oldin xavfsizlik nusxasi
+    except Exception:
+        logger.exception("Boshlang'ich zaxira nusxa olishda xato")
     await init_models()
     await seed_data()
     logger.info("IQTM API ishga tushdi.")
@@ -35,6 +44,9 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 
 @app.get("/health")

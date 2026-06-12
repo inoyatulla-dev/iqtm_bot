@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel
 
 from app.schemas.user import UserOut
@@ -15,6 +17,7 @@ class AuthResponse(BaseModel):
 class ProfileUpdate(BaseModel):
     first_name: str
     last_name: str = ""
+    birthday: date | None = None
 
 
 class LangUpdate(BaseModel):

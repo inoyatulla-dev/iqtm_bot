@@ -4,7 +4,7 @@ import type { AppSettings } from "../api/client";
 import { useI18n } from "../i18n";
 
 const ROUTE_EVENTS = [
-  "new_task", "status_change", "done", "overdue", "weekly", "reminder", "application",
+  "new_task", "status_change", "done", "overdue", "weekly", "reminder", "application", "birthday",
 ] as const;
 
 export function TopicsSection() {

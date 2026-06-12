@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { commentsApi, tasksApi, usersApi } from "../api/client";
-import type { BoardColumn, Comment, Task, User } from "../api/types";
+import { useEffect, useRef, useState } from "react";
+import { attachmentsApi, commentsApi, tasksApi, usersApi } from "../api/client";
+import type { Attachment, BoardColumn, Comment, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
@@ -20,7 +20,7 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
   const [desc, setDesc] = useState(task?.description || "");
   const [depId, setDepId] = useState(task?.dep_id || "");
   const [masulId, setMasulId] = useState(task?.masul_id ? String(task.masul_id) : "");
-  const [deadline, setDeadline] = useState(task?.deadline || "");
+  const [deadline, setDeadline] = useState(task?.deadline ? task.deadline.slice(0, 16) : "");
   const [workers, setWorkers] = useState<User[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -38,12 +38,20 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
   const [commentTarget, setCommentTarget] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
+  // ── Biriktirmalar ──
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (isBoss) usersApi.list("active").then(setWorkers);
   }, [isBoss]);
 
   useEffect(() => {
-    if (task) commentsApi.list(task.id).then(setComments);
+    if (task) {
+      commentsApi.list(task.id).then(setComments);
+      attachmentsApi.list(task.id).then(setAttachments);
+    }
   }, [task?.id]);
 
   const canEdit = !task || isBoss || task.created_by === user?.id;
@@ -156,6 +164,39 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
     }
   }
 
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!task || !file) return;
+    setUploading(true);
+    setErr("");
+    try {
+      const a = await attachmentsApi.upload(task.id, file);
+      setAttachments((prev) => [...prev, a]);
+    } catch (e: any) {
+      setErr(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  async function removeAttachment(a: Attachment) {
+    if (!task) return;
+    await attachmentsApi.remove(task.id, a.id);
+    setAttachments((prev) => prev.filter((x) => x.id !== a.id));
+  }
+
+  async function downloadAttachment(a: Attachment) {
+    if (!task) return;
+    const blob = await attachmentsApi.download(task.id, a.id);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = a.file_name;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <Sheet title={task ? `#${task.id}` : t("task.new")} onClose={onClose}>
       <div className="sheet__pad">
@@ -206,7 +247,7 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
         <div className="field">
           <label>{t("task.deadline")}</label>
           <input
-            type="date"
+            type="datetime-local"
             value={deadline}
             disabled={!canEdit}
             onChange={(e) => setDeadline(e.target.value)}
@@ -276,6 +317,55 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
 
       {task && (
         <>
+          <div className="section-title">{t("task.attachments")}</div>
+          <div className="sheet__pad">
+            <div className="attachment-list">
+              {attachments.length === 0 && (
+                <div className="comment-empty">{t("task.attachmentEmpty")}</div>
+              )}
+              {attachments.map((a) => (
+                <div className="attachment" key={a.id}>
+                  {a.url ? (
+                    <a
+                      className="attachment__name"
+                      href={a.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      📎 {a.file_name}
+                    </a>
+                  ) : (
+                    <button
+                      className="attachment__name attachment__link"
+                      onClick={() => downloadAttachment(a)}
+                    >
+                      📎 {a.file_name}
+                    </button>
+                  )}
+                  <span className="attachment__size">{formatFileSize(a.size)}</span>
+                  {(isBoss || a.uploaded_by === user?.id) && (
+                    <button className="attachment__remove" onClick={() => removeAttachment(a)}>
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              style={{ display: "none" }}
+              onChange={onFileChange}
+            />
+            <button
+              className="btn btn--ghost"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? t("task.attachmentUploading") : t("task.attachmentUpload")}
+            </button>
+          </div>
+
           <div className="section-title">{t("comment.title")}</div>
           <div className="sheet__pad">
             <div className="comment-list">
@@ -385,6 +475,12 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
       </div>
     </Sheet>
   );
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDateTime(value?: string): string {
