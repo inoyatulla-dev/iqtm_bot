@@ -42,6 +42,7 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isBoss) usersApi.list("active").then(setWorkers);
@@ -357,13 +358,30 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
               style={{ display: "none" }}
               onChange={onFileChange}
             />
-            <button
-              className="btn btn--ghost"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? t("task.attachmentUploading") : t("task.attachmentUpload")}
-            </button>
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={onFileChange}
+            />
+            <div className="report-row">
+              <button
+                className="btn btn--ghost"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? t("task.attachmentUploading") : t("task.attachmentUpload")}
+              </button>
+              <button
+                className="btn btn--ghost"
+                onClick={() => cameraRef.current?.click()}
+                disabled={uploading}
+              >
+                {t("task.attachmentCamera")}
+              </button>
+            </div>
           </div>
 
           <div className="section-title">{t("comment.title")}</div>
