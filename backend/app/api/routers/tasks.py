@@ -41,6 +41,8 @@ async def get_task(task_id: int, user: CurrentUser, session: SessionDep):
 async def create_task(body: TaskCreate, user: CurrentUser, session: SessionDep):
     # Boshliq oddiy vazifa beradi; xodim faqat shaxsiy
     if body.type == TaskType.PERSONAL:
+        if not permissions.can_create_personal_task(user):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Kuzatuvchi vazifa qo'sha olmaydi")
         body.masul_id = user.id
         body.dep_id = body.dep_id or user.dep_id
     elif not permissions.can_create_task(user):

@@ -1,9 +1,9 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { projectsApi, usersApi } from "../api/client";
-import type { ProjectDetail, ProjectTaskCreate, User } from "../api/types";
+import { projectsApi, tasksApi, usersApi } from "../api/client";
+import type { ProjectDetail, ProjectStatus, ProjectTaskCreate, User } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
-import { Sheet } from "../components/Sheet";
+import { Sheet, ActionRow } from "../components/Sheet";
 
 export function ProjectsPage() {
   const { isBoss, columns } = useAuth();
@@ -15,7 +15,21 @@ export function ProjectsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [works, setWorks] = useState<ProjectTaskCreate[]>([{ name: "", masul_id: null }]);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  const [selId, setSelId] = useState<number | null>(null);
+  const [view, setView] = useState<"detail" | "edit" | "addTask" | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editStatus, setEditStatus] = useState<ProjectStatus>("active");
+  const [editSaving, setEditSaving] = useState(false);
+
+  const [taskName, setTaskName] = useState("");
+  const [taskMasul, setTaskMasul] = useState<number | "">("");
+  const [taskSaving, setTaskSaving] = useState(false);
+
+  const sel = projects.find((p) => p.id === selId) || null;
 
   async function load() {
     setLoading(true);
@@ -29,13 +43,17 @@ export function ProjectsPage() {
     load();
   }, []);
 
+  function ensureUsers() {
+    if (isBoss && users.length === 0) {
+      usersApi.list().then(setUsers);
+    }
+  }
+
   function openCreate() {
     setName("");
     setDescription("");
     setWorks([{ name: "", masul_id: null }]);
-    if (isBoss && users.length === 0) {
-      usersApi.list().then(setUsers);
-    }
+    ensureUsers();
     setCreating(true);
   }
 
@@ -54,10 +72,69 @@ export function ProjectsPage() {
     }
   }
 
-  async function remove(id: number) {
+  function openDetail(p: ProjectDetail) {
+    setSelId(p.id);
+    setView("detail");
+    setConfirmDelete(false);
+    ensureUsers();
+  }
+
+  function openEdit(p: ProjectDetail) {
+    setEditName(p.name);
+    setEditDesc(p.description || "");
+    setEditStatus(p.status);
+    setView("edit");
+  }
+
+  async function saveEdit() {
+    if (!sel) return;
+    setEditSaving(true);
     try {
-      await projectsApi.remove(id);
-      setConfirmDeleteId(null);
+      await projectsApi.update(sel.id, {
+        name: editName.trim(),
+        description: editDesc.trim() || null,
+        status: editStatus,
+      });
+      await load();
+      setView("detail");
+    } catch (e: any) {
+      alert(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  function openAddTask() {
+    setTaskName("");
+    setTaskMasul("");
+    setView("addTask");
+  }
+
+  async function submitAddTask() {
+    if (!sel || !taskName.trim()) return;
+    setTaskSaving(true);
+    try {
+      await tasksApi.create({
+        name: taskName.trim(),
+        masul_id: taskMasul === "" ? null : taskMasul,
+        type: "project",
+        project_id: sel.id,
+      });
+      await load();
+      setView("detail");
+    } catch (e: any) {
+      alert(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setTaskSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!sel) return;
+    try {
+      await projectsApi.remove(sel.id);
+      setView(null);
+      setSelId(null);
       load();
     } catch (e: any) {
       alert(e?.response?.data?.detail || t("common.error"));
@@ -68,6 +145,37 @@ export function ProjectsPage() {
     if (percent >= 100) return "var(--ok)";
     if (percent > 0) return "var(--accent)";
     return "var(--warn)";
+  }
+
+  function renderTasks(tasks: ProjectDetail["tasks"]) {
+    return (
+      <div className="project-tasks" style={{ marginTop: 12 }}>
+        {tasks.map((task) => {
+          const col = columns.find((c) => c.key === task.status);
+          const icon = col?.emoji || "🆕";
+          let cls = "badge badge--accent";
+          let style: CSSProperties | undefined;
+          if (task.is_overdue) {
+            cls = "badge badge--danger";
+          } else if (col?.is_done) {
+            cls = "badge badge--ok";
+          } else if (col?.is_initial) {
+            cls = "badge";
+            style = { background: "var(--surface)", color: "var(--hint)" };
+          }
+          return (
+            <div className="project-task" key={task.id}>
+              <span className={cls} style={style}>{icon}</span>
+              {task.name}
+              <span className="project-task__assignee">
+                {task.masul_name || t("projects.unassigned")}
+                {task.is_overdue ? ` · ${t("monitoring.dist.overdue").toLowerCase()}` : ""}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
   }
 
   if (loading) return <div className="center-screen">{t("common.loading")}</div>;
@@ -87,7 +195,7 @@ export function ProjectsPage() {
 
       <div className="project-grid">
         {projects.map((p) => (
-          <div className="card project-card" key={p.id}>
+          <div className="card project-card" key={p.id} style={{ cursor: "pointer" }} onClick={() => openDetail(p)}>
             <div className="project-card__head">
               <div className="project-card__name">{p.name}</div>
               <span className={`badge ${p.status === "done" ? "badge--accent" : "badge--ok"}`}>
@@ -108,47 +216,110 @@ export function ProjectsPage() {
                 style={{ width: `${p.percent}%`, background: progressColor(p.percent) }}
               />
             </div>
-            {p.tasks.length > 0 && (
-              <div className="project-tasks">
-                {p.tasks.map((task) => {
-                  const col = columns.find((c) => c.key === task.status);
-                  const icon = col?.emoji || "🆕";
-                  let cls = "badge badge--accent";
-                  let style: CSSProperties | undefined;
-                  if (task.is_overdue) {
-                    cls = "badge badge--danger";
-                  } else if (col?.is_done) {
-                    cls = "badge badge--ok";
-                  } else if (col?.is_initial) {
-                    cls = "badge";
-                    style = { background: "var(--surface)", color: "var(--hint)" };
-                  }
-                  return (
-                    <div className="project-task" key={task.id}>
-                      <span className={cls} style={style}>{icon}</span>
-                      {task.name}
-                      <span className="project-task__assignee">
-                        {task.masul_name || t("projects.unassigned")}
-                        {task.is_overdue ? ` · ${t("monitoring.dist.overdue").toLowerCase()}` : ""}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {isBoss &&
-              (confirmDeleteId === p.id ? (
-                <button className="btn btn--danger" onClick={() => remove(p.id)}>
-                  {t("projects.deleteConfirm")}
-                </button>
-              ) : (
-                <button className="btn btn--ghost" onClick={() => setConfirmDeleteId(p.id)}>
-                  {t("projects.delete")}
-                </button>
-              ))}
           </div>
         ))}
       </div>
+
+      {sel && view === "detail" && (
+        <Sheet
+          title={sel.name}
+          subtitle={t(`projects.status.${sel.status}`)}
+          onClose={() => { setView(null); setSelId(null); }}
+        >
+          <div className="sheet__pad">
+            {sel.description && (
+              <p style={{ marginTop: 0, color: "var(--hint)" }}>{sel.description}</p>
+            )}
+            <div className="dept-row__head">
+              <div className="dept-row__count">
+                {t("projects.progress")
+                  .replace("{done}", String(sel.done_count))
+                  .replace("{total}", String(sel.task_count))}
+              </div>
+              <div className="dept-row__count">{sel.percent}%</div>
+            </div>
+            <div className="progress-bar">
+              <div
+                className="progress-bar__fill"
+                style={{ width: `${sel.percent}%`, background: progressColor(sel.percent) }}
+              />
+            </div>
+            {sel.tasks.length > 0 ? renderTasks(sel.tasks) : (
+              <div className="empty-state">{t("monitoring.noTasks")}</div>
+            )}
+          </div>
+          {isBoss && (
+            <>
+              <ActionRow icon="✏️" label={t("projects.edit")} onClick={() => openEdit(sel)} />
+              <ActionRow icon="➕" label={t("projects.addTask")} onClick={openAddTask} />
+              {confirmDelete ? (
+                <div className="sheet__pad">
+                  <button className="btn btn--danger" onClick={remove}>
+                    {t("projects.deleteConfirm")}
+                  </button>
+                </div>
+              ) : (
+                <ActionRow icon="🗑" label={t("projects.delete")} danger onClick={() => setConfirmDelete(true)} />
+              )}
+            </>
+          )}
+        </Sheet>
+      )}
+
+      {sel && view === "edit" && (
+        <Sheet title={t("projects.editTitle")} subtitle={sel.name} onClose={() => setView("detail")}>
+          <div className="sheet__pad">
+            <div className="field">
+              <label>{t("projects.name")}</label>
+              <input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>{t("projects.description")}</label>
+              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>{t("projects.statusLabel")}</label>
+              <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as ProjectStatus)}>
+                <option value="active">{t("projects.status.active")}</option>
+                <option value="done">{t("projects.status.done")}</option>
+              </select>
+            </div>
+            <button className="btn btn--primary" onClick={saveEdit} disabled={editSaving}>
+              {editSaving ? t("task.saving") : t("common.save")}
+            </button>
+          </div>
+        </Sheet>
+      )}
+
+      {sel && view === "addTask" && (
+        <Sheet title={t("projects.addTaskTitle")} subtitle={sel.name} onClose={() => setView("detail")}>
+          <div className="sheet__pad">
+            <div className="field">
+              <label>{t("projects.tasksLabel")}</label>
+              <input
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+                placeholder={t("projects.taskNamePh")}
+              />
+            </div>
+            <div className="field">
+              <label>{t("task.masul")}</label>
+              <select
+                value={taskMasul}
+                onChange={(e) => setTaskMasul(e.target.value ? Number(e.target.value) : "")}
+              >
+                <option value="">{t("projects.unassigned")}</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+            <button className="btn btn--primary" onClick={submitAddTask} disabled={taskSaving}>
+              {taskSaving ? t("task.saving") : t("projects.addTask")}
+            </button>
+          </div>
+        </Sheet>
+      )}
 
       {creating && (
         <Sheet title={t("projects.newTitle")} onClose={() => setCreating(false)}>

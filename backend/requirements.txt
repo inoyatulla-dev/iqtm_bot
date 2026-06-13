@@ -18,10 +18,9 @@ python-dotenv==1.0.1
 python-multipart==0.0.20
 Pillow==11.0.0
 
-# ── Hisobotlar (PDF/DOCX/XLSX + diagrammalar) ───────────
+# ── Hisobotlar (PDF/DOCX + diagrammalar) ────────────────
 reportlab==4.2.5
 python-docx==1.1.2
-openpyxl==3.1.5
 matplotlib==3.9.2
 
 # ── Auth ────────────────────────────────────────────────

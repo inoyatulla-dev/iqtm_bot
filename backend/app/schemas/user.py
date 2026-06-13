@@ -50,3 +50,4 @@ class UserUpdate(BaseModel):
     role: Role | None = None
     dep_id: str | None = None
     status: UserStatus | None = None
+    birthday: date | None = None

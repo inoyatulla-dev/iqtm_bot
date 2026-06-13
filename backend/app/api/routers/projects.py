@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import case, func, select, update
 
 from app.api.deps import BossUser, CurrentUser, SessionDep
-from app.core.constants import TaskType
+from app.core.constants import Role, TaskType
 from app.models import Project, Task
 from app.schemas.project import ProjectCreate, ProjectDetail, ProjectOut, ProjectUpdate
 from app.services import board_service, task_service
@@ -12,8 +12,17 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 
 
 @router.get("", response_model=list[ProjectOut])
-async def list_projects(_: CurrentUser, session: SessionDep):
-    result = await session.execute(select(Project).order_by(Project.created_at.desc()))
+async def list_projects(user: CurrentUser, session: SessionDep):
+    stmt = select(Project).order_by(Project.created_at.desc())
+    if user.role == Role.WORKER:
+        stmt = stmt.where(
+            Project.id.in_(
+                select(Task.project_id).where(
+                    Task.project_id.is_not(None), Task.masul_id == user.id
+                )
+            )
+        )
+    result = await session.execute(stmt)
     projects = list(result.scalars().all())
     if not projects:
         return []
@@ -45,10 +54,14 @@ async def list_projects(_: CurrentUser, session: SessionDep):
 @router.get("/{project_id}", response_model=ProjectDetail)
 async def get_project(project_id: int, user: CurrentUser, session: SessionDep):
     project = await _get_or_404(session, project_id)
-    result = await session.execute(
-        select(Task).where(Task.project_id == project_id).order_by(Task.created_at)
-    )
+    stmt = select(Task).where(Task.project_id == project_id)
+    if user.role == Role.WORKER:
+        stmt = stmt.where(Task.masul_id == user.id)
+    stmt = stmt.order_by(Task.created_at)
+    result = await session.execute(stmt)
     tasks = list(result.scalars().all())
+    if user.role == Role.WORKER and not tasks:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Bu loyihada sizga tegishli ish yo'q")
     done_keys = await board_service.get_done_keys(session)
 
     from app.api.routers.tasks import _to_out_batch

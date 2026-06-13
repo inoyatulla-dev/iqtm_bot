@@ -92,6 +92,7 @@ export interface StatusCounts {
   counts: Record<string, number>;
   overdue: number;
   total: number;
+  done_in_period: number;
 }
 
 export interface RatingRow {
@@ -100,6 +101,7 @@ export interface RatingRow {
   done: number;
   active: number;
   overdue: number;
+  done_in_period: number;
 }
 
 export interface Project {
@@ -146,8 +148,8 @@ export interface DashboardData {
   done: number;
   in_progress: number;
   overdue: number;
-  new_this_month: number;
-  closed_this_month: number;
+  new_in_period: number;
+  closed_in_period: number;
   departments: DeptProgress[];
   distribution: DistributionSlice[];
 }

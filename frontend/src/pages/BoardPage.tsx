@@ -12,7 +12,7 @@ import { TaskCard } from "../components/board/TaskCard";
 import { TaskForm } from "./TaskForm";
 
 export function BoardPage() {
-  const { deps, columns, isBoss } = useAuth();
+  const { deps, columns, isBoss, isObserver } = useAuth();
   const { t } = useI18n();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +33,7 @@ export function BoardPage() {
   }, []);
 
   async function moveTask(taskId: number, newStatus: string) {
+    if (isObserver) return;
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === newStatus) return;
 
@@ -83,21 +84,24 @@ export function BoardPage() {
         </div>
       </DndContext>
 
-      <button
-        className="fab"
-        onClick={() => {
-          setEditing(null);
-          setFormOpen(true);
-        }}
-      >
-        +
-      </button>
+      {!isObserver && (
+        <button
+          className="fab"
+          onClick={() => {
+            setEditing(null);
+            setFormOpen(true);
+          }}
+        >
+          +
+        </button>
+      )}
 
       {formOpen && (
         <TaskForm
           key={editing?.id ?? "new"}
           task={editing}
           isBoss={isBoss}
+          isObserver={isObserver}
           onClose={() => setFormOpen(false)}
           onSaved={() => {
             setFormOpen(false);

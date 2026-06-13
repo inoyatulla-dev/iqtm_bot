@@ -8,6 +8,7 @@ import { useI18n, LANGS, type Lang } from "../i18n";
 import { BoardColumnsSection } from "../components/BoardColumnsSection";
 import { DepartmentsSection } from "../components/DepartmentsSection";
 import { TemplatesSection } from "../components/TemplatesSection";
+import { TopicsSection } from "../components/TopicsSection";
 
 function splitName(name?: string): [string, string] {
   if (!name) return ["", ""];
@@ -23,6 +24,7 @@ type View =
   | "group-main"
   | "group-departments"
   | "templates"
+  | "topics"
   | "board"
   | "branding";
 
@@ -40,6 +42,8 @@ function viewTitleKey(view: View): string {
       return "settings.group.departments";
     case "templates":
       return "settings.menu.templates";
+    case "topics":
+      return "settings.topics.title";
     case "board":
       return "settings.menu.board";
     case "branding":
@@ -80,6 +84,7 @@ export function SettingsPage() {
       {view === "group-main" && <GroupMainView />}
       {view === "group-departments" && <DepartmentsSection />}
       {view === "templates" && <TemplatesSection />}
+      {view === "topics" && <TopicsSection />}
       {view === "board" && <BoardColumnsSection />}
       {view === "branding" && <BrandingTab />}
     </div>
@@ -94,6 +99,7 @@ function MenuView({ isBoss, onNav }: { isBoss: boolean; onNav: (v: View) => void
       ? ([
           { key: "group-menu", label: t("settings.menu.group") },
           { key: "templates", label: t("settings.menu.templates") },
+          { key: "topics", label: t("settings.topics.title") },
           { key: "board", label: t("settings.menu.board") },
           { key: "branding", label: t("settings.menu.branding") },
         ] as { key: View; label: string }[])

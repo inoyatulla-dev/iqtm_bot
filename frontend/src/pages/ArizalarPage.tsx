@@ -92,7 +92,7 @@ export function ArizalarPage({ onChange }: Props) {
         >
           <ActionRow icon="👑" label={t("role.boss")} onClick={() => { setChosenRole("boss"); setView("dep"); }} />
           <ActionRow icon="👤" label={t("role.worker")} onClick={() => { setChosenRole("worker"); setView("dep"); }} />
-          <ActionRow icon="👁" label={t("role.observer")} onClick={() => { setChosenRole("observer"); setView("dep"); }} />
+          <ActionRow icon="👁" label={t("role.observer")} onClick={() => { setChosenRole("observer"); approve("observer", null); }} />
         </Sheet>
       )}
 

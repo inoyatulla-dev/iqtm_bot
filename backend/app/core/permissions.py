@@ -29,8 +29,13 @@ def can_create_task(user: User) -> bool:
     return is_boss(user)
 
 
+def can_create_personal_task(user: User) -> bool:
+    """Shaxsiy vazifa qo'shish — kuzatuvchi faqat ko'radi, qo'sha olmaydi."""
+    return not is_observer(user)
+
+
 def can_view_task(user: User, task: Task) -> bool:
-    if is_boss(user):
+    if is_boss(user) or is_observer(user):
         return True
     # Xodim: o'ziga tegishli yoki o'zi yaratgan
     return task.masul_id == user.id or task.created_by == user.id
@@ -38,6 +43,8 @@ def can_view_task(user: User, task: Task) -> bool:
 
 def can_edit_task(user: User, task: Task) -> bool:
     """Vazifa mazmunini (nom, tavsif, muddat, mas'ul) tahrirlash."""
+    if is_observer(user):
+        return False
     if is_boss(user):
         return True
     # Xodim faqat o'zining shaxsiy vazifasini tahrirlaydi
@@ -50,6 +57,8 @@ def can_change_status(user: User, task: Task, target_column: BoardColumn) -> boo
     "Yakuniy" (is_done) ustunga faqat boshliq o'tkaza oladi — ish tekshirib
     tasdiqlangandan keyin "Bajarildi"ga o'tadi.
     """
+    if is_observer(user):
+        return False
     if is_boss(user):
         return True
     if target_column.is_done:
@@ -60,6 +69,8 @@ def can_change_status(user: User, task: Task, target_column: BoardColumn) -> boo
 
 
 def can_delete_task(user: User, task: Task) -> bool:
+    if is_observer(user):
+        return False
     if is_boss(user):
         return True
     return task.type == TaskType.PERSONAL and task.created_by == user.id

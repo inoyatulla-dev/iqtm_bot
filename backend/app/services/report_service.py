@@ -11,8 +11,8 @@ from sqlalchemy import case, func, select
 from sqlalchemy import false as sql_false, true as sql_true
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.constants import TaskType
-from app.models import Department, Task, User
+from app.core.constants import ProjectStatus, TaskType
+from app.models import Department, Project, Task, User
 from app.services import board_service, settings_service
 from app.services.upload_service import resolve_path
 
@@ -50,6 +50,25 @@ class RatingRow:
 
 
 @dataclass
+class ProjectTaskRow:
+    name: str
+    assignee: str
+    status_label: str
+
+
+@dataclass
+class ProjectRow:
+    name: str
+    status_label: str
+    total: int
+    done: int
+    percent: int
+    done_tasks: list[ProjectTaskRow] = field(default_factory=list)
+    in_progress_tasks: list[ProjectTaskRow] = field(default_factory=list)
+    planned_tasks: list[ProjectTaskRow] = field(default_factory=list)
+
+
+@dataclass
 class ReportData:
     period: str
     period_label: str
@@ -63,6 +82,7 @@ class ReportData:
     statuses: list[StatusCount] = field(default_factory=list)
     departments: list[DeptRow] = field(default_factory=list)
     rating: list[RatingRow] = field(default_factory=list)
+    projects: list[ProjectRow] = field(default_factory=list)
     logo_path: Path = DEFAULT_LOGO
 
 
@@ -187,6 +207,50 @@ async def collect_report_data(session: AsyncSession, period: str) -> ReportData:
         for name, username, done, active, overdue_n, done_period in rating_result.all()
     ]
 
+    # ── Loyihalar ──
+    initial_keys = {c.key for c in columns if c.is_initial}
+    columns_by_key = {c.key: c for c in columns}
+
+    proj_result = await session.execute(select(Project).order_by(Project.created_at.desc()))
+    db_projects = list(proj_result.scalars().all())
+
+    proj_task_result = await session.execute(
+        select(Task.project_id, Task.name, Task.status, User.name)
+        .select_from(Task)
+        .outerjoin(User, Task.masul_id == User.id)
+        .where(Task.project_id.is_not(None))
+    )
+    proj_tasks: dict[int, list[tuple[str, str, str]]] = {}
+    for project_id, task_name, task_status, masul_name in proj_task_result.all():
+        proj_tasks.setdefault(project_id, []).append((task_name, task_status, masul_name or "—"))
+
+    projects = []
+    for proj in db_projects:
+        rows = proj_tasks.get(proj.id, [])
+        done_tasks, in_progress_tasks, planned_tasks = [], [], []
+        for task_name, task_status, masul_name in rows:
+            col = columns_by_key.get(task_status)
+            status_label = f"{col.emoji} {col.name}" if col else task_status
+            row = ProjectTaskRow(name=task_name, assignee=masul_name, status_label=status_label)
+            if task_status in done_keys:
+                done_tasks.append(row)
+            elif task_status in initial_keys:
+                planned_tasks.append(row)
+            else:
+                in_progress_tasks.append(row)
+        total_tasks = len(rows)
+        done_count = len(done_tasks)
+        projects.append(ProjectRow(
+            name=proj.name,
+            status_label="Tugagan" if proj.status == ProjectStatus.DONE else "Faol",
+            total=total_tasks,
+            done=done_count,
+            percent=round(done_count * 100 / total_tasks) if total_tasks else 0,
+            done_tasks=done_tasks,
+            in_progress_tasks=in_progress_tasks,
+            planned_tasks=planned_tasks,
+        ))
+
     logo_path = await _resolve_logo(session)
 
     return ReportData(
@@ -196,6 +260,7 @@ async def collect_report_data(session: AsyncSession, period: str) -> ReportData:
         total=total, overdue=overdue,
         created_in_period=created_in_period, done_in_period=done_in_period,
         statuses=statuses, departments=departments, rating=rating,
+        projects=projects,
         logo_path=logo_path,
     )
 

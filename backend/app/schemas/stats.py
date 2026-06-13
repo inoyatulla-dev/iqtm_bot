@@ -5,6 +5,7 @@ class StatusCounts(BaseModel):
     counts: dict[str, int] = Field(default_factory=dict)
     overdue: int = 0
     total: int = 0
+    done_in_period: int = 0
 
 
 class RatingRow(BaseModel):
@@ -13,6 +14,7 @@ class RatingRow(BaseModel):
     done: int
     active: int
     overdue: int
+    done_in_period: int = 0
 
 
 class DeptProgress(BaseModel):
@@ -37,7 +39,7 @@ class DashboardOut(BaseModel):
     done: int = 0
     in_progress: int = 0
     overdue: int = 0
-    new_this_month: int = 0
-    closed_this_month: int = 0
+    new_in_period: int = 0
+    closed_in_period: int = 0
     departments: list[DeptProgress] = Field(default_factory=list)
     distribution: list[DistributionSlice] = Field(default_factory=list)

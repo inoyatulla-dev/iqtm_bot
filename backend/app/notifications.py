@@ -3,6 +3,7 @@
 Past darajali: faqat yuboradi. Matn tayyorlash servislarda.
 Xato yuz bersa — log qiladi, lekin API ni to'xtatmaydi.
 """
+import io
 import logging
 from pathlib import Path
 
@@ -78,6 +79,26 @@ async def send_document_to_archive(
     except Exception as e:
         logger.warning("Faylni arxivga yuklashda xato: %s", e)
         return None
+
+
+async def send_document_bytes(
+    chat_id: int, filename: str, data: bytes, caption: str = ""
+) -> bool:
+    """Xotiradagi faylni foydalanuvchi shaxsiy chatiga yuboradi."""
+    bot = get_bot()
+    if not bot:
+        return False
+    try:
+        await bot.send_document(
+            chat_id=chat_id,
+            document=io.BytesIO(data),
+            filename=filename,
+            caption=caption,
+        )
+        return True
+    except Exception as e:
+        logger.warning("Hisobotni Telegramga yuborishda xato (%s): %s", chat_id, e)
+        return False
 
 
 async def download_telegram_file(file_id: str) -> bytes | None:

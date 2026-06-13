@@ -1,4 +1,4 @@
-"""Hisobotni PDF/DOCX/XLSX formatida tayyorlash."""
+"""Hisobotni PDF/DOCX formatida tayyorlash."""
 import io
 
 from app.services.report_service import ReportData, rating_chart, status_chart
@@ -85,6 +85,29 @@ def build_pdf(data: ReportData) -> bytes:
         ]
         elements.append(Table(rows, style=table_style, colWidths=[70 * mm, 22 * mm, 18 * mm, 22 * mm, 28 * mm]))
 
+    if data.projects:
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph("Loyihalar", styles["Heading2"]))
+        for proj in data.projects:
+            elements.append(Spacer(1, 6))
+            elements.append(Paragraph(
+                f"<b>{proj.name}</b> — {proj.status_label}, {proj.done}/{proj.total} ({proj.percent}%)",
+                styles["Normal"],
+            ))
+            for label, tasks in (
+                ("Bajarilgan", proj.done_tasks),
+                ("Jarayonda", proj.in_progress_tasks),
+                ("Rejalashtirilgan", proj.planned_tasks),
+            ):
+                if not tasks:
+                    continue
+                elements.append(Paragraph(label, styles["Heading4"]))
+                rows = [["Vazifa", "Mas'ul", "Holat"]] + [
+                    [t.name, t.assignee, t.status_label] for t in tasks
+                ]
+                elements.append(Table(rows, style=table_style, colWidths=[80 * mm, 40 * mm, 40 * mm]))
+                elements.append(Spacer(1, 4))
+
     doc.build(elements)
     return buf.getvalue()
 
@@ -136,105 +159,32 @@ def build_docx(data: ReportData) -> bytes:
             for i, v in enumerate([r.name, str(r.done), str(r.active), str(r.overdue), str(r.done_period)]):
                 row[i].text = v
 
+    if data.projects:
+        doc.add_heading("Loyihalar", level=2)
+        for proj in data.projects:
+            doc.add_heading(
+                f"{proj.name} — {proj.status_label}, {proj.done}/{proj.total} ({proj.percent}%)",
+                level=3,
+            )
+            for label, tasks in (
+                ("Bajarilgan", proj.done_tasks),
+                ("Jarayonda", proj.in_progress_tasks),
+                ("Rejalashtirilgan", proj.planned_tasks),
+            ):
+                if not tasks:
+                    continue
+                p = doc.add_paragraph()
+                p.add_run(label).bold = True
+                table = doc.add_table(rows=1, cols=3)
+                table.style = "Light Grid Accent 1"
+                hdr = table.rows[0].cells
+                hdr[0].text, hdr[1].text, hdr[2].text = "Vazifa", "Mas'ul", "Holat"
+                for t in tasks:
+                    row = table.add_row().cells
+                    row[0].text, row[1].text, row[2].text = t.name, t.assignee, t.status_label
+
     buf = io.BytesIO()
     doc.save(buf)
     return buf.getvalue()
 
 
-def build_xlsx(data: ReportData) -> bytes:
-    from openpyxl import Workbook
-    from openpyxl.chart import BarChart, Reference
-    from openpyxl.drawing.image import Image as XLImage
-    from openpyxl.styles import Font
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Hisobot"
-
-    ws["A1"] = f"{data.period_label} hisobot"
-    ws["A1"].font = Font(size=14, bold=True)
-    ws["A2"] = f"Davr: {data.start} — {data.end}"
-    ws["A3"] = f"Yaratildi: {data.generated_at.strftime('%Y-%m-%d %H:%M')}"
-
-    if data.logo_path.exists():
-        img = XLImage(str(data.logo_path))
-        img.width, img.height = 150, 100
-        ws.add_image(img, "E1")
-
-    row = 5
-    ws.cell(row=row, column=1, value="Ko'rsatkich").font = Font(bold=True)
-    ws.cell(row=row, column=2, value="Qiymat").font = Font(bold=True)
-    for label, value in _summary_rows(data):
-        row += 1
-        ws.cell(row=row, column=1, value=label)
-        ws.cell(row=row, column=2, value=value)
-
-    # ── Holatlar jadvali + diagramma ──
-    status_header_row = row + 2
-    ws.cell(row=status_header_row, column=1, value="Holat").font = Font(bold=True)
-    ws.cell(row=status_header_row, column=2, value="Soni").font = Font(bold=True)
-    for i, s in enumerate(data.statuses, start=1):
-        ws.cell(row=status_header_row + i, column=1, value=f"{s.emoji} {s.name}")
-        ws.cell(row=status_header_row + i, column=2, value=s.count)
-
-    if data.statuses:
-        chart = BarChart()
-        chart.title = "Vazifalar holati bo'yicha"
-        last_row = status_header_row + len(data.statuses)
-        chart.add_data(
-            Reference(ws, min_col=2, min_row=status_header_row, max_row=last_row),
-            titles_from_data=True,
-        )
-        chart.set_categories(
-            Reference(ws, min_col=1, min_row=status_header_row + 1, max_row=last_row)
-        )
-        ws.add_chart(chart, f"D{status_header_row}")
-        row = last_row
-    else:
-        row = status_header_row
-
-    # ── Bo'limlar jadvali ──
-    if data.departments:
-        row += 2
-        ws.cell(row=row, column=1, value="Bo'lim").font = Font(bold=True)
-        ws.cell(row=row, column=2, value="Jami").font = Font(bold=True)
-        ws.cell(row=row, column=3, value="Bajarilgan").font = Font(bold=True)
-        for d in data.departments:
-            row += 1
-            ws.cell(row=row, column=1, value=f"{d.emoji} {d.name}")
-            ws.cell(row=row, column=2, value=d.total)
-            ws.cell(row=row, column=3, value=d.done)
-
-    # ── Xodimlar reytingi ──
-    if data.rating:
-        row += 2
-        rating_header_row = row
-        headers = ["Xodim", "Bajarilgan", "Faol", "Kechikkan", "Davrda bajarilgan"]
-        for col, h in enumerate(headers, start=1):
-            ws.cell(row=row, column=col, value=h).font = Font(bold=True)
-        for r in data.rating:
-            row += 1
-            ws.cell(row=row, column=1, value=r.name)
-            ws.cell(row=row, column=2, value=r.done)
-            ws.cell(row=row, column=3, value=r.active)
-            ws.cell(row=row, column=4, value=r.overdue)
-            ws.cell(row=row, column=5, value=r.done_period)
-
-        rating_chart_obj = BarChart()
-        rating_chart_obj.title = "Davrda bajarilgan vazifalar — xodimlar"
-        last_row = row
-        rating_chart_obj.add_data(
-            Reference(ws, min_col=5, min_row=rating_header_row, max_row=last_row),
-            titles_from_data=True,
-        )
-        rating_chart_obj.set_categories(
-            Reference(ws, min_col=1, min_row=rating_header_row + 1, max_row=last_row)
-        )
-        ws.add_chart(rating_chart_obj, f"G{rating_header_row}")
-
-    for col, width in {"A": 32, "B": 14, "C": 14, "D": 14, "E": 18}.items():
-        ws.column_dimensions[col].width = width
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    return buf.getvalue()

@@ -44,7 +44,6 @@ export function TaskCard({ task, dep, onClick }: Props) {
                 task.masul_name.slice(0, 1).toUpperCase()
               )}
             </span>
-            {task.masul_emoji && <span className="emoji-badge">{task.masul_emoji}</span>}
           </span>
           {task.masul_name}
         </div>

@@ -8,12 +8,13 @@ import { Sheet, ActionRow } from "../components/Sheet";
 interface Props {
   task: Task | null; // null = yangi
   isBoss: boolean;
+  isObserver?: boolean;
   onClose: () => void;
   onSaved: () => void;
   onStatusChanged?: (task: Task) => void;
 }
 
-export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Props) {
+export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusChanged }: Props) {
   const { deps, columns, user } = useAuth();
   const { t } = useI18n();
   const [name, setName] = useState(task?.name || "");
@@ -352,36 +353,40 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
                 </div>
               ))}
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              style={{ display: "none" }}
-              onChange={onFileChange}
-            />
-            <input
-              ref={cameraRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              style={{ display: "none" }}
-              onChange={onFileChange}
-            />
-            <div className="report-row">
-              <button
-                className="btn btn--ghost"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? t("task.attachmentUploading") : t("task.attachmentUpload")}
-              </button>
-              <button
-                className="btn btn--ghost"
-                onClick={() => cameraRef.current?.click()}
-                disabled={uploading}
-              >
-                {t("task.attachmentCamera")}
-              </button>
-            </div>
+            {!isObserver && (
+              <>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  style={{ display: "none" }}
+                  onChange={onFileChange}
+                />
+                <input
+                  ref={cameraRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: "none" }}
+                  onChange={onFileChange}
+                />
+                <div className="report-row">
+                  <button
+                    className="btn btn--ghost"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? t("task.attachmentUploading") : t("task.attachmentUpload")}
+                  </button>
+                  <button
+                    className="btn btn--ghost"
+                    onClick={() => cameraRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {t("task.attachmentCamera")}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="section-title">{t("comment.title")}</div>
@@ -453,7 +458,7 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
               </div>
             )}
 
-            {workers.length > 0 && (
+            {!isObserver && workers.length > 0 && (
               <div className="field" style={{ marginBottom: 8 }}>
                 <label>{t("comment.target")}</label>
                 <select value={commentTarget} onChange={(e) => setCommentTarget(e.target.value)}>
@@ -467,21 +472,23 @@ export function TaskForm({ task, isBoss, onClose, onSaved, onStatusChanged }: Pr
               </div>
             )}
 
-            <div className="comment-input">
-              <textarea
-                value={commentText}
-                placeholder={t("comment.placeholder")}
-                onChange={(e) => setCommentText(e.target.value)}
-              />
-              <button
-                className="btn btn--primary"
-                style={{ width: "auto", padding: "12px 16px" }}
-                onClick={sendComment}
-                disabled={commentBusy || !commentText.trim()}
-              >
-                {t("comment.send")}
-              </button>
-            </div>
+            {!isObserver && (
+              <div className="comment-input">
+                <textarea
+                  value={commentText}
+                  placeholder={t("comment.placeholder")}
+                  onChange={(e) => setCommentText(e.target.value)}
+                />
+                <button
+                  className="btn btn--primary"
+                  style={{ width: "auto", padding: "12px 16px" }}
+                  onClick={sendComment}
+                  disabled={commentBusy || !commentText.trim()}
+                >
+                  {t("comment.send")}
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

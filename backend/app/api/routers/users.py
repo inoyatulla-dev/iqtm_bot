@@ -13,11 +13,15 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("", response_model=list[UserOut])
 async def list_users(
-    _: BossUser, session: SessionDep, status_filter: UserStatus | None = None
+    user: CurrentUser, session: SessionDep, status_filter: UserStatus | None = None
 ):
     stmt = select(User).order_by(User.name)
-    if status_filter:
-        stmt = stmt.where(User.status == status_filter)
+    if user.role == Role.BOSS:
+        if status_filter:
+            stmt = stmt.where(User.status == status_filter)
+    else:
+        # Xodim/kuzatuvchi faqat faol foydalanuvchilarni ko'radi
+        stmt = stmt.where(User.status == UserStatus.ACTIVE)
     result = await session.execute(stmt)
     return list(result.scalars().all())
 

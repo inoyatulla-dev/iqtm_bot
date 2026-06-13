@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { reportsApi, statsApi } from "../api/client";
-import type { ReportFormat, ReportPeriod } from "../api/client";
+import { statsApi } from "../api/client";
+import type { ReportPeriod } from "../api/client";
 import type { RatingRow, StatusCounts } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
@@ -14,31 +14,16 @@ export function StatsPage() {
   const [rating, setRating] = useState<RatingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<ReportPeriod>("week");
-  const [reportBusy, setReportBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const c = isBoss ? await statsApi.global() : await statsApi.me();
+      setLoading(true);
+      const c = isBoss ? await statsApi.global(period) : await statsApi.me(period);
       setCounts(c);
-      if (isBoss) setRating(await statsApi.rating());
+      if (isBoss) setRating(await statsApi.rating(period));
       setLoading(false);
     })();
-  }, [isBoss]);
-
-  async function downloadReport(fmt: ReportFormat) {
-    setReportBusy(true);
-    try {
-      const blob = await reportsApi.download(period, fmt);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `hisobot_${period}.${fmt}`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setReportBusy(false);
-    }
-  }
+  }, [isBoss, period]);
 
   if (loading || !counts) return <div className="center-screen">{t("common.loading")}</div>;
 
@@ -50,14 +35,29 @@ export function StatsPage() {
       color: col.color,
     })),
     { num: counts.overdue, label: `⚠️ ${t("stats.overdue")}`, color: "#ff5a5a" },
+    { num: counts.done_in_period, label: `✅ ${t("stats.doneInPeriod")}`, color: "var(--ok)" },
   ];
   const medal = (i: number) => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+  const maxDone = Math.max(1, ...rating.map((r) => r.done_in_period));
 
   return (
     <div className="page-content">
       <div className="section-title">
         {isBoss ? t("stats.titleGlobal") : t("stats.titleMy")}
       </div>
+
+      <div className="report-row" style={{ marginBottom: 16 }}>
+        {PERIODS.map((p) => (
+          <button
+            key={p}
+            className={`btn ${period === p ? "btn--primary" : "btn--ghost"}`}
+            onClick={() => setPeriod(p)}
+          >
+            {t(`stats.period.${p}`)}
+          </button>
+        ))}
+      </div>
+
       <div className="stat-grid">
         {cards.map((c) => (
           <div className="stat-card" key={c.label}>
@@ -83,35 +83,23 @@ export function StatsPage() {
               </div>
             </div>
           ))}
-        </>
-      )}
 
-      {isBoss && (
-        <>
-          <div className="section-title">{t("stats.reports")}</div>
-          <div className="report-controls">
-            <div className="report-row">
-              {PERIODS.map((p) => (
-                <button
-                  key={p}
-                  className={`btn ${period === p ? "btn--primary" : "btn--ghost"}`}
-                  onClick={() => setPeriod(p)}
-                >
-                  {t(`stats.period.${p}`)}
-                </button>
-              ))}
-            </div>
-            <div className="report-row">
-              <button className="btn btn--ghost" onClick={() => downloadReport("pdf")} disabled={reportBusy}>
-                📄 {t("stats.downloadPdf")}
-              </button>
-              <button className="btn btn--ghost" onClick={() => downloadReport("docx")} disabled={reportBusy}>
-                📝 {t("stats.downloadDocx")}
-              </button>
-              <button className="btn btn--ghost" onClick={() => downloadReport("xlsx")} disabled={reportBusy}>
-                📊 {t("stats.downloadExcel")}
-              </button>
-            </div>
+          <div className="section-title">{t("stats.efficiency")}</div>
+          <div className="card">
+            {rating.map((r) => (
+              <div className="dept-row" key={r.user_id}>
+                <div className="dept-row__head">
+                  <div className="dept-row__name">{r.name}</div>
+                  <div className="dept-row__count">{r.done_in_period}</div>
+                </div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-bar__fill"
+                    style={{ width: `${(r.done_in_period / maxDone) * 100}%`, background: "var(--accent)" }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </>
       )}

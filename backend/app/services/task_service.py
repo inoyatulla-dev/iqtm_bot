@@ -183,11 +183,11 @@ async def notify_comment(
 async def get_board_tasks(
     session: AsyncSession, user: User
 ) -> list[Task]:
-    """Doska uchun vazifalar — boshliq hammasini, xodim o'zinikini."""
+    """Doska uchun vazifalar — boshliq va kuzatuvchi hammasini, xodim o'zinikini."""
     from app.core.constants import Role, TaskType
 
     stmt = select(Task).where(Task.type != TaskType.PROJECT)
-    if user.role != Role.BOSS:
+    if user.role not in (Role.BOSS, Role.OBSERVER):
         stmt = stmt.where(
             (Task.masul_id == user.id) | (Task.created_by == user.id)
         )

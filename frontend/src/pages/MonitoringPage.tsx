@@ -1,19 +1,39 @@
 import { useEffect, useState } from "react";
-import { statsApi } from "../api/client";
+import { reportsApi, statsApi } from "../api/client";
+import type { ReportFormat, ReportPeriod } from "../api/client";
 import type { DashboardData } from "../api/types";
 import { useI18n } from "../i18n";
+
+const PERIODS: ReportPeriod[] = ["week", "month", "year"];
 
 export function MonitoringPage() {
   const { t } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<ReportPeriod>("month");
+  const [sending, setSending] = useState<ReportFormat | null>(null);
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    statsApi.dashboard().then((d) => {
+    setLoading(true);
+    statsApi.dashboard(period).then((d) => {
       setData(d);
       setLoading(false);
     });
-  }, []);
+  }, [period]);
+
+  async function sendReport(fmt: ReportFormat) {
+    setSending(fmt);
+    setSent(false);
+    try {
+      await reportsApi.send(period, fmt);
+      setSent(true);
+    } catch (e: any) {
+      alert(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setSending(null);
+    }
+  }
 
   if (loading || !data) return <div className="center-screen">{t("common.loading")}</div>;
 
@@ -29,6 +49,18 @@ export function MonitoringPage() {
 
   return (
     <div className="page-content">
+      <div className="report-row" style={{ marginBottom: 16 }}>
+        {PERIODS.map((p) => (
+          <button
+            key={p}
+            className={`btn ${period === p ? "btn--primary" : "btn--ghost"}`}
+            onClick={() => { setPeriod(p); setSent(false); }}
+          >
+            {t(`stats.period.${p}`)}
+          </button>
+        ))}
+      </div>
+
       <div className="stat-grid">
         <div className="stat-card">
           <div className="stat-card__num">{data.total}</div>
@@ -47,12 +79,12 @@ export function MonitoringPage() {
           <div className="stat-card__label">{t("monitoring.overdue")}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card__num">{data.new_this_month}</div>
-          <div className="stat-card__label">{t("monitoring.newThisMonth")}</div>
+          <div className="stat-card__num">{data.new_in_period}</div>
+          <div className="stat-card__label">{t("monitoring.newInPeriod")}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card__num">{data.closed_this_month}</div>
-          <div className="stat-card__label">{t("monitoring.closedThisMonth")}</div>
+          <div className="stat-card__num">{data.closed_in_period}</div>
+          <div className="stat-card__label">{t("monitoring.closedInPeriod")}</div>
         </div>
       </div>
 
@@ -91,6 +123,23 @@ export function MonitoringPage() {
             </span>
           ))}
         </div>
+      </div>
+
+      <div className="section-title">{t("monitoring.exportTitle")}</div>
+      <div className="report-controls">
+        <div className="report-row">
+          <button className="btn btn--ghost" onClick={() => sendReport("pdf")} disabled={!!sending}>
+            {sending === "pdf" ? t("monitoring.sending") : `📄 ${t("stats.downloadPdf")}`}
+          </button>
+          <button className="btn btn--ghost" onClick={() => sendReport("docx")} disabled={!!sending}>
+            {sending === "docx" ? t("monitoring.sending") : `📝 ${t("stats.downloadDocx")}`}
+          </button>
+        </div>
+        {sent && (
+          <div className="badge badge--ok" style={{ marginTop: 8 }}>
+            {t("monitoring.exportSent")}
+          </div>
+        )}
       </div>
     </div>
   );
