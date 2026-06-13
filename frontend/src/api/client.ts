@@ -198,7 +198,7 @@ export const statsApi = {
 export const projectsApi = {
   list: () => api.get<Project[]>("/projects").then((r) => r.data),
   get: (id: number) => api.get<ProjectDetail>(`/projects/${id}`).then((r) => r.data),
-  create: (body: { name: string; description?: string | null; tasks: ProjectTaskCreate[] }) =>
+  create: (body: { name: string; description?: string | null; deadline?: string | null; tasks: ProjectTaskCreate[] }) =>
     api.post<ProjectDetail>("/projects", body).then((r) => r.data),
   update: (id: number, body: Partial<Project>) =>
     api.patch<Project>(`/projects/${id}`, body).then((r) => r.data),

@@ -76,7 +76,9 @@ async def get_project(project_id: int, user: CurrentUser, session: SessionDep):
 
 @router.post("", response_model=ProjectDetail, status_code=status.HTTP_201_CREATED)
 async def create_project(body: ProjectCreate, boss: BossUser, session: SessionDep):
-    project = Project(name=body.name, description=body.description, created_by=boss.id)
+    project = Project(
+        name=body.name, description=body.description, created_by=boss.id, deadline=body.deadline
+    )
     session.add(project)
     await session.flush()
 

@@ -111,6 +111,7 @@ export interface Project {
   status: ProjectStatus;
   created_by: number;
   created_at?: string | null;
+  deadline?: string | null;
   task_count: number;
   done_count: number;
   percent: number;

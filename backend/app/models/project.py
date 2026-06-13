@@ -17,6 +17,7 @@ class Project(Base):
     status: Mapped[ProjectStatus] = mapped_column(EnumCol(ProjectStatus), default=ProjectStatus.ACTIVE)
     created_by: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    deadline: Mapped[date | None] = mapped_column(Date, default=None)
 
     stages: Mapped[list["ProjectStage"]] = relationship(
         back_populates="project",

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -15,6 +15,7 @@ class ProjectOut(BaseModel):
     status: ProjectStatus
     created_by: int
     created_at: datetime | None = None
+    deadline: date | None = None
     task_count: int = 0
     done_count: int = 0
     percent: int = 0
@@ -33,6 +34,7 @@ class ProjectTaskCreate(BaseModel):
 class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
+    deadline: date | None = None
     tasks: list[ProjectTaskCreate] = []
 
 
@@ -40,3 +42,4 @@ class ProjectUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     status: ProjectStatus | None = None
+    deadline: date | None = None

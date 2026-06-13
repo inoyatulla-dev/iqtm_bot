@@ -4,16 +4,18 @@ import type { ProjectDetail, ProjectStatus, ProjectTaskCreate, User } from "../a
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
+import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
 
 export function ProjectsPage() {
   const { isBoss, columns } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [deadline, setDeadline] = useState("");
   const [works, setWorks] = useState<ProjectTaskCreate[]>([{ name: "", masul_id: null }]);
 
   const [selId, setSelId] = useState<number | null>(null);
@@ -23,6 +25,7 @@ export function ProjectsPage() {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editStatus, setEditStatus] = useState<ProjectStatus>("active");
+  const [editDeadline, setEditDeadline] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
   const [taskName, setTaskName] = useState("");
@@ -52,6 +55,7 @@ export function ProjectsPage() {
   function openCreate() {
     setName("");
     setDescription("");
+    setDeadline("");
     setWorks([{ name: "", masul_id: null }]);
     ensureUsers();
     setCreating(true);
@@ -63,6 +67,7 @@ export function ProjectsPage() {
       await projectsApi.create({
         name: name.trim(),
         description: description.trim() || null,
+        deadline: deadline || null,
         tasks: works.filter((w) => w.name.trim()),
       });
       setCreating(false);
@@ -83,6 +88,7 @@ export function ProjectsPage() {
     setEditName(p.name);
     setEditDesc(p.description || "");
     setEditStatus(p.status);
+    setEditDeadline(p.deadline ? p.deadline.slice(0, 10) : "");
     setView("edit");
   }
 
@@ -94,6 +100,7 @@ export function ProjectsPage() {
         name: editName.trim(),
         description: editDesc.trim() || null,
         status: editStatus,
+        deadline: editDeadline || null,
       });
       await load();
       setView("detail");
@@ -216,6 +223,11 @@ export function ProjectsPage() {
                 style={{ width: `${p.percent}%`, background: progressColor(p.percent) }}
               />
             </div>
+            {p.deadline && (
+              <div className="project-task__assignee" style={{ marginTop: 6 }}>
+                {t("task.deadline")}: {formatDeadlineDate(p.deadline)} · {formatCountdown(p.deadline, lang)}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -229,6 +241,11 @@ export function ProjectsPage() {
           <div className="sheet__pad">
             {sel.description && (
               <p style={{ marginTop: 0, color: "var(--hint)" }}>{sel.description}</p>
+            )}
+            {sel.deadline && (
+              <p style={{ marginTop: 0, color: "var(--hint)" }}>
+                {t("task.deadline")}: {formatDeadlineDate(sel.deadline)} · {formatCountdown(sel.deadline, lang)}
+              </p>
             )}
             <div className="dept-row__head">
               <div className="dept-row__count">
@@ -284,6 +301,10 @@ export function ProjectsPage() {
                 <option value="done">{t("projects.status.done")}</option>
               </select>
             </div>
+            <div className="field">
+              <label>{t("task.deadline")}</label>
+              <input type="date" value={editDeadline} onChange={(e) => setEditDeadline(e.target.value)} />
+            </div>
             <button className="btn btn--primary" onClick={saveEdit} disabled={editSaving}>
               {editSaving ? t("task.saving") : t("common.save")}
             </button>
@@ -335,6 +356,10 @@ export function ProjectsPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t("projects.descPh")}
               />
+            </div>
+            <div className="field">
+              <label>{t("task.deadline")}</label>
+              <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
             </div>
             <div className="field">
               <label>{t("projects.tasksLabel")}</label>

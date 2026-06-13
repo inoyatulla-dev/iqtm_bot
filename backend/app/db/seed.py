@@ -81,6 +81,7 @@ async def init_models() -> None:
             "ALTER TABLE users ADD COLUMN photo VARCHAR(255)",
             "ALTER TABLE users ADD COLUMN birthday DATE",
             "ALTER TABLE users ADD COLUMN custom_emoji VARCHAR(8)",
+            "ALTER TABLE projects ADD COLUMN deadline DATE",
         ]:
             try:
                 await conn.exec_driver_sql(stmt)
