@@ -30,7 +30,7 @@ export function Layout({ tab, onTab, user, pendingCount, children }: Props) {
       ? [{ id: "applications" as Tab, text: t("tabs.applications"), icon: "📥", badge: pendingCount }]
       : []),
     ...(!isObserver ? [{ id: "users" as Tab, text: t("tabs.users"), icon: "👥" }] : []),
-    ...(!isObserver ? [{ id: "projects" as Tab, text: t("tabs.projects"), icon: "🗂" }] : []),
+    { id: "projects", text: t("tabs.projects"), icon: "🗂" },
     ...(isBoss || isObserver ? [{ id: "monitoring" as Tab, text: t("tabs.monitoring"), icon: "📊" }] : []),
     ...(!isObserver ? [{ id: "stats" as Tab, text: t("tabs.stats"), icon: "📈" }] : []),
     { id: "settings", text: t("tabs.settings"), icon: "⚙️" },

@@ -42,6 +42,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
   // ── Biriktirmalar ──
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [viewImage, setViewImage] = useState<{ name: string; src: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -199,6 +200,21 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
     URL.revokeObjectURL(url);
   }
 
+  async function openImage(a: Attachment) {
+    if (!task) return;
+    if (a.url) {
+      setViewImage({ name: a.file_name, src: a.url });
+      return;
+    }
+    const blob = await attachmentsApi.download(task.id, a.id);
+    setViewImage({ name: a.file_name, src: URL.createObjectURL(blob) });
+  }
+
+  function closeImage() {
+    if (viewImage?.src.startsWith("blob:")) URL.revokeObjectURL(viewImage.src);
+    setViewImage(null);
+  }
+
   return (
     <Sheet title={task ? `#${task.id}` : t("task.new")} onClose={onClose}>
       <div className="sheet__pad">
@@ -325,33 +341,43 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
               {attachments.length === 0 && (
                 <div className="comment-empty">{t("task.attachmentEmpty")}</div>
               )}
-              {attachments.map((a) => (
-                <div className="attachment" key={a.id}>
-                  {a.url ? (
-                    <a
-                      className="attachment__name"
-                      href={a.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      📎 {a.file_name}
-                    </a>
-                  ) : (
-                    <button
-                      className="attachment__name attachment__link"
-                      onClick={() => downloadAttachment(a)}
-                    >
-                      📎 {a.file_name}
-                    </button>
-                  )}
-                  <span className="attachment__size">{formatFileSize(a.size)}</span>
-                  {(isBoss || a.uploaded_by === user?.id) && (
-                    <button className="attachment__remove" onClick={() => removeAttachment(a)}>
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
+              {attachments.map((a) => {
+                const isImage = a.mime_type?.startsWith("image/");
+                return (
+                  <div className="attachment" key={a.id}>
+                    {isImage ? (
+                      <button
+                        className="attachment__name attachment__link"
+                        onClick={() => openImage(a)}
+                      >
+                        🖼 {a.file_name}
+                      </button>
+                    ) : a.url ? (
+                      <a
+                        className="attachment__name"
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        📎 {a.file_name}
+                      </a>
+                    ) : (
+                      <button
+                        className="attachment__name attachment__link"
+                        onClick={() => downloadAttachment(a)}
+                      >
+                        📎 {a.file_name}
+                      </button>
+                    )}
+                    <span className="attachment__size">{formatFileSize(a.size)}</span>
+                    {(isBoss || a.uploaded_by === user?.id) && (
+                      <button className="attachment__remove" onClick={() => removeAttachment(a)}>
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             {!isObserver && (
               <>
@@ -389,6 +415,8 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
             )}
           </div>
 
+          {!isObserver && (
+          <>
           <div className="section-title">{t("comment.title")}</div>
           <div className="sheet__pad">
             <div className="comment-list">
@@ -458,7 +486,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
               </div>
             )}
 
-            {!isObserver && workers.length > 0 && (
+            {workers.length > 0 && (
               <div className="field" style={{ marginBottom: 8 }}>
                 <label>{t("comment.target")}</label>
                 <select value={commentTarget} onChange={(e) => setCommentTarget(e.target.value)}>
@@ -472,25 +500,34 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
               </div>
             )}
 
-            {!isObserver && (
-              <div className="comment-input">
-                <textarea
-                  value={commentText}
-                  placeholder={t("comment.placeholder")}
-                  onChange={(e) => setCommentText(e.target.value)}
-                />
-                <button
-                  className="btn btn--primary"
-                  style={{ width: "auto", padding: "12px 16px" }}
-                  onClick={sendComment}
-                  disabled={commentBusy || !commentText.trim()}
-                >
-                  {t("comment.send")}
-                </button>
-              </div>
-            )}
+            <div className="comment-input">
+              <textarea
+                value={commentText}
+                placeholder={t("comment.placeholder")}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <button
+                className="btn btn--primary"
+                style={{ width: "auto", padding: "12px 16px" }}
+                onClick={sendComment}
+                disabled={commentBusy || !commentText.trim()}
+              >
+                {t("comment.send")}
+              </button>
+            </div>
           </div>
+          </>
+          )}
         </>
+      )}
+
+      {viewImage && (
+        <div className="image-viewer" onClick={closeImage}>
+          <img src={viewImage.src} alt={viewImage.name} onClick={(e) => e.stopPropagation()} />
+          <button className="image-viewer__close" onClick={closeImage}>
+            ✕
+          </button>
+        </div>
       )}
 
       <div className="sheet__pad">
