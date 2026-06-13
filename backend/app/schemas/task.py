@@ -15,6 +15,7 @@ class TaskOut(BaseModel):
     masul_id: int | None = None
     masul_name: str | None = None
     masul_photo: str | None = None
+    masul_emoji: str | None = None
     created_by: int
     deadline: datetime | None = None
     status: str
@@ -32,6 +33,7 @@ class TaskCreate(BaseModel):
     masul_id: int | None = None
     deadline: datetime | None = None
     type: TaskType = TaskType.STANDALONE
+    project_id: int | None = None
 
 
 class TaskUpdate(BaseModel):

@@ -258,6 +258,7 @@ async def _to_out_batch(
         masul_info = info.get(task.masul_id) if task.masul_id else None
         out.masul_name = masul_info[0] if masul_info else None
         out.masul_photo = masul_info[1] if masul_info else None
+        out.masul_emoji = masul_info[2] if masul_info else None
         out.attachments_count = counts.get(task.id, 0)
         out_list.append(out)
     return out_list
@@ -270,13 +271,15 @@ async def _author_names(session: SessionDep, user_ids: set[int]) -> dict[int, st
     return dict(result.all())
 
 
-async def _author_info(session: SessionDep, user_ids: set[int]) -> dict[int, tuple[str, str | None]]:
+async def _author_info(
+    session: SessionDep, user_ids: set[int]
+) -> dict[int, tuple[str, str | None, str | None]]:
     if not user_ids:
         return {}
     result = await session.execute(
-        select(User.id, User.name, User.photo).where(User.id.in_(user_ids))
+        select(User.id, User.name, User.photo, User.custom_emoji).where(User.id.in_(user_ids))
     )
-    return {uid: (name, photo) for uid, name, photo in result.all()}
+    return {uid: (name, photo, emoji) for uid, name, photo, emoji in result.all()}
 
 
 def _comment_out(

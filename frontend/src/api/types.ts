@@ -1,6 +1,7 @@
-export type Role = "boss" | "worker";
+export type Role = "boss" | "worker" | "observer";
 export type UserStatus = "active" | "pending" | "blocked";
 export type TaskType = "standalone" | "personal" | "project";
+export type ProjectStatus = "active" | "done";
 
 export interface User {
   id: number;
@@ -13,6 +14,7 @@ export interface User {
   photo?: string | null;
   birthday?: string | null;
   birthday_in_days?: number | null;
+  custom_emoji?: string | null;
   created_at?: string;
 }
 
@@ -44,6 +46,7 @@ export interface Task {
   masul_id: number | null;
   masul_name?: string | null;
   masul_photo?: string | null;
+  masul_emoji?: string | null;
   created_by: number;
   deadline: string | null;
   status: string;
@@ -99,8 +102,62 @@ export interface RatingRow {
   overdue: number;
 }
 
+export interface Project {
+  id: number;
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  created_by: number;
+  created_at?: string | null;
+  task_count: number;
+  done_count: number;
+  percent: number;
+}
+
+export interface ProjectDetail extends Project {
+  tasks: Task[];
+}
+
+export interface ProjectTaskCreate {
+  name: string;
+  masul_id?: number | null;
+  dep_id?: string | null;
+}
+
+export interface DeptProgress {
+  dep_id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  total: number;
+  done: number;
+  percent: number;
+}
+
+export interface DistributionSlice {
+  key: string;
+  label: string;
+  color: string;
+  percent: number;
+}
+
+export interface DashboardData {
+  total: number;
+  done: number;
+  in_progress: number;
+  overdue: number;
+  new_this_month: number;
+  closed_this_month: number;
+  departments: DeptProgress[];
+  distribution: DistributionSlice[];
+}
+
 // ── UI yorliqlari ──────────────────────────────────────
 export const ROLE_LABEL: Record<Role, string> = {
   boss: "Admin",
   worker: "Xodim",
+  observer: "Kuzatuvchi",
 };
+
+// ── Profil emoji tanlovi ────────────────────────────────
+export const PROFILE_EMOJI_OPTIONS = ["🚀", "🎯", "⚡", "🎨", "📊", "🧠", "🔥", "🌟"];

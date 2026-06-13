@@ -71,6 +71,8 @@ async def update_profile(
     user.name = name
     if body.birthday is not None:
         user.birthday = body.birthday
+    if body.custom_emoji is not None:
+        user.custom_emoji = body.custom_emoji
     return user_out_with_birthday(user)
 
 

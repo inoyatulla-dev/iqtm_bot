@@ -18,6 +18,7 @@ class ProfileUpdate(BaseModel):
     first_name: str
     last_name: str = ""
     birthday: date | None = None
+    custom_emoji: str | None = None
 
 
 class LangUpdate(BaseModel):

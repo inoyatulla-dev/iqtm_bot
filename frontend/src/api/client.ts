@@ -1,7 +1,8 @@
 import axios from "axios";
 import { getInitData } from "../telegram";
 import type {
-  Attachment, BoardColumn, Comment, Department, RatingRow, StatusCounts, Task, Topic, User,
+  Attachment, BoardColumn, Comment, DashboardData, Department, Project, ProjectDetail,
+  ProjectTaskCreate, RatingRow, StatusCounts, Task, Topic, User,
 } from "./types";
 
 export const api = axios.create({ baseURL: "/api" });
@@ -27,9 +28,11 @@ export async function authenticate(): Promise<{ token: string; user: User }> {
 }
 
 export async function updateProfile(
-  first_name: string, last_name: string, birthday?: string | null
+  first_name: string, last_name: string, birthday?: string | null, custom_emoji?: string | null
 ): Promise<User> {
-  const { data } = await api.post<User>("/auth/profile", { first_name, last_name, birthday });
+  const { data } = await api.post<User>("/auth/profile", {
+    first_name, last_name, birthday, custom_emoji,
+  });
   return data;
 }
 
@@ -187,6 +190,18 @@ export const statsApi = {
   me: () => api.get<StatusCounts>("/stats/me").then((r) => r.data),
   global: () => api.get<StatusCounts>("/stats/global").then((r) => r.data),
   rating: () => api.get<RatingRow[]>("/stats/rating").then((r) => r.data),
+  dashboard: () => api.get<DashboardData>("/stats/dashboard").then((r) => r.data),
+};
+
+// ── Loyihalar ──────────────────────────────────────────
+export const projectsApi = {
+  list: () => api.get<Project[]>("/projects").then((r) => r.data),
+  get: (id: number) => api.get<ProjectDetail>(`/projects/${id}`).then((r) => r.data),
+  create: (body: { name: string; description?: string | null; tasks: ProjectTaskCreate[] }) =>
+    api.post<ProjectDetail>("/projects", body).then((r) => r.data),
+  update: (id: number, body: Partial<Project>) =>
+    api.patch<Project>(`/projects/${id}`, body).then((r) => r.data),
+  remove: (id: number) => api.delete(`/projects/${id}`),
 };
 
 // ── Hisobotlar ─────────────────────────────────────────

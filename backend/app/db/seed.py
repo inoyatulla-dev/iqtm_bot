@@ -80,6 +80,7 @@ async def init_models() -> None:
             "ALTER TABLE comments ADD COLUMN parent_id INTEGER",
             "ALTER TABLE users ADD COLUMN photo VARCHAR(255)",
             "ALTER TABLE users ADD COLUMN birthday DATE",
+            "ALTER TABLE users ADD COLUMN custom_emoji VARCHAR(8)",
         ]:
             try:
                 await conn.exec_driver_sql(stmt)

@@ -58,6 +58,7 @@ async def create_task(
         created_by=created_by,
         deadline=data.deadline,
         type=data.type,
+        project_id=data.project_id,
         status=await board_service.get_initial_key(session),
     )
     session.add(task)

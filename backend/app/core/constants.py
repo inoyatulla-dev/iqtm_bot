@@ -6,12 +6,13 @@ from enum import Enum
 
 
 class Role(str, Enum):
-    BOSS = "boss"        # Boshliq (super admin)
-    WORKER = "worker"    # Xodim
+    BOSS = "boss"          # Boshliq (super admin)
+    WORKER = "worker"      # Xodim
+    OBSERVER = "observer"  # Kuzatuvchi (faqat ko'rish)
 
     @property
     def label(self) -> str:
-        return {"boss": "Admin", "worker": "Xodim"}[self.value]
+        return {"boss": "Admin", "worker": "Xodim", "observer": "Kuzatuvchi"}[self.value]
 
 
 class UserStatus(str, Enum):

@@ -41,7 +41,6 @@ export function UsersPage() {
 
   if (loading) return <div className="center-screen">{t("common.loading")}</div>;
 
-  const pending = users.filter((u) => u.status === "pending");
   const active = users.filter((u) => u.status !== "pending");
   const depName = (id: string | null) => deps.find((d) => d.id === id)?.name || t("users.noDept");
   const initials = (n: string) => n.trim().charAt(0).toUpperCase();
@@ -81,32 +80,6 @@ export function UsersPage() {
         </button>
       </div>
 
-      {pending.length > 0 && (
-        <>
-          <div className="section-title">
-            {t("users.pending")} ({pending.length})
-          </div>
-          {pending.map((u) => (
-            <div className="list-item" key={u.id}>
-              <div className="list-item__avatar">{initials(u.name)}</div>
-              <div className="list-item__body">
-                <div className="list-item__title">{u.name}</div>
-                <div className="list-item__sub">@{u.username || "—"}</div>
-              </div>
-              <div className="list-item__after">
-                <button
-                  className="btn btn--primary"
-                  style={{ width: "auto", padding: "8px 14px", fontSize: 14 }}
-                  onClick={() => patch(u.id, { status: "active", role: "worker" })}
-                >
-                  {t("users.approve")}
-                </button>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-
       <div className="section-title">
         {t("users.list")} ({visible.length})
       </div>
@@ -128,6 +101,7 @@ export function UsersPage() {
                   <div className="avatar" style={{ background: avatarGradient(u.id) }}>
                     {u.photo ? <img src={u.photo} alt="" /> : initials(u.name)}
                   </div>
+                  {u.custom_emoji && <span className="emoji-badge">{u.custom_emoji}</span>}
                 </div>
                 <div>
                   <div className="emp-card__name">

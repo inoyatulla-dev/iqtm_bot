@@ -25,6 +25,11 @@ async def get_done_keys(session: AsyncSession) -> set[str]:
     return set(result.scalars().all())
 
 
+async def get_initial_keys(session: AsyncSession) -> set[str]:
+    result = await session.execute(select(BoardColumn.key).where(BoardColumn.is_initial.is_(True)))
+    return set(result.scalars().all())
+
+
 async def get_initial_key(session: AsyncSession) -> str:
     col = await session.scalar(select(BoardColumn).where(BoardColumn.is_initial.is_(True)))
     if col:

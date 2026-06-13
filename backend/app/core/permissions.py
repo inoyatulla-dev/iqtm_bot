@@ -10,6 +10,15 @@ def is_boss(user: User) -> bool:
     return user.role == Role.BOSS
 
 
+def is_observer(user: User) -> bool:
+    return user.role == Role.OBSERVER
+
+
+def can_view_dashboard(user: User) -> bool:
+    """Monitoring paneli — boshliq va kuzatuvchi ko'ra oladi."""
+    return is_boss(user) or is_observer(user)
+
+
 def can_manage_users(user: User) -> bool:
     """Xodim/bo'lim/sozlama CRUD — faqat boshliq."""
     return is_boss(user)

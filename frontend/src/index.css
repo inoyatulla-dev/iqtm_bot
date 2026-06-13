@@ -125,6 +125,7 @@ body {
 }
 
 .tabbar__item {
+  position: relative;
   flex: 1;
   background: transparent;
   border: none;
@@ -135,6 +136,22 @@ body {
   gap: 2px;
   color: var(--hint);
   cursor: pointer;
+}
+
+.tabbar__badge {
+  position: absolute;
+  top: 2px;
+  right: 14px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 
 .tabbar__item.active {
@@ -216,6 +233,14 @@ body {
   font-size: 13px;
   text-align: center;
   padding: 24px 0;
+}
+
+.empty-state {
+  color: var(--hint);
+  opacity: 0.6;
+  font-size: 14px;
+  text-align: center;
+  padding: 32px 0;
 }
 
 /* ── Vazifa kartochkasi ─────────────────────────────── */
@@ -756,6 +781,209 @@ body {
   margin-top: 4px;
 }
 
+/* ── Karta konteyner (Loyihalar/Monitoring) ──────────── */
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 0 16px 14px;
+}
+
+/* ── Loyihalar ────────────────────────────────────────── */
+.project-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.project-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.project-card__name {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.progress-bar {
+  height: 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  border-radius: 6px;
+}
+
+.project-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.project-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.project-task__assignee {
+  margin-left: auto;
+  color: var(--hint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.work-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.work-row input {
+  flex: 2;
+}
+
+.work-row select {
+  flex: 1;
+}
+
+.work-row__remove {
+  background: rgba(248, 113, 113, 0.14);
+  color: var(--danger);
+  border: none;
+  border-radius: 10px;
+  width: 42px;
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ── Monitoring ───────────────────────────────────────── */
+.dept-row {
+  margin-bottom: 16px;
+}
+
+.dept-row:last-child {
+  margin-bottom: 0;
+}
+
+.dept-row__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  margin-bottom: 6px;
+}
+
+.dept-row__name {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dept-row__count {
+  color: var(--hint);
+  font-size: 12.5px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.grid-2 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.donut {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.donut::after {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  background: var(--bg-elev);
+  border-radius: 50%;
+}
+
+.donut-legend {
+  font-size: 12.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.donut-legend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* ── Maxsus emoji tanlash (profil) ───────────────────── */
+.emoji-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.emoji-opt {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.emoji-opt.selected {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.15);
+}
+
 /* ── Center / placeholder ───────────────────────────── */
 .center-screen {
   height: 100vh;
@@ -1102,7 +1330,8 @@ body {
   /* ── Xodimlar grid ── */
   .toolbar,
   .emp-grid,
-  .birthday-banner {
+  .birthday-banner,
+  .project-grid {
     margin-left: 0;
     margin-right: 0;
     padding-left: 24px;
@@ -1111,6 +1340,23 @@ body {
 
   .emp-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* ── Loyihalar / Monitoring ── */
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .card {
+    margin: 0 24px 16px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
   }
 
   .stat-card {

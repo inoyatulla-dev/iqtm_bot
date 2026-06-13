@@ -13,6 +13,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isBoss: boolean;
+  isObserver: boolean;
   reload: () => void;
 }
 
@@ -67,7 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthCtx.Provider
       value={{
         user, deps, columns, loading, error,
-        isBoss: user?.role === "boss", reload: load,
+        isBoss: user?.role === "boss",
+        isObserver: user?.role === "observer",
+        reload: load,
       }}
     >
       <I18nProvider lang={lang} setLang={setLang}>

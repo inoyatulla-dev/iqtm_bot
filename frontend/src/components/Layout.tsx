@@ -3,24 +3,36 @@ import type { User } from "../api/types";
 import { useI18n } from "../i18n";
 import { Logo } from "./Logo";
 
-export type Tab = "board" | "users" | "stats" | "settings";
+export type Tab =
+  | "board"
+  | "applications"
+  | "users"
+  | "projects"
+  | "monitoring"
+  | "stats"
+  | "settings";
 
 interface Props {
   tab: Tab;
   onTab: (t: Tab) => void;
   user: User;
+  pendingCount?: number;
   children: ReactNode;
 }
 
-export function Layout({ tab, onTab, user, children }: Props) {
+export function Layout({ tab, onTab, user, pendingCount, children }: Props) {
   const { t } = useI18n();
   const isBoss = user.role === "boss";
-  const tabs: { id: Tab; text: string; icon: string }[] = [
+  const isObserver = user.role === "observer";
+  const tabs: { id: Tab; text: string; icon: string; badge?: number }[] = [
     { id: "board", text: t("tabs.board"), icon: "📋" },
     ...(isBoss
-      ? ([{ id: "users", text: t("tabs.users"), icon: "👥" }] as const)
+      ? [{ id: "applications" as Tab, text: t("tabs.applications"), icon: "📥", badge: pendingCount }]
       : []),
-    { id: "stats", text: t("tabs.stats"), icon: "📊" },
+    ...(isBoss ? [{ id: "users" as Tab, text: t("tabs.users"), icon: "👥" }] : []),
+    ...(!isObserver ? [{ id: "projects" as Tab, text: t("tabs.projects"), icon: "🗂" }] : []),
+    ...(isBoss || isObserver ? [{ id: "monitoring" as Tab, text: t("tabs.monitoring"), icon: "📊" }] : []),
+    { id: "stats", text: t("tabs.stats"), icon: "📈" },
     { id: "settings", text: t("tabs.settings"), icon: "⚙️" },
   ];
 
@@ -32,14 +44,15 @@ export function Layout({ tab, onTab, user, children }: Props) {
           <Logo />
           <span className="tabbar__brand-name">IQTM</span>
         </div>
-        {tabs.map((t) => (
+        {tabs.map((tb) => (
           <button
-            key={t.id}
-            className={`tabbar__item${tab === t.id ? " active" : ""}`}
-            onClick={() => onTab(t.id)}
+            key={tb.id}
+            className={`tabbar__item${tab === tb.id ? " active" : ""}`}
+            onClick={() => onTab(tb.id)}
           >
-            <span className="tabbar__icon">{t.icon}</span>
-            <span className="tabbar__text">{t.text}</span>
+            <span className="tabbar__icon">{tb.icon}</span>
+            <span className="tabbar__text">{tb.text}</span>
+            {!!tb.badge && <span className="tabbar__badge">{tb.badge}</span>}
           </button>
         ))}
       </nav>

@@ -66,3 +66,14 @@ async def require_boss(user: CurrentUser) -> User:
 
 
 BossUser = Annotated[User, Depends(require_boss)]
+
+
+async def require_dashboard_access(user: CurrentUser) -> User:
+    if not permissions.can_view_dashboard(user):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "Bu amal faqat boshliq/kuzatuvchi uchun"
+        )
+    return user
+
+
+DashboardUser = Annotated[User, Depends(require_dashboard_access)]

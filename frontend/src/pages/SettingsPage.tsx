@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   depsApi, settingsApi, updateProfile, uploadProfilePhoto, type AppSettings,
 } from "../api/client";
+import { PROFILE_EMOJI_OPTIONS } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n, LANGS, type Lang } from "../i18n";
 import { BoardColumnsSection } from "../components/BoardColumnsSection";
@@ -121,6 +122,7 @@ function ProfileView() {
   const [firstName, setFirstName] = useState(first0);
   const [lastName, setLastName] = useState(last0);
   const [birthday, setBirthday] = useState(user?.birthday || "");
+  const [customEmoji, setCustomEmoji] = useState(user?.custom_emoji || null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -132,7 +134,8 @@ function ProfileView() {
     setFirstName(f);
     setLastName(l);
     setBirthday(user?.birthday || "");
-  }, [user?.name, user?.birthday]);
+    setCustomEmoji(user?.custom_emoji || null);
+  }, [user?.name, user?.birthday, user?.custom_emoji]);
 
   async function save() {
     if (firstName.trim().length < 1) {
@@ -142,7 +145,7 @@ function ProfileView() {
     setSaving(true);
     setErr("");
     try {
-      await updateProfile(firstName.trim(), lastName.trim(), birthday || null);
+      await updateProfile(firstName.trim(), lastName.trim(), birthday || null, customEmoji);
       await reload();
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
@@ -174,17 +177,20 @@ function ProfileView() {
       <div className="section-title">{t("settings.profile")}</div>
       <div className="sheet__pad">
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
-          {user?.photo ? (
-            <img
-              src={user.photo}
-              alt=""
-              style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }}
-            />
-          ) : (
-            <div className="list-item__avatar" style={{ width: 64, height: 64, fontSize: 24 }}>
-              {firstName.slice(0, 1).toUpperCase()}
-            </div>
-          )}
+          <div className="avatar-wrap" style={{ width: 64, height: 64, fontSize: 24 }}>
+            {user?.photo ? (
+              <img
+                src={user.photo}
+                alt=""
+                style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }}
+              />
+            ) : (
+              <div className="list-item__avatar" style={{ width: 64, height: 64, fontSize: 24 }}>
+                {firstName.slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            {customEmoji && <span className="emoji-badge">{customEmoji}</span>}
+          </div>
           <div>
             <input
               ref={fileRef}
@@ -218,6 +224,20 @@ function ProfileView() {
             value={birthday ?? ""}
             onChange={(e) => setBirthday(e.target.value)}
           />
+        </div>
+        <div className="field">
+          <label>{t("settings.emoji")}</label>
+          <div className="emoji-picker">
+            {PROFILE_EMOJI_OPTIONS.map((emoji) => (
+              <div
+                key={emoji}
+                className={`emoji-opt${customEmoji === emoji ? " selected" : ""}`}
+                onClick={() => setCustomEmoji(customEmoji === emoji ? null : emoji)}
+              >
+                {emoji}
+              </div>
+            ))}
+          </div>
         </div>
         {err && <div className="form-error">{err}</div>}
         <button className="btn btn--primary" onClick={save} disabled={saving}>
