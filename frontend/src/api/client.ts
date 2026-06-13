@@ -140,6 +140,7 @@ export const depsApi = {
 export interface AppSettings {
   group_chat_id: string;
   routes: Record<string, number | null>;
+  templates: Record<string, string>;
   max_file_mb: number;
   storage_limit_gb: number;
   archive_channel_id: string;

@@ -3,7 +3,7 @@ import type { User } from "../api/types";
 import { useI18n } from "../i18n";
 import { Logo } from "./Logo";
 
-export type Tab = "board" | "users" | "departments" | "stats" | "settings";
+export type Tab = "board" | "users" | "stats" | "settings";
 
 interface Props {
   tab: Tab;
@@ -18,10 +18,7 @@ export function Layout({ tab, onTab, user, children }: Props) {
   const tabs: { id: Tab; text: string; icon: string }[] = [
     { id: "board", text: t("tabs.board"), icon: "📋" },
     ...(isBoss
-      ? ([
-          { id: "users", text: t("tabs.users"), icon: "👥" },
-          { id: "departments", text: t("tabs.departments"), icon: "🏢" },
-        ] as const)
+      ? ([{ id: "users", text: t("tabs.users"), icon: "👥" }] as const)
       : []),
     { id: "stats", text: t("tabs.stats"), icon: "📊" },
     { id: "settings", text: t("tabs.settings"), icon: "⚙️" },

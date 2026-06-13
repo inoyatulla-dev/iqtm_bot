@@ -43,6 +43,7 @@ export interface Task {
   dep_id: string | null;
   masul_id: number | null;
   masul_name?: string | null;
+  masul_photo?: string | null;
   created_by: number;
   deadline: string | null;
   status: string;

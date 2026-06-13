@@ -5,7 +5,8 @@ import {
 import { useAuth } from "../store/auth";
 import { useI18n, LANGS, type Lang } from "../i18n";
 import { BoardColumnsSection } from "../components/BoardColumnsSection";
-import { TopicsSection } from "../components/TopicsSection";
+import { DepartmentsSection } from "../components/DepartmentsSection";
+import { TemplatesSection } from "../components/TemplatesSection";
 
 function splitName(name?: string): [string, string] {
   if (!name) return ["", ""];
@@ -13,49 +14,109 @@ function splitName(name?: string): [string, string] {
   return [first || "", rest.join(" ")];
 }
 
-type TabKey = "profile" | "group" | "board" | "branding";
+type View =
+  | "menu"
+  | "profile"
+  | "language"
+  | "group-menu"
+  | "group-main"
+  | "group-departments"
+  | "templates"
+  | "board"
+  | "branding";
+
+function viewTitleKey(view: View): string {
+  switch (view) {
+    case "profile":
+      return "settings.menu.profile";
+    case "language":
+      return "settings.menu.language";
+    case "group-menu":
+      return "settings.menu.group";
+    case "group-main":
+      return "settings.group.main";
+    case "group-departments":
+      return "settings.group.departments";
+    case "templates":
+      return "settings.menu.templates";
+    case "board":
+      return "settings.menu.board";
+    case "branding":
+      return "settings.menu.branding";
+    default:
+      return "tabs.settings";
+  }
+}
 
 export function SettingsPage() {
   const { isBoss } = useAuth();
   const { t } = useI18n();
-  const [tab, setTab] = useState<TabKey>("profile");
+  const [stack, setStack] = useState<View[]>(["menu"]);
+  const view = stack[stack.length - 1];
 
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: "profile", label: t("settings.tab.profile") },
-    ...(isBoss
-      ? ([
-          { key: "group", label: t("settings.tab.group") },
-          { key: "board", label: t("settings.tab.board") },
-          { key: "branding", label: t("settings.tab.branding") },
-        ] as { key: TabKey; label: string }[])
-      : []),
-  ];
+  function push(v: View) {
+    setStack((s) => [...s, v]);
+  }
+  function back() {
+    setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+  }
 
   return (
     <div className="page-content">
-      <div className="settings-tabs">
-        {tabs.map((tb) => (
-          <button
-            key={tb.key}
-            className={`btn ${tab === tb.key ? "btn--primary" : "btn--ghost"}`}
-            onClick={() => setTab(tb.key)}
-          >
-            {tb.label}
+      {view !== "menu" && (
+        <div className="settings-header">
+          <button className="btn btn--ghost settings-header__back" onClick={back}>
+            ←
           </button>
-        ))}
-      </div>
+          <div className="settings-header__title">{t(viewTitleKey(view))}</div>
+        </div>
+      )}
 
-      {tab === "profile" && <ProfileTab />}
-      {isBoss && tab === "group" && <GroupTab />}
-      {isBoss && tab === "board" && <BoardColumnsSection />}
-      {isBoss && tab === "branding" && <BrandingTab />}
+      {view === "menu" && <MenuView isBoss={isBoss} onNav={push} />}
+      {view === "profile" && <ProfileView />}
+      {view === "language" && <LanguageView />}
+      {view === "group-menu" && <GroupMenuView onNav={push} />}
+      {view === "group-main" && <GroupMainView />}
+      {view === "group-departments" && <DepartmentsSection />}
+      {view === "templates" && <TemplatesSection />}
+      {view === "board" && <BoardColumnsSection />}
+      {view === "branding" && <BrandingTab />}
     </div>
   );
 }
 
-function ProfileTab() {
+function MenuView({ isBoss, onNav }: { isBoss: boolean; onNav: (v: View) => void }) {
+  const { t } = useI18n();
+  const items: { key: View; label: string }[] = [
+    { key: "profile", label: t("settings.menu.profile") },
+    ...(isBoss
+      ? ([
+          { key: "group-menu", label: t("settings.menu.group") },
+          { key: "templates", label: t("settings.menu.templates") },
+          { key: "board", label: t("settings.menu.board") },
+          { key: "branding", label: t("settings.menu.branding") },
+        ] as { key: View; label: string }[])
+      : []),
+    { key: "language", label: t("settings.menu.language") },
+  ];
+
+  return (
+    <>
+      {items.map((i) => (
+        <div className="list-item" key={i.key} onClick={() => onNav(i.key)}>
+          <div className="list-item__body">
+            <div className="list-item__title">{i.label}</div>
+          </div>
+          <span className="list-item__after">›</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function ProfileView() {
   const { user, reload } = useAuth();
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const [first0, last0] = splitName(user?.name);
   const [firstName, setFirstName] = useState(first0);
   const [lastName, setLastName] = useState(last0);
@@ -163,7 +224,14 @@ function ProfileTab() {
           {saved ? t("settings.profileSaved") : t("common.save")}
         </button>
       </div>
+    </>
+  );
+}
 
+function LanguageView() {
+  const { t, lang, setLang } = useI18n();
+  return (
+    <>
       <div className="section-title">{t("settings.language")}</div>
       <div className="sheet__pad">
         <div style={{ display: "flex", gap: 8 }}>
@@ -183,7 +251,28 @@ function ProfileTab() {
   );
 }
 
-function GroupTab() {
+function GroupMenuView({ onNav }: { onNav: (v: View) => void }) {
+  const { t } = useI18n();
+  const items: { key: View; label: string }[] = [
+    { key: "group-main", label: t("settings.group.main") },
+    { key: "group-departments", label: t("settings.group.departments") },
+  ];
+
+  return (
+    <>
+      {items.map((i) => (
+        <div className="list-item" key={i.key} onClick={() => onNav(i.key)}>
+          <div className="list-item__body">
+            <div className="list-item__title">{i.label}</div>
+          </div>
+          <span className="list-item__after">›</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function GroupMainView() {
   const { deps, reload } = useAuth();
   const { t } = useI18n();
   const [s, setS] = useState<AppSettings | null>(null);
@@ -242,8 +331,6 @@ function GroupTab() {
           {saved ? t("common.saved") : t("common.save")}
         </button>
       </div>
-
-      <TopicsSection />
 
       <div className="section-title">{t("settings.deptTopics")}</div>
       <div className="sheet__pad">

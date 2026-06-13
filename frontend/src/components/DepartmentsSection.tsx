@@ -3,19 +3,19 @@ import { depsApi } from "../api/client";
 import type { Department } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
-import { Sheet } from "../components/Sheet";
+import { Sheet } from "./Sheet";
 
 const EMOJIS = ["🔌", "💻", "📐", "🔧", "🎨", "🏢", "📦", "🔬", "⚙️", "📊"];
 const COLORS = ["#3b82f6", "#f59e0b", "#8b5cf6", "#10b981", "#ef4444", "#ec4899"];
 
-export function DepartmentsPage() {
+export function DepartmentsSection() {
   const { deps, reload } = useAuth();
   const { t } = useI18n();
   const [edit, setEdit] = useState<Department | null>(null);
   const [creating, setCreating] = useState(false);
 
   return (
-    <div className="page-content">
+    <>
       <div className="sheet__pad" style={{ paddingTop: 16 }}>
         <button className="btn btn--primary" onClick={() => setCreating(true)}>
           {t("dept.add")}
@@ -55,7 +55,7 @@ export function DepartmentsPage() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

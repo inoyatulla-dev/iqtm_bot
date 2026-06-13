@@ -14,6 +14,7 @@ class TaskOut(BaseModel):
     dep_id: str | None = None
     masul_id: int | None = None
     masul_name: str | None = None
+    masul_photo: str | None = None
     created_by: int
     deadline: datetime | None = None
     status: str

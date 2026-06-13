@@ -4,7 +4,6 @@ import { useI18n } from "./i18n";
 import { Layout, type Tab } from "./components/Layout";
 import { BoardPage } from "./pages/BoardPage";
 import { UsersPage } from "./pages/UsersPage";
-import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { RegisterForm } from "./pages/RegisterForm";
@@ -53,7 +52,6 @@ export function App() {
     <Layout tab={tab} onTab={setTab} user={user}>
       {tab === "board" && <BoardPage />}
       {tab === "users" && <UsersPage />}
-      {tab === "departments" && <DepartmentsPage />}
       {tab === "stats" && <StatsPage />}
       {tab === "settings" && <SettingsPage />}
     </Layout>

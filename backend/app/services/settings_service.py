@@ -19,6 +19,76 @@ DEFAULT_STORAGE_LIMIT_GB = 3
 DEFAULT_LOGO_PATH = "/logo.png"
 DEFAULT_LOGO_SIZE = 40
 
+# Xabar shablonlari — har bir voqea uchun tahrirlanadigan matn ({var} qoliplari bilan)
+TEMPLATE_EVENTS = ROUTE_EVENTS
+
+DEFAULT_TEMPLATES: dict[str, str] = {
+    "new_task": (
+        "📌 <b>Yangi vazifa #{id}</b>\n"
+        "🏢 {department}\n"
+        "📝 {name}\n"
+        "👤 Mas'ul: {assignee}\n"
+        "⏰ Muddat: {deadline}\n"
+        "📄 {description}"
+    ),
+    "status_change": (
+        "📌 <b>Vazifa holati o'zgardi</b>\n"
+        "🏢 {department}\n"
+        "📝 #{id} {name}\n"
+        "➡️ {status}\n"
+        "👤 O'zgartirdi: {actor}"
+    ),
+    "done": (
+        "✅ <b>Vazifa tasdiqlandi #{id}</b>\n"
+        "🏢 {department}\n"
+        "📝 {name}\n"
+        "👤 Bajaruvchi: {assignee}\n"
+        "📣 Qo'ygan: {creator}\n"
+        "🔎 Tekshirdi: {checker}\n"
+        "💬 {comment}"
+    ),
+    "reminder": (
+        "🔔 <b>Vazifa eslatmasi!</b>\n"
+        "📝 #{id}: {name}\n"
+        "⏰ Muddat: {deadline}"
+    ),
+    "overdue": (
+        "🚨 <b>Kechikkan vazifalar — {date}</b>\n\n"
+        "Jami: {count} ta"
+    ),
+    "weekly": (
+        "📈 <b>Haftalik hisobot — {date}</b>\n\n"
+        "Jami: {total} | ✅ {done} | {percent}%"
+    ),
+    "application": (
+        "🔔 <b>Yangi ariza!</b>\n\n"
+        "👤 {name}\n"
+        "🆔 <code>{id}</code>\n"
+        "📛 @{username}\n\n"
+        "Ilovada tasdiqlang."
+    ),
+    "birthday": (
+        "🎉🎂 <b>Tug'ilgan kun tabriklari!</b>\n\n"
+        "Bugun {name}ning tug'ilgan kuni — tabriklaymiz! 🎁"
+    ),
+}
+
+
+class _SafeDict(dict):
+    def __missing__(self, key):
+        return "{" + key + "}"
+
+
+def render_template(template: str, **values) -> str:
+    """`{var}` qoliplarini almashtiradi; noma'lum qolip bo'lsa xato bermaydi."""
+    return template.format_map(_SafeDict(**values))
+
+
+async def get_template(session, event: str) -> str:
+    """Adminning shablon matnini o'qiydi, bo'lmasa standart matn."""
+    val = await get_setting(session, f"tpl_{event}")
+    return val or DEFAULT_TEMPLATES.get(event, "")
+
 
 async def get_setting(session, key: str, default=None):
     row = await session.get(Setting, key)

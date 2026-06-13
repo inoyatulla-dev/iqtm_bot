@@ -12,6 +12,7 @@ from app import notifications as notify
 from app.models import BoardColumn, Comment, Department, Log, Reminder, Task, User
 from app.schemas.task import TaskCreate
 from app.services import board_service, settings_service
+from app.services.report_service import user_label
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ async def _user(session: AsyncSession, uid: int | None) -> User | None:
 def _mention(user: User | None) -> str:
     if not user:
         return "—"
-    return f"@{user.username}" if user.username else user.name
+    return user_label(user.name, user.username)
 
 
 def _dep_label(dep: Department | None) -> str:
@@ -76,15 +77,16 @@ async def create_task(
     masul = await _user(session, task.masul_id)
     await session.flush()
 
-    text = (
-        f"📌 <b>Yangi vazifa #{task.id}</b>\n"
-        f"🏢 {_dep_label(dep)}\n"
-        f"📝 {task.name}\n"
-        f"👤 Mas'ul: {_mention(masul)}\n"
-        f"⏰ Muddat: {_fmt_deadline(task.deadline)}"
+    tpl = await settings_service.get_template(session, "new_task")
+    text = settings_service.render_template(
+        tpl,
+        id=task.id,
+        department=_dep_label(dep),
+        name=task.name,
+        assignee=_mention(masul),
+        deadline=_fmt_deadline(task.deadline),
+        description=task.description or "—",
     )
-    if task.description:
-        text += f"\n📄 {task.description}"
 
     initial_col = await board_service.get_column(session, task.status)
     if not initial_col or initial_col.notify:
@@ -111,30 +113,33 @@ async def change_status(
     if column.is_done:
         event = "done"
         creator = await _user(session, task.created_by)
-        text = (
-            f"✅ <b>Vazifa tasdiqlandi #{task.id}</b>\n"
-            f"🏢 {_dep_label(dep)}\n"
-            f"📝 {task.name}\n"
-            f"👤 Bajaruvchi: {_mention(masul)}\n"
-            f"📣 Qo'ygan: {_mention(creator)}\n"
-            f"🔎 Tekshirdi: {actor.name}"
-        )
         last_comment = await session.scalar(
             select(Comment)
             .where(Comment.task_id == task.id)
             .order_by(Comment.created_at.desc())
             .limit(1)
         )
-        if last_comment:
-            text += f"\n💬 {last_comment.text}"
+        tpl = await settings_service.get_template(session, event)
+        text = settings_service.render_template(
+            tpl,
+            id=task.id,
+            department=_dep_label(dep),
+            name=task.name,
+            assignee=_mention(masul),
+            creator=_mention(creator),
+            checker=actor.name,
+            comment=last_comment.text if last_comment else "—",
+        )
     else:
         event = "status_change"
-        text = (
-            f"📌 <b>Vazifa holati o'zgardi</b>\n"
-            f"🏢 {_dep_label(dep)}\n"
-            f"📝 #{task.id} {task.name}\n"
-            f"➡️ {column.emoji} {column.name}\n"
-            f"👤 O'zgartirdi: {actor.name}"
+        tpl = await settings_service.get_template(session, event)
+        text = settings_service.render_template(
+            tpl,
+            id=task.id,
+            department=_dep_label(dep),
+            name=task.name,
+            status=f"{column.emoji} {column.name}",
+            actor=actor.name,
         )
     # Ustunда bildirishnoma o'chirilган bo'lsa — xabar yuborilmaydi
     if column.notify:

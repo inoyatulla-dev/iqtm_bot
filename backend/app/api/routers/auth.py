@@ -98,12 +98,12 @@ async def _notify_bosses(session, new_user: User) -> None:
     result = await session.execute(
         select(User).where(User.role == Role.BOSS, User.status == UserStatus.ACTIVE)
     )
-    text = (
-        f"🔔 <b>Yangi ariza!</b>\n\n"
-        f"👤 {new_user.name}\n"
-        f"🆔 <code>{new_user.id}</code>\n"
-        f"📛 @{new_user.username or '—'}\n\n"
-        f"Ilovada tasdiqlang."
+    tpl = await settings_service.get_template(session, "application")
+    text = settings_service.render_template(
+        tpl,
+        name=new_user.name,
+        id=new_user.id,
+        username=new_user.username or "—",
     )
     for boss in result.scalars().all():
         await notify.send_dm(boss.id, text)

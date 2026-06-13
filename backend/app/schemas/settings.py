@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 class SettingsOut(BaseModel):
     group_chat_id: str = ""
     routes: dict[str, int | None] = Field(default_factory=dict)
+    templates: dict[str, str] = Field(default_factory=dict)
     max_file_mb: int = 10
     storage_limit_gb: int = 3
     archive_channel_id: str = ""
@@ -19,6 +20,7 @@ class BrandingOut(BaseModel):
 class SettingsUpdate(BaseModel):
     group_chat_id: str | None = None
     routes: dict[str, int | None] | None = None
+    templates: dict[str, str] | None = None
     max_file_mb: int | None = None
     storage_limit_gb: int | None = None
     archive_channel_id: str | None = None

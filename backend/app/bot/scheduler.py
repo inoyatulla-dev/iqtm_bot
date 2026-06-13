@@ -29,10 +29,12 @@ async def check_reminders():
             if not task or task.status in done_keys:
                 r.sent = True
                 continue
-            text = (
-                f"🔔 <b>Vazifa eslatmasi!</b>\n"
-                f"📝 #{task.id}: {task.name}\n"
-                f"⏰ Muddat: {task_service._fmt_deadline(task.deadline)}"
+            tpl = await settings_service.get_template(session, "reminder")
+            text = settings_service.render_template(
+                tpl,
+                id=task.id,
+                name=task.name,
+                deadline=task_service._fmt_deadline(task.deadline),
             )
             if task.masul_id:
                 await notify.send_dm(task.masul_id, text)
@@ -61,7 +63,9 @@ async def check_overdue():
         tasks = list(result.scalars().all())
         if not tasks:
             return
-        lines = ["🚨 <b>Kechikkan vazifalar:</b>", ""]
+        tpl = await settings_service.get_template(session, "overdue")
+        header = settings_service.render_template(tpl, date=date.today(), count=len(tasks))
+        lines = [header, ""]
         for t in tasks:
             lines.append(f"• #{t.id} {t.name} — muddat {task_service._fmt_deadline(t.deadline)}")
         topic_id = await settings_service.get_routed_topic(session, "overdue")
@@ -77,7 +81,8 @@ async def check_birthdays():
         )
         for u in result.scalars().all():
             if u.birthday.month == today.month and u.birthday.day == today.day:
-                text = f"🎉🎂 <b>Tug'ilgan kun tabriklari!</b>\n\nBugun {u.name}ning tug'ilgan kuni — tabriklaymiz! 🎁"
+                tpl = await settings_service.get_template(session, "birthday")
+                text = settings_service.render_template(tpl, name=u.name)
                 topic_id = await settings_service.get_routed_topic(session, "birthday")
                 await notify.send_to_group(text, topic_id)
                 await notify.send_dm(u.id, "🎉🎂 <b>Tug'ilgan kuningiz bilan!</b>\n\nSizga sog'lik, omad va yutuqlar tilaymiz! 🎁")
@@ -102,9 +107,9 @@ async def weekly_report():
         total = len(rows)
         done = sum(1 for s, _ in rows if s in done_keys)
         prog = int(done / total * 100) if total else 0
-        text = (
-            f"📈 <b>Haftalik hisobot — {date.today()}</b>\n\n"
-            f"Jami: {total} | ✅ {done} | {prog}%"
+        tpl = await settings_service.get_template(session, "weekly")
+        text = settings_service.render_template(
+            tpl, date=date.today(), total=total, done=done, percent=prog
         )
         topic_id = await settings_service.get_routed_topic(session, "weekly")
         await notify.send_to_group(text, topic_id)

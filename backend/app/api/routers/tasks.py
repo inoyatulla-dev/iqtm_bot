@@ -239,7 +239,7 @@ async def _to_out_batch(
     session: SessionDep, tasks: list[Task], done_keys: set[str]
 ) -> list[TaskOut]:
     masul_ids = {t.masul_id for t in tasks if t.masul_id}
-    names = await _author_names(session, masul_ids)
+    info = await _author_info(session, masul_ids)
 
     counts: dict[int, int] = {}
     task_ids = [t.id for t in tasks]
@@ -255,7 +255,9 @@ async def _to_out_batch(
     for task in tasks:
         out = TaskOut.model_validate(task)
         out.is_overdue = board_service.is_overdue(task, done_keys)
-        out.masul_name = names.get(task.masul_id) if task.masul_id else None
+        masul_info = info.get(task.masul_id) if task.masul_id else None
+        out.masul_name = masul_info[0] if masul_info else None
+        out.masul_photo = masul_info[1] if masul_info else None
         out.attachments_count = counts.get(task.id, 0)
         out_list.append(out)
     return out_list
@@ -266,6 +268,15 @@ async def _author_names(session: SessionDep, user_ids: set[int]) -> dict[int, st
         return {}
     result = await session.execute(select(User.id, User.name).where(User.id.in_(user_ids)))
     return dict(result.all())
+
+
+async def _author_info(session: SessionDep, user_ids: set[int]) -> dict[int, tuple[str, str | None]]:
+    if not user_ids:
+        return {}
+    result = await session.execute(
+        select(User.id, User.name, User.photo).where(User.id.in_(user_ids))
+    )
+    return {uid: (name, photo) for uid, name, photo in result.all()}
 
 
 def _comment_out(

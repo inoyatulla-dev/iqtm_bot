@@ -6,6 +6,7 @@ from app.config import settings as env_settings
 from app.schemas.settings import BrandingOut, SettingsOut, SettingsUpdate
 from app.services.settings_service import (
     ROUTE_EVENTS,
+    TEMPLATE_EVENTS,
     get_archive_channel_id,
     get_logo_path,
     get_logo_size,
@@ -13,6 +14,7 @@ from app.services.settings_service import (
     get_route,
     get_setting,
     get_storage_limit_gb,
+    get_template,
     set_setting,
 )
 from app.services.upload_service import IMAGE_EXTENSIONS, file_extension, save_file
@@ -37,6 +39,8 @@ async def get_settings(_: BossUser, session: SessionDep):
         out.group_chat_id = str(env_settings.group_chat_id)
     for event in ROUTE_EVENTS:
         out.routes[event] = await get_route(session, event)
+    for event in TEMPLATE_EVENTS:
+        out.templates[event] = await get_template(session, event)
     out.max_file_mb = await get_max_file_mb(session)
     out.storage_limit_gb = await get_storage_limit_gb(session)
     archive_id = await get_archive_channel_id(session)
@@ -55,6 +59,11 @@ async def update_settings(body: SettingsUpdate, _: BossUser, session: SessionDep
             if event not in ROUTE_EVENTS:
                 continue
             await set_setting(session, f"route_{event}", str(topic_pk) if topic_pk else "")
+    if body.templates is not None:
+        for event, text in body.templates.items():
+            if event not in TEMPLATE_EVENTS:
+                continue
+            await set_setting(session, f"tpl_{event}", text.strip())
     if body.max_file_mb is not None:
         await set_setting(session, "max_file_mb", str(body.max_file_mb))
     if body.storage_limit_gb is not None:

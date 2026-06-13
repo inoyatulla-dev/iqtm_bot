@@ -34,15 +34,26 @@ export function TaskCard({ task, dep, onClick }: Props) {
         {task.type === "personal" ? "👤 " : ""}
         {task.name}
       </div>
+      {task.masul_name && (
+        <div className="task-card__assignee">
+          <span className="avatar-wrap" style={{ width: 20, height: 20 }}>
+            <span className="avatar" style={{ fontSize: 11 }}>
+              {task.masul_photo ? (
+                <img src={task.masul_photo} alt="" />
+              ) : (
+                task.masul_name.slice(0, 1).toUpperCase()
+              )}
+            </span>
+          </span>
+          {task.masul_name}
+        </div>
+      )}
       <div className="task-card__meta">
         {dep && (
           <span className="chip chip--dep">
             <span className="dep-dot" style={{ background: dep.color }} />
             {dep.name}
           </span>
-        )}
-        {task.masul_name && (
-          <span className="chip">👤 {task.masul_name}</span>
         )}
         {task.deadline && (
           <span className={`chip${task.is_overdue ? " chip--overdue" : ""}`}>
