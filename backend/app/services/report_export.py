@@ -108,9 +108,9 @@ h2.section:first-child { margin-top: 0; }
 }
 .legend { display: flex; flex-wrap: wrap; gap: 10px 24px; flex: 1; }
 .leg { display: flex; align-items: center; gap: 8px; font-size: 12px; width: 46%; }
-.leg .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.leg .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; margin-right: 8px; }
 .leg .ln { flex: 1; color: var(--ink); font-weight: 500; }
-.leg .cnt { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+.leg .cnt { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; margin-left: 8px; }
 .leg.zero { opacity: .45; }
 
 /* ---------- DEPARTMENTS: progress bars ---------- */
@@ -130,23 +130,26 @@ h2.section:first-child { margin-top: 0; }
   background: linear-gradient(180deg, #FAFBFC, #fff); border-bottom: 1px solid var(--line); flex-wrap: wrap;
 }
 .project.late .proj-head { background: linear-gradient(180deg, #FEF4F4, #fff); border-bottom-color: #F5C2C2; }
-.proj-title { display: flex; align-items: center; gap: 10px; }
-.proj-title .pn { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; }
+.proj-title { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0; }
+.proj-title .pn { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; margin-right: 10px; }
 .pill {
   font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
   padding: 3px 9px; border-radius: 20px; background: var(--brand-tint); color: var(--brand-dark);
+  white-space: nowrap;
 }
 .pill.late { background: var(--late-bg); color: var(--late); }
-.proj-prog { display: flex; align-items: center; gap: 10px; min-width: 170px; }
+.proj-prog { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .proj-prog .ptrack { width: 110px; height: 7px; border-radius: 6px; background: #EFF2F4; overflow: hidden; }
 .proj-prog .pfill { height: 100%; }
-.proj-prog .ptxt { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.proj-prog .ptxt { font-size: 12px; color: var(--muted); white-space: nowrap; margin-left: 10px; }
 .proj-prog .ptxt b { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--ink); }
 .proj-sub {
   padding: 8px 16px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line);
   display: flex; gap: 20px; flex-wrap: wrap;
 }
-.proj-sub span b { color: var(--ink); font-weight: 600; }
+.proj-sub > div { margin-right: 20px; }
+.proj-sub > div:last-child { margin-right: 0; }
+.proj-sub div b { color: var(--ink); font-weight: 600; }
 .proj-sub .warn { color: var(--late); font-weight: 600; }
 
 table { width: 100%; border-collapse: collapse; }
@@ -227,6 +230,13 @@ def _donut_svg(statuses: list[StatusCount], total: int, size: int = 160) -> str:
     return f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">{pie}{hole}{text}</svg>'
 
 
+def _bar_width(percent: int, total: int) -> str:
+    """Progress-bar to'ldirilish foizi — 0% bo'lsa bo'sh, aks holda ko'rinishi uchun min. 3%."""
+    if not total or percent <= 0:
+        return "0%"
+    return f"{max(percent, 3)}%"
+
+
 def _progress_color(percent: int) -> str:
     if percent >= 100:
         return "#16A34A"
@@ -285,15 +295,15 @@ def build_html(data: ReportData) -> str:
     donut_svg = _donut_svg(data.statuses, total_status)
     legend_html = "".join(
         f'<div class="leg{" zero" if s.count == 0 else ""}">'
-        f'<span class="dot" style="background:{s.color}"></span>'
-        f'<span class="ln">{_esc(s.name)}</span><span class="cnt">{s.count}</span></div>'
+        f'<div class="dot" style="background:{s.color}"></div>'
+        f'<div class="ln">{_esc(s.name)}</div><div class="cnt">{s.count}</div></div>'
         for s in data.statuses
     ) or '<div class="empty">Holatlar mavjud emas</div>'
 
     depts_sorted = sorted(data.departments, key=lambda d: d.percent, reverse=True)
     depts_html = "".join(
         f'<div class="dept"><div class="nm">{_esc(d.name)}</div>'
-        f'<div class="track"><div class="fill" style="width:{max(d.percent, 3) if d.total else 0}%;background:{d.color}"></div></div>'
+        f'<div class="track"><div class="fill" style="width:{_bar_width(d.percent, d.total)};background:{d.color}"></div></div>'
         f'<div class="pct"><b>{f"{d.percent}%" if d.total else "—"}</b> · {d.done}/{d.total}</div></div>'
         for d in depts_sorted
     ) or '<div class="empty">Bo\'limlar mavjud emas</div>'
@@ -302,26 +312,26 @@ def build_html(data: ReportData) -> str:
     for proj in data.projects:
         late = proj.schedule_label.startswith("Orqada qolmoqda") or proj.schedule_label.startswith("Muddat o'tgan")
         pill_label = "Orqada qolmoqda" if late else proj.status_label
-        width = f"{max(proj.percent, 3)}%" if proj.total else "0%"
+        width = _bar_width(proj.percent, proj.total)
         pfill_color = "var(--late)" if late else _progress_color(proj.percent)
         rows = "".join(_task_row(t) for t in proj.tasks) or (
             '<tr><td colspan="5" class="empty">Vazifalar mavjud emas</td></tr>'
         )
-        second_span = (
-            f'<span class="warn">⚠ {_esc(proj.schedule_label)}</span>'
+        second_div = (
+            f'<div class="warn">⚠ {_esc(proj.schedule_label)}</div>'
             if late else
-            f'<span>Joriy jarayon: <b>{_esc(proj.schedule_label)}</b></span>'
+            f'<div>Joriy jarayon: <b>{_esc(proj.schedule_label)}</b></div>'
         )
         projects_html += (
             f'<div class="project{" late" if late else ""}">'
             f'<div class="proj-head">'
-            f'<div class="proj-title"><span class="pn">{_esc(proj.name)}</span>'
-            f'<span class="pill{" late" if late else ""}">{_esc(pill_label)}</span></div>'
+            f'<div class="proj-title"><div class="pn">{_esc(proj.name)}</div>'
+            f'<div class="pill{" late" if late else ""}">{_esc(pill_label)}</div></div>'
             f'<div class="proj-prog"><div class="ptrack"><div class="pfill" '
             f'style="width:{width};background:{pfill_color}"></div></div>'
             f'<div class="ptxt"><b>{proj.done}/{proj.total}</b> · {proj.percent}%</div></div>'
             f"</div>"
-            f'<div class="proj-sub"><span>Muddat: <b>{_esc(proj.deadline_label)}</b></span>{second_span}</div>'
+            f'<div class="proj-sub"><div>Muddat: <b>{_esc(proj.deadline_label)}</b></div>{second_div}</div>'
             f"<table><thead><tr><th>#</th><th>Vazifa</th><th>Mas'ul</th><th>Muddat</th><th>Holat</th></tr></thead>"
             f"<tbody>{rows}</tbody></table>"
             f"</div>"
