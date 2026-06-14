@@ -1438,8 +1438,9 @@ body {
   }
 
   .board-column {
-    flex: 0 0 300px;
+    flex: 1 1 280px;
     min-width: 280px;
+    max-width: 360px;
     scroll-snap-align: none;
   }
 
@@ -1533,7 +1534,8 @@ body {
   }
 
   .board-column {
-    flex: 0 0 310px;
+    flex: 1 1 310px;
+    max-width: 380px;
   }
 
   .emp-grid {
@@ -1562,7 +1564,8 @@ body {
   }
 
   .board-column {
-    flex: 0 0 340px;
+    flex: 1 1 340px;
+    max-width: 420px;
   }
 
   .board {
