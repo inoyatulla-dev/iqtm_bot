@@ -1,6 +1,7 @@
 """Hisobotni PDF/DOCX formatida tayyorlash. PDF — HTML shabloni (HISOBOT_TEMPLATE.md) asosida."""
 import base64
 import io
+import math
 from html import escape
 
 from app.services.report_service import ProjectTaskRow, ReportData, StatusCount
@@ -95,8 +96,7 @@ h2.section:first-child { margin-top: 0; }
 .kpi .value { font-size: 24px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
 .kpi .label { font-size: 11px; color: var(--muted); margin-top: 4px; }
 .status-wrap { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
-.donut { width: 140px; height: 140px; border-radius: 50%; flex-shrink: 0; position: relative; }
-.donut::after { content: ""; position: absolute; inset: 26px; background: #fff; border-radius: 50%; }
+.donut { width: 140px; height: 140px; flex-shrink: 0; }
 .donut-legend { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
 .legend-dot, .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 6px; flex-shrink: 0; }
 .dept { margin-bottom: 12px; }
@@ -150,18 +150,32 @@ def _tint(hex_color: str, alpha: float = 0.15) -> str:
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
-def _conic_gradient(statuses: list[StatusCount], total: int) -> str:
+def _donut_svg(statuses: list[StatusCount], total: int, size: int = 140) -> str:
+    """Holatlar taqsimoti — SVG donut diagramma (weasyprint CSS conic-gradient'ni qo'llamaydi)."""
+    cx = cy = size / 2
+    r = size / 2 - 13
+    circumference = 2 * math.pi * r
     if total <= 0:
-        return "var(--line)"
-    parts = []
-    current = 0.0
+        return (
+            f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#E6E8EB" stroke-width="26"/></svg>'
+        )
+    segments = []
+    offset = 0.0
     for s in statuses:
         if s.count == 0:
             continue
-        end = current + (s.count / total * 100)
-        parts.append(f"{s.color} {current:.2f}% {end:.2f}%")
-        current = end
-    return f"conic-gradient({', '.join(parts)})"
+        length = s.count / total * circumference
+        segments.append(
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{s.color}" stroke-width="26" '
+            f'stroke-dasharray="{length:.3f} {circumference - length:.3f}" '
+            f'stroke-dashoffset="{-offset:.3f}"/>'
+        )
+        offset += length
+    return (
+        f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
+        f'<g transform="rotate(-90 {cx} {cy})">{"".join(segments)}</g></svg>'
+    )
 
 
 def _progress_color(percent: int) -> str:
@@ -203,7 +217,7 @@ def build_html(data: ReportData) -> str:
     )
 
     total_status = sum(s.count for s in data.statuses)
-    gradient = _conic_gradient(data.statuses, total_status)
+    donut_svg = _donut_svg(data.statuses, total_status)
     legend_html = "".join(
         f'<span><span class="legend-dot" style="background:{s.color}"></span>'
         f"{_esc(s.name)} — {round(s.count * 100 / total_status) if total_status else 0}% ({s.count})</span>"
@@ -274,7 +288,7 @@ def build_html(data: ReportData) -> str:
 
     <h2 class="section">Holatlar bo'yicha taqsimot</h2>
     <div class="status-wrap">
-      <div class="donut" style="background:{gradient}"></div>
+      <div class="donut">{donut_svg}</div>
       <div class="donut-legend">{legend_html}</div>
     </div>
 

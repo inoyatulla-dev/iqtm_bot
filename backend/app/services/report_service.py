@@ -271,8 +271,8 @@ async def collect_report_data(
         for seq, (task_name, task_status, task_deadline, masul_name) in enumerate(rows, start=1):
             col = columns_by_key.get(task_status)
             label = col.name if col else task_status
-            overdue = task_status not in done_keys and bool(task_deadline) and task_deadline < now
-            if overdue:
+            task_overdue = task_status not in done_keys and bool(task_deadline) and task_deadline < now
+            if task_overdue:
                 label = f"{label} (kechikkan)"
             tasks.append(ProjectTaskRow(
                 seq=seq,
@@ -281,7 +281,7 @@ async def collect_report_data(
                 deadline=task_deadline.strftime("%d.%m.%Y %H:%M") if task_deadline else "—",
                 status_label=label,
                 status_color=col.color if col else "#64748b",
-                overdue=overdue,
+                overdue=task_overdue,
             ))
         total_tasks = len(rows)
         done_count = sum(1 for _, status_key, _, _ in rows if status_key in done_keys)
