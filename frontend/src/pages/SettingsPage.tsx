@@ -252,7 +252,7 @@ function ProfileView() {
 
       <CredentialsSection />
 
-      {!tg && (
+      {!tg?.initData && (
         <div className="sheet__pad">
           <button className="btn btn--ghost" onClick={logout}>
             {t("settings.logout")}
