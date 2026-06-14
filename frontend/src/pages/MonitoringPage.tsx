@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, FileType } from "lucide-react";
+import { Eye, FileText, FileType } from "lucide-react";
 import { reportsApi, statsApi } from "../api/client";
 import type { ReportFormat } from "../api/client";
 import type { DashboardData } from "../api/types";
@@ -14,6 +14,7 @@ export function MonitoringPage() {
   const [period, setPeriod] = useState<PeriodValue>(() => defaultPeriodValue("month"));
   const [sending, setSending] = useState<ReportFormat | null>(null);
   const [sent, setSent] = useState(false);
+  const [viewing, setViewing] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -33,6 +34,18 @@ export function MonitoringPage() {
       alert(e?.response?.data?.detail || t("common.error"));
     } finally {
       setSending(null);
+    }
+  }
+
+  async function viewReport() {
+    setViewing(true);
+    try {
+      const blob = await reportsApi.download(period.period, "html", toPeriodParams(period));
+      window.open(URL.createObjectURL(blob), "_blank");
+    } catch (e: any) {
+      alert(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setViewing(false);
     }
   }
 
@@ -119,6 +132,9 @@ export function MonitoringPage() {
       <div className="section-title">{t("monitoring.exportTitle")}</div>
       <div className="report-controls">
         <div className="report-row">
+          <button className="btn btn--ghost" onClick={viewReport} disabled={viewing}>
+            {viewing ? t("monitoring.sending") : <><Eye size={18} /> {t("monitoring.viewHtml")}</>}
+          </button>
           <button className="btn btn--ghost" onClick={() => sendReport("pdf")} disabled={!!sending}>
             {sending === "pdf" ? t("monitoring.sending") : <><FileText size={18} /> {t("stats.downloadPdf")}</>}
           </button>

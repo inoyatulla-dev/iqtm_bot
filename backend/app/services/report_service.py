@@ -75,6 +75,7 @@ class StatusCount:
     key: str
     name: str
     count: int
+    color: str = "#64748b"
 
 
 @dataclass
@@ -83,6 +84,7 @@ class DeptRow:
     total: int
     done: int
     percent: int
+    color: str = "#2481cc"
 
 
 @dataclass
@@ -92,6 +94,8 @@ class ProjectTaskRow:
     assignee: str
     deadline: str
     status_label: str
+    status_color: str = "#64748b"
+    overdue: bool = False
 
 
 @dataclass
@@ -215,7 +219,7 @@ async def collect_report_data(
     ) or 0
 
     statuses = [
-        StatusCount(key=c.key, name=c.name, count=status_counts.get(c.key, 0))
+        StatusCount(key=c.key, name=c.name, count=status_counts.get(c.key, 0), color=c.color)
         for c in columns
     ]
 
@@ -223,20 +227,22 @@ async def collect_report_data(
     dept_result = await session.execute(
         select(
             Department.name,
+            Department.color,
             func.count(Task.id),
             func.sum(case((done_filter, 1), else_=0)),
         )
         .select_from(Department)
         .outerjoin(Task, (Task.dep_id == Department.id) & (Task.type != TaskType.PROJECT.value))
-        .group_by(Department.id, Department.name)
+        .group_by(Department.id, Department.name, Department.color)
         .order_by(Department.name)
     )
     departments = [
         DeptRow(
             name=name, total=total_n or 0, done=done_n or 0,
             percent=round((done_n or 0) * 100 / total_n) if total_n else 0,
+            color=color,
         )
-        for name, total_n, done_n in dept_result.all()
+        for name, color, total_n, done_n in dept_result.all()
     ]
 
     # ── Loyihalar ──
@@ -263,7 +269,8 @@ async def collect_report_data(
         for seq, (task_name, task_status, task_deadline, masul_name) in enumerate(rows, start=1):
             col = columns_by_key.get(task_status)
             label = col.name if col else task_status
-            if task_status not in done_keys and task_deadline and task_deadline < now:
+            overdue = task_status not in done_keys and bool(task_deadline) and task_deadline < now
+            if overdue:
                 label = f"{label} (kechikkan)"
             tasks.append(ProjectTaskRow(
                 seq=seq,
@@ -271,6 +278,8 @@ async def collect_report_data(
                 assignee=masul_name or "—",
                 deadline=task_deadline.strftime("%d.%m.%Y %H:%M") if task_deadline else "—",
                 status_label=label,
+                status_color=col.color if col else "#64748b",
+                overdue=overdue,
             ))
         total_tasks = len(rows)
         done_count = sum(1 for _, status_key, _, _ in rows if status_key in done_keys)

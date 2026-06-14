@@ -8,13 +8,14 @@ from fastapi.responses import StreamingResponse
 from app import notifications as notify
 from app.api.deps import BossUser, DashboardUser, SessionDep
 from app.services import report_service
-from app.services.report_export import build_docx, build_pdf
+from app.services.report_export import build_docx, build_html, build_pdf
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 _FORMATS = {
     "pdf": (build_pdf, "application/pdf"),
     "docx": (build_docx, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    "html": (build_html, "text/html; charset=utf-8"),
 }
 _PERIODS = {"week", "month", "year"}
 
@@ -36,6 +37,8 @@ async def download_report(
         session, period, year=year, month=month, date_from=date_from, date_to=date_to
     )
     content = build_fn(data)
+    if isinstance(content, str):
+        content = content.encode("utf-8")
     filename = f"hisobot_{period}_{data.end.isoformat()}.{fmt}"
     return StreamingResponse(
         io.BytesIO(content),
@@ -62,6 +65,8 @@ async def send_report(
         session, period, year=year, month=month, date_from=date_from, date_to=date_to
     )
     content = build_fn(data)
+    if isinstance(content, str):
+        content = content.encode("utf-8")
     filename = f"hisobot_{period}_{data.end.isoformat()}.{fmt}"
     ok = await notify.send_document_bytes(
         user.id, filename, content, caption=f"📊 {data.period_label} hisobot"
