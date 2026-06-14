@@ -1,4 +1,4 @@
-"""Hisobotni PDF/DOCX/HTML formatida tayyorlash — faqat jadval va matn (ikonkasiz)."""
+"""Hisobotni PDF/DOCX formatida tayyorlash. PDF — HTML shabloni (HISOBOT_TEMPLATE.md) asosida."""
 import base64
 import io
 from html import escape
@@ -11,12 +11,6 @@ _SUMMARY_LABELS = [
     ("Davrda bajarilgan", "done_in_period"),
     ("Kechikkan", "overdue"),
 ]
-
-# Rang palitrasi
-_NAVY = "#1e3a5f"
-_ACCENT = "#2563eb"
-_ROW_ALT = "#eef2f7"
-_GRID = "#cbd5e1"
 
 # Tashkilot nomi (sahifa tepasidagi takrorlanuvchi header uchun standart qiymat)
 ORG_FULL_NAME = "Innovatsiyalarni qo'llab-quvvatlash va tijoratlashtirish markazi"
@@ -254,7 +248,7 @@ def build_html(data: ReportData) -> str:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{_esc(data.period_label)} hisobot</title>
+<title>{_esc(data.period_title)} hisobot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <style>{_HTML_CSS}</style>
@@ -266,7 +260,7 @@ def build_html(data: ReportData) -> str:
       {logo_html}
       <div>
         <div class="header__title">{_esc(org_name)}</div>
-        <div class="header__sub">{_esc(data.period_label)} hisobot</div>
+        <div class="header__sub">{_esc(data.period_title)} hisobot</div>
       </div>
     </div>
     <div class="header__meta">
@@ -300,152 +294,10 @@ def build_html(data: ReportData) -> str:
 
 
 def build_pdf(data: ReportData) -> bytes:
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-    from reportlab.lib.units import mm
-    from reportlab.lib.utils import ImageReader
-    from reportlab.platypus import (
-        Paragraph,
-        SimpleDocTemplate,
-        Spacer,
-        Table,
-        TableStyle,
-    )
+    """HTML hisobotni (HISOBOT_TEMPLATE.md dizayni) PDF'ga aylantiradi."""
+    from weasyprint import HTML
 
-    org_name = _clean(data.org_name) or ORG_FULL_NAME
-    header_height = 24 * mm
-
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buf, pagesize=A4,
-        topMargin=18 * mm + header_height, bottomMargin=18 * mm,
-        leftMargin=18 * mm, rightMargin=18 * mm,
-    )
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(
-        "SectionTitle", parent=styles["Heading2"],
-        textColor=colors.HexColor(_NAVY), spaceBefore=14, spaceAfter=6,
-    ))
-    styles.add(ParagraphStyle(
-        "ProjectTitle", parent=styles["Heading3"],
-        textColor=colors.HexColor(_ACCENT), spaceBefore=10, spaceAfter=4,
-    ))
-    styles.add(ParagraphStyle(
-        "Cell", parent=styles["Normal"], fontSize=8.5, leading=11,
-    ))
-    cell = lambda text: Paragraph(_clean(text), styles["Cell"])
-
-    header_style = TableStyle([
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor(_GRID)),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(_NAVY)),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor(_ROW_ALT)]),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-    ])
-    info_style = TableStyle([
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor(_GRID)),
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor(_ROW_ALT)),
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-    ])
-
-    def draw_header(canvas, doc):
-        """Har bir sahifa tepasida: logotip, tashkilot nomi va ajratuvchi chiziq."""
-        canvas.saveState()
-        page_w, page_h = A4
-        left = doc.leftMargin
-        right = page_w - doc.rightMargin
-        line_y = page_h - 18 * mm - header_height + 8 * mm
-        text_x = left
-        if data.logo_path.exists():
-            logo_size = 14 * mm
-            iw, ih = ImageReader(str(data.logo_path)).getSize()
-            logo_h = logo_size * ih / iw
-            canvas.drawImage(
-                str(data.logo_path), left, line_y + 4 * mm,
-                width=logo_size, height=logo_h,
-                preserveAspectRatio=True, mask="auto",
-            )
-            text_x = left + logo_size + 4 * mm
-        available = right - text_x
-        font_size = 12
-        while canvas.stringWidth(org_name, "Helvetica-Bold", font_size) > available and font_size > 7:
-            font_size -= 0.5
-        canvas.setFont("Helvetica-Bold", font_size)
-        canvas.setFillColor(colors.HexColor(_NAVY))
-        canvas.drawString(text_x, line_y + 8 * mm, org_name)
-        canvas.setStrokeColor(colors.HexColor(_GRID))
-        canvas.setLineWidth(1)
-        canvas.line(left, line_y, right, line_y)
-        canvas.restoreState()
-
-    elements = []
-
-    elements.append(Paragraph(f"{data.period_label} hisobot", styles["Title"]))
-    elements.append(Paragraph(f"Davr: {data.start} — {data.end}", styles["Normal"]))
-    elements.append(Paragraph(
-        f"Yaratildi: {data.generated_at.strftime('%Y-%m-%d %H:%M')}", styles["Normal"]
-    ))
-    elements.append(Spacer(1, 12))
-
-    elements.append(Paragraph("Umumiy ko'rsatkichlar", styles["SectionTitle"]))
-    elements.append(Table(
-        [["Ko'rsatkich", "Qiymat"]] + [[label, str(value)] for label, value in _summary_rows(data)],
-        style=header_style, colWidths=[120 * mm, 54 * mm],
-    ))
-
-    if data.statuses:
-        elements.append(Paragraph("Holatlar bo'yicha", styles["SectionTitle"]))
-        rows = [["Holat", "Soni"]] + [[_clean(s.name), str(s.count)] for s in data.statuses]
-        elements.append(Table(rows, style=header_style, colWidths=[120 * mm, 54 * mm]))
-
-    if data.departments:
-        elements.append(Paragraph("Bo'limlar bo'yicha", styles["SectionTitle"]))
-        rows = [["Bo'lim", "Jami", "Bajarilgan", "Foiz"]] + [
-            [_clean(d.name), str(d.total), str(d.done), f"{d.percent}%"] for d in data.departments
-        ]
-        elements.append(Table(rows, style=header_style, colWidths=[84 * mm, 30 * mm, 30 * mm, 30 * mm]))
-
-    if data.projects:
-        elements.append(Paragraph("Loyihalar", styles["SectionTitle"]))
-        for proj in data.projects:
-            elements.append(Paragraph(_clean(proj.name), styles["ProjectTitle"]))
-            info_rows = [
-                ["Holat", _clean(proj.status_label)],
-                ["Muddat", _clean(proj.deadline_label)],
-                ["Bajarilgan vazifalar", f"{proj.done}/{proj.total} ({proj.percent}%)"],
-                ["Joriy jarayon", _clean(proj.schedule_label)],
-            ]
-            elements.append(Table(info_rows, style=info_style, colWidths=[50 * mm, 124 * mm]))
-            elements.append(Spacer(1, 4))
-
-            if proj.tasks:
-                rows = [["#", "Vazifa", "Mas'ul", "Muddat", "Holat"]] + [
-                    [str(t.seq), cell(t.name), cell(t.assignee), _clean(t.deadline), _clean(t.status_label)]
-                    for t in proj.tasks
-                ]
-                elements.append(Table(
-                    rows, style=header_style,
-                    colWidths=[8 * mm, 70 * mm, 40 * mm, 28 * mm, 28 * mm],
-                ))
-            else:
-                elements.append(Paragraph("Vazifalar mavjud emas", styles["Normal"]))
-            elements.append(Spacer(1, 10))
-
-    doc.build(elements, onFirstPage=draw_header, onLaterPages=draw_header)
-    return buf.getvalue()
+    return HTML(string=build_html(data)).write_pdf()
 
 
 def build_docx(data: ReportData) -> bytes:
@@ -493,7 +345,7 @@ def build_docx(data: ReportData) -> bytes:
     pBdr.append(bottom)
     pPr.append(pBdr)
 
-    doc.add_heading(f"{data.period_label} hisobot", level=0)
+    doc.add_heading(f"{data.period_title} hisobot", level=0)
     doc.add_paragraph(f"Davr: {data.start} — {data.end}")
     doc.add_paragraph(f"Yaratildi: {data.generated_at.strftime('%Y-%m-%d %H:%M')}")
 

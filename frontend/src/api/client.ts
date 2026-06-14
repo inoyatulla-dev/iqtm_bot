@@ -218,7 +218,7 @@ export const projectsApi = {
 
 // ── Hisobotlar ─────────────────────────────────────────
 export type ReportPeriod = "week" | "month" | "year";
-export type ReportFormat = "pdf" | "docx" | "html";
+export type ReportFormat = "pdf" | "docx";
 
 export const reportsApi = {
   download: (period: ReportPeriod, fmt: ReportFormat, extra?: PeriodParams) =>

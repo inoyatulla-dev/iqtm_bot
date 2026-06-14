@@ -20,6 +20,7 @@ DEFAULT_LOGO = ASSETS_DIR / "logo.png"
 
 _PERIOD_DAYS = {"week": 7, "month": 30, "year": 365}
 _PERIOD_LABELS = {"week": "Haftalik", "month": "Oylik", "year": "Yillik"}
+_PERIOD_TITLES = {"week": "Haftalik", "month": "Oylik", "year": "Yillik"}
 _MONTH_NAMES = {
     1: "Yanvar", 2: "Fevral", 3: "Mart", 4: "Aprel", 5: "May", 6: "Iyun",
     7: "Iyul", 8: "Avgust", 9: "Sentyabr", 10: "Oktyabr", 11: "Noyabr", 12: "Dekabr",
@@ -114,6 +115,7 @@ class ProjectRow:
 class ReportData:
     period: str
     period_label: str
+    period_title: str
     start: date
     end: date
     generated_at: datetime
@@ -301,6 +303,7 @@ async def collect_report_data(
     return ReportData(
         period=period,
         period_label=label,
+        period_title=_PERIOD_TITLES.get(period, "Hisobot"),
         start=start, end=end, generated_at=now,
         total=total, overdue=overdue,
         created_in_period=created_in_period, done_in_period=done_in_period,
