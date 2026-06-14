@@ -10,6 +10,7 @@ import { boardColumnsApi } from "../api/client";
 import type { BoardColumn } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
+import { EmojiIcon } from "../utils/emojiIcon";
 import { Sheet } from "./Sheet";
 
 const EMOJIS = ["🆕", "🔄", "🔍", "✅", "⏸️", "🚀", "🧪", "📦", "🗂️", "⏳"];
@@ -104,7 +105,7 @@ function ColumnRow({ column, onClick }: { column: BoardColumn; onClick: () => vo
       <span className="col-row__handle" {...attributes} {...listeners}>
         ⠿
       </span>
-      <span className="col-row__emoji">{column.emoji}</span>
+      <span className="col-row__emoji"><EmojiIcon emoji={column.emoji} size={20} color={column.color} /></span>
       <div className="col-row__body" onClick={onClick}>
         <div className="col-row__title">
           {column.name}
@@ -193,29 +194,25 @@ function ColumnForm({
         </div>
         <div className="field">
           <label>{t("boards.emoji")}</label>
-          <input
-            value={emoji}
-            maxLength={4}
-            placeholder="📋"
-            onChange={(e) => setEmoji(e.target.value)}
-            style={{ fontSize: 22, width: 80, textAlign: "center" }}
-          />
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {EMOJIS.map((e) => (
               <button
                 key={e}
                 type="button"
                 onClick={() => setEmoji(e)}
                 style={{
-                  fontSize: 18,
-                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 36,
+                  height: 36,
                   borderRadius: 8,
-                  border: "1px solid var(--line)",
+                  border: emoji === e ? "2px solid var(--accent)" : "1px solid var(--line)",
                   background: "var(--secondary-bg)",
                   cursor: "pointer",
                 }}
               >
-                {e}
+                <EmojiIcon emoji={e} size={18} color={emoji === e ? color : undefined} />
               </button>
             ))}
           </div>

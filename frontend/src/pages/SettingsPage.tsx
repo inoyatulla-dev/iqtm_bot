@@ -10,6 +10,7 @@ import { BoardColumnsSection } from "../components/BoardColumnsSection";
 import { DepartmentsSection } from "../components/DepartmentsSection";
 import { TemplatesSection } from "../components/TemplatesSection";
 import { TopicsSection } from "../components/TopicsSection";
+import { EmojiIcon } from "../utils/emojiIcon";
 
 function splitName(name?: string): [string, string] {
   if (!name) return ["", ""];
@@ -191,7 +192,7 @@ function ProfileView() {
                 {firstName.slice(0, 1).toUpperCase()}
               </div>
             )}
-            {customEmoji && <span className="emoji-badge">{customEmoji}</span>}
+            {customEmoji && <span className="emoji-badge"><EmojiIcon emoji={customEmoji} size={13} /></span>}
           </div>
           <div>
             <input
@@ -236,7 +237,7 @@ function ProfileView() {
                 className={`emoji-opt${customEmoji === emoji ? " selected" : ""}`}
                 onClick={() => setCustomEmoji(customEmoji === emoji ? null : emoji)}
               >
-                {emoji}
+                <EmojiIcon emoji={emoji} size={20} color={customEmoji === emoji ? "var(--accent)" : undefined} />
               </div>
             ))}
           </div>
@@ -264,7 +265,7 @@ function LanguageView() {
               className={`btn ${lang === l.code ? "btn--primary" : "btn--ghost"}`}
               style={{ fontSize: 14 }}
             >
-              {l.flag} {l.label}
+              {l.label}
             </button>
           ))}
         </div>
@@ -365,8 +366,8 @@ function GroupMainView() {
         </p>
         {deps.map((d) => (
           <div className="field" key={d.id}>
-            <label>
-              {d.emoji} {d.name}
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <EmojiIcon emoji={d.emoji} size={14} color={d.color} /> {d.name}
             </label>
             <select
               value={depTopics[d.id] ?? ""}

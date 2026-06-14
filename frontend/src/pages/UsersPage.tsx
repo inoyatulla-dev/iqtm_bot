@@ -8,6 +8,7 @@ import { copyText, inviteLink, shareInvite } from "../telegram";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { avatarGradient } from "../utils/avatarColor";
 import { birthdayInDays } from "../utils/birthday";
+import { EmojiIcon } from "../utils/emojiIcon";
 
 export function UsersPage() {
   const { deps, user: me, isBoss } = useAuth();
@@ -141,7 +142,7 @@ export function UsersPage() {
                   <div className="avatar" style={{ background: avatarGradient(u.id) }}>
                     {u.photo ? <img src={u.photo} alt="" /> : initials(u.name)}
                   </div>
-                  {u.custom_emoji && <span className="emoji-badge">{u.custom_emoji}</span>}
+                  {u.custom_emoji && <span className="emoji-badge"><EmojiIcon emoji={u.custom_emoji} size={11} /></span>}
                 </div>
                 <div>
                   <div className="emp-card__name">
@@ -184,7 +185,7 @@ export function UsersPage() {
                 <div className="avatar" style={{ background: avatarGradient(sel.id) }}>
                   {sel.photo ? <img src={sel.photo} alt="" /> : initials(sel.name)}
                 </div>
-                {sel.custom_emoji && <span className="emoji-badge">{sel.custom_emoji}</span>}
+                {sel.custom_emoji && <span className="emoji-badge"><EmojiIcon emoji={sel.custom_emoji} size={13} /></span>}
               </div>
               <div>
                 <div className="emp-card__name">
@@ -247,7 +248,7 @@ export function UsersPage() {
               <select value={editDep} onChange={(e) => setEditDep(e.target.value)}>
                 <option value="">{t("users.noDept")}</option>
                 {deps.map((d: Department) => (
-                  <option key={d.id} value={d.id}>{d.emoji} {d.name}</option>
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </div>

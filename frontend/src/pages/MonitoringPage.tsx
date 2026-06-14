@@ -5,6 +5,7 @@ import type { ReportFormat } from "../api/client";
 import type { DashboardData } from "../api/types";
 import { useI18n } from "../i18n";
 import { PeriodPicker, defaultPeriodValue, toPeriodParams, type PeriodValue } from "../components/PeriodPicker";
+import { EmojiIcon } from "../utils/emojiIcon";
 
 export function MonitoringPage() {
   const { t } = useI18n();
@@ -88,7 +89,7 @@ export function MonitoringPage() {
               <div className="dept-row__head">
                 <div className="dept-row__name">
                   <span className="dot" style={{ background: d.color }} />
-                  {d.emoji} {d.name}
+                  <EmojiIcon emoji={d.emoji} size={14} color={d.color} /> {d.name}
                 </div>
                 <div className="dept-row__count">
                   {d.done} / {d.total} · {d.percent}%

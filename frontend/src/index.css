@@ -649,6 +649,10 @@ body {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .badge--danger {
@@ -1245,7 +1249,9 @@ body {
 }
 
 .col-row__emoji {
-  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .col-row__body {

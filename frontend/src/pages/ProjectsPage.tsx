@@ -7,6 +7,7 @@ import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { TaskForm } from "./TaskForm";
 import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
+import { EmojiIcon } from "../utils/emojiIcon";
 
 export function ProjectsPage() {
   const { isBoss, isObserver, columns } = useAuth();
@@ -164,7 +165,6 @@ export function ProjectsPage() {
       <div className="project-tasks" style={{ marginTop: 12 }}>
         {tasks.map((task) => {
           const col = columns.find((c) => c.key === task.status);
-          const icon = col?.emoji || "🆕";
           let cls = "badge badge--accent";
           let style: CSSProperties | undefined;
           if (task.is_overdue) {
@@ -182,7 +182,7 @@ export function ProjectsPage() {
               style={{ cursor: "pointer" }}
               onClick={() => { setEditingTask(task); setTaskFormOpen(true); }}
             >
-              <span className={cls} style={style}>{icon}</span>
+              <span className={cls} style={style}><EmojiIcon emoji={col?.emoji} size={12} /></span>
               {task.name}
               <span className="project-task__assignee">
                 {task.masul_name || t("projects.unassigned")}

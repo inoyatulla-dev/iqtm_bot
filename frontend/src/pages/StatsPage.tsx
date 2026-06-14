@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Medal, RefreshCw } from "lucide-react";
+import { EmojiIcon } from "../utils/emojiIcon";
 import { statsApi } from "../api/client";
 import type { RatingRow, StatusCounts } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -31,8 +32,9 @@ export function StatsPage() {
     { num: counts.total, label: t("stats.total"), color: "var(--text)" },
     ...columns.map((col) => ({
       num: counts.counts[col.key] || 0,
-      label: `${col.emoji} ${col.name}`,
+      label: col.name,
       color: col.color,
+      icon: <EmojiIcon emoji={col.emoji} color={col.color} size={14} />,
     })),
     { num: counts.overdue, label: t("stats.overdue"), color: "#ff5a5a", icon: <AlertTriangle size={14} /> },
     { num: counts.done_in_period, label: t("stats.doneInPeriod"), color: "var(--ok)", icon: <CheckCircle2 size={14} /> },

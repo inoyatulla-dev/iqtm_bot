@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import type { ReactNode } from "react";
 import type { BoardColumn } from "../../api/types";
 import { useI18n } from "../../i18n";
+import { EmojiIcon } from "../../utils/emojiIcon";
 
 interface Props {
   column: BoardColumn;
@@ -21,8 +22,8 @@ export function Column({ column, count, children }: Props) {
     >
       <div className="board-column__header">
         <span className="board-column__dot" style={{ background: column.color }} />
-        <span>
-          {column.emoji} {column.name}
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <EmojiIcon emoji={column.emoji} size={14} color={column.color} /> {column.name}
         </span>
         <span className="board-column__count">{count}</span>
       </div>

@@ -4,6 +4,7 @@ import { depsApi } from "../api/client";
 import type { Department } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
+import { EmojiIcon } from "../utils/emojiIcon";
 import { Sheet } from "./Sheet";
 
 const EMOJIS = ["🔌", "💻", "📐", "🔧", "🎨", "🏢", "📦", "🔬", "⚙️", "📊"];
@@ -28,7 +29,7 @@ export function DepartmentsSection() {
       </div>
       {deps.map((d) => (
         <div className="list-item" key={d.id} onClick={() => setEdit(d)}>
-          <span style={{ fontSize: 24 }}>{d.emoji}</span>
+          <EmojiIcon emoji={d.emoji} size={24} color={d.color} />
           <div className="list-item__body">
             <div className="list-item__title">{d.name}</div>
             <div className="list-item__sub">{d.id}</div>
@@ -125,15 +126,18 @@ function DeptForm({
                 key={e}
                 onClick={() => setEmoji(e)}
                 style={{
-                  fontSize: 22,
-                  padding: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 40,
+                  height: 40,
                   borderRadius: 10,
                   border: emoji === e ? "2px solid var(--accent)" : "1px solid var(--line)",
                   background: "var(--secondary-bg)",
                   cursor: "pointer",
                 }}
               >
-                {e}
+                <EmojiIcon emoji={e} size={20} color={emoji === e ? color : undefined} />
               </button>
             ))}
           </div>

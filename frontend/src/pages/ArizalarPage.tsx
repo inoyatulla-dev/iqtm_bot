@@ -6,6 +6,7 @@ import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { avatarGradient } from "../utils/avatarColor";
+import { EmojiIcon } from "../utils/emojiIcon";
 
 interface Props {
   onChange?: () => void;
@@ -101,7 +102,7 @@ export function ArizalarPage({ onChange }: Props) {
         <Sheet title={t("applications.chooseDept")} subtitle={sel.name} onClose={() => setView("role")}>
           <ActionRow icon={<Ban size={20} />} label={t("users.noDept")} onClick={() => approve(chosenRole, null)} />
           {deps.map((d: Department) => (
-            <ActionRow key={d.id} icon={d.emoji} label={d.name} onClick={() => approve(chosenRole, d.id)} />
+            <ActionRow key={d.id} icon={<EmojiIcon emoji={d.emoji} color={d.color} size={20} />} label={d.name} onClick={() => approve(chosenRole, d.id)} />
           ))}
         </Sheet>
       )}

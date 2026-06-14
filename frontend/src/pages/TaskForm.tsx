@@ -5,6 +5,7 @@ import type { Attachment, BoardColumn, Comment, Task, User } from "../api/types"
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
+import { EmojiIcon } from "../utils/emojiIcon";
 
 interface Props {
   task: Task | null; // null = yangi
@@ -249,7 +250,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
                 <option value="">{t("task.unassigned")}</option>
                 {deps.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.emoji} {d.name}
+                    {d.name}
                   </option>
                 ))}
               </select>
@@ -303,7 +304,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
             {targetColumns.map((col) => (
               <ActionRow
                 key={col.key}
-                icon={col.emoji}
+                icon={<EmojiIcon emoji={col.emoji} color={col.color} size={20} />}
                 label={col.name}
                 checked={task.status === col.key}
                 onClick={() => changeStatus(col)}

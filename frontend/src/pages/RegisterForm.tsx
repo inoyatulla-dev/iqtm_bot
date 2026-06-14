@@ -59,7 +59,7 @@ export function RegisterForm() {
             className={`btn ${lang === l.code ? "btn--primary" : "btn--ghost"}`}
             style={{ width: "auto", padding: "8px 12px", fontSize: 14 }}
           >
-            {l.flag} {l.label}
+            {l.label}
           </button>
         ))}
       </div>
