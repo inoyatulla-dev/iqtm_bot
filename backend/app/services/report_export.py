@@ -26,6 +26,7 @@ def build_pdf(data: ReportData) -> bytes:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import mm
+    from reportlab.lib.utils import ImageReader
     from reportlab.platypus import (
         Image as RLImage,
         Paragraph,
@@ -48,6 +49,10 @@ def build_pdf(data: ReportData) -> bytes:
     styles.add(ParagraphStyle(
         "ProjectTitle", parent=styles["Heading3"],
         textColor=colors.HexColor(_ACCENT), spaceBefore=10, spaceAfter=4,
+    ))
+    styles.add(ParagraphStyle(
+        "OrgName", parent=styles["Heading2"],
+        textColor=colors.HexColor(_NAVY), fontSize=14, leading=18, spaceAfter=0,
     ))
     styles.add(ParagraphStyle(
         "Cell", parent=styles["Normal"], fontSize=8.5, leading=11,
@@ -80,9 +85,27 @@ def build_pdf(data: ReportData) -> bytes:
     ])
 
     elements = []
+    logo_cell = ""
     if data.logo_path.exists():
-        elements.append(RLImage(str(data.logo_path), width=120, height=80))
-        elements.append(Spacer(1, 8))
+        iw, ih = ImageReader(str(data.logo_path)).getSize()
+        logo_w = 18 * mm
+        logo_cell = RLImage(str(data.logo_path), width=logo_w, height=logo_w * ih / iw)
+
+    if logo_cell or data.org_name:
+        org_cell = Paragraph(data.org_name, styles["OrgName"]) if data.org_name else ""
+        header_table = Table(
+            [[logo_cell, org_cell]], colWidths=[24 * mm, 150 * mm],
+        )
+        header_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (0, 0), "LEFT"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(header_table)
+        elements.append(Spacer(1, 10))
 
     elements.append(Paragraph(f"{data.period_label} hisobot", styles["Title"]))
     elements.append(Paragraph(f"Davr: {data.start} — {data.end}", styles["Normal"]))
@@ -141,14 +164,32 @@ def build_pdf(data: ReportData) -> bytes:
 
 def build_docx(data: ReportData) -> bytes:
     from docx import Document
-    from docx.shared import Inches, RGBColor
+    from docx.enum.table import WD_ALIGN_VERTICAL
+    from docx.shared import Inches, Pt, RGBColor
 
     navy = RGBColor(0x1E, 0x3A, 0x5F)
     accent = RGBColor(0x25, 0x63, 0xEB)
 
     doc = Document()
-    if data.logo_path.exists():
-        doc.add_picture(str(data.logo_path), width=Inches(2))
+    if data.logo_path.exists() or data.org_name:
+        header_table = doc.add_table(rows=1, cols=2)
+        header_table.autofit = False
+        header_table.allow_autofit = False
+        header_table.columns[0].width = Inches(0.9)
+        header_table.columns[1].width = Inches(5.6)
+        logo_cell, org_cell = header_table.rows[0].cells
+        logo_cell.width = Inches(0.9)
+        org_cell.width = Inches(5.6)
+        logo_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        org_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        if data.logo_path.exists():
+            logo_cell.paragraphs[0].add_run().add_picture(str(data.logo_path), width=Inches(0.7))
+        if data.org_name:
+            run = org_cell.paragraphs[0].add_run(data.org_name)
+            run.bold = True
+            run.font.size = Pt(14)
+            run.font.color.rgb = navy
+        doc.add_paragraph()
 
     doc.add_heading(f"{data.period_label} hisobot", level=0)
     doc.add_paragraph(f"Davr: {data.start} — {data.end}")

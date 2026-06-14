@@ -6,7 +6,7 @@ import { useI18n } from "../i18n";
 import { copyText, inviteLink, shareInvite } from "../telegram";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { avatarGradient } from "../utils/avatarColor";
-import { birthdayInDays, formatBirthdayDate } from "../utils/birthday";
+import { birthdayInDays } from "../utils/birthday";
 
 export function UsersPage() {
   const { deps, user: me, isBoss } = useAuth();
@@ -92,6 +92,7 @@ export function UsersPage() {
     : active;
 
   const birthdayUser = active.find((u) => birthdayInDays(u.birthday) === 0);
+  const selDays = birthdayInDays(sel?.birthday);
 
   return (
     <div className="page-content">
@@ -151,20 +152,18 @@ export function UsersPage() {
                   </div>
                 </div>
               </div>
-              {(u.birthday || u.status === "blocked") && (
+              {((days != null && days <= 3) || u.status === "blocked") && (
                 <div className="emp-card__row">
-                  {u.birthday ? (
-                    <span>🎂 {formatBirthdayDate(u.birthday)}</span>
+                  {days != null && days <= 3 ? (
+                    <span className={`badge ${days === 0 ? "badge--warn" : "badge--accent"}`}>
+                      🎂 {days === 0 ? t("users.birthdayBadgeToday") : t("users.birthdayIn").replace("{days}", String(days))}
+                    </span>
                   ) : (
                     <span />
                   )}
-                  {u.status === "blocked" ? (
+                  {u.status === "blocked" && (
                     <span className="badge badge--danger">{t("users.blocked")}</span>
-                  ) : days != null && days <= 60 ? (
-                    <span className={`badge ${days === 0 ? "badge--warn" : "badge--accent"}`}>
-                      {days === 0 ? t("users.birthdayBadgeToday") : t("users.birthdayIn").replace("{days}", String(days))}
-                    </span>
-                  ) : null}
+                  )}
                 </div>
               )}
             </div>
@@ -180,7 +179,7 @@ export function UsersPage() {
         >
           <div className="sheet__pad">
             <div className="emp-card__head">
-              <div className="avatar-wrap">
+              <div className="avatar-wrap" style={{ width: 64, height: 64, fontSize: 24 }}>
                 <div className="avatar" style={{ background: avatarGradient(sel.id) }}>
                   {sel.photo ? <img src={sel.photo} alt="" /> : initials(sel.name)}
                 </div>
@@ -196,9 +195,15 @@ export function UsersPage() {
                 </div>
               </div>
             </div>
-            {(sel.birthday || sel.status === "blocked") && (
+            {((selDays != null && selDays <= 3) || sel.status === "blocked") && (
               <div className="emp-card__row" style={{ marginTop: 12 }}>
-                {sel.birthday ? <span>🎂 {formatBirthdayDate(sel.birthday)}</span> : <span />}
+                {selDays != null && selDays <= 3 ? (
+                  <span className={`badge ${selDays === 0 ? "badge--warn" : "badge--accent"}`}>
+                    🎂 {selDays === 0 ? t("users.birthdayBadgeToday") : t("users.birthdayIn").replace("{days}", String(selDays))}
+                  </span>
+                ) : (
+                  <span />
+                )}
                 {sel.status === "blocked" && (
                   <span className="badge badge--danger">{t("users.blocked")}</span>
                 )}

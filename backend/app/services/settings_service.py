@@ -18,6 +18,7 @@ DEFAULT_MAX_FILE_MB = 10
 DEFAULT_STORAGE_LIMIT_GB = 3
 DEFAULT_LOGO_PATH = "/logo.png"
 DEFAULT_LOGO_SIZE = 40
+DEFAULT_ORG_NAME = ""
 
 # Xabar shablonlari — har bir voqea uchun tahrirlanadigan matn ({var} qoliplari bilan)
 TEMPLATE_EVENTS = ROUTE_EVENTS
@@ -151,3 +152,7 @@ async def get_logo_path(session) -> str:
 async def get_logo_size(session) -> int:
     val = await get_setting(session, "logo_size")
     return int(val) if val and val.isdigit() else DEFAULT_LOGO_SIZE
+
+
+async def get_org_name(session) -> str:
+    return await get_setting(session, "org_name") or DEFAULT_ORG_NAME

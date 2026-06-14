@@ -20,6 +20,54 @@ DEFAULT_LOGO = ASSETS_DIR / "logo.png"
 
 _PERIOD_DAYS = {"week": 7, "month": 30, "year": 365}
 _PERIOD_LABELS = {"week": "Haftalik", "month": "Oylik", "year": "Yillik"}
+_MONTH_NAMES = {
+    1: "Yanvar", 2: "Fevral", 3: "Mart", 4: "Aprel", 5: "May", 6: "Iyun",
+    7: "Iyul", 8: "Avgust", 9: "Sentyabr", 10: "Oktyabr", 11: "Noyabr", 12: "Dekabr",
+}
+
+
+def resolve_period_range(
+    period: str,
+    year: int | None = None,
+    month: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> tuple[date, date]:
+    """Davr uchun (boshlanish, tugash) sanalarini hisoblaydi.
+
+    Ustunlik tartibi: aniq sana oralig'i > aniq oy/yil > nisbiy davr (oxirgi N kun).
+    """
+    if date_from and date_to:
+        return date_from, date_to
+    if period == "year" and year:
+        return date(year, 1, 1), date(year, 12, 31)
+    if period == "month" and year and month:
+        start = date(year, month, 1)
+        end = date(year, month + 1, 1) - timedelta(days=1) if month < 12 else date(year, 12, 31)
+        return start, end
+    days = _PERIOD_DAYS.get(period, _PERIOD_DAYS["month"])
+    end = date.today()
+    start = end - timedelta(days=days - 1)
+    return start, end
+
+
+def period_label(
+    period: str,
+    start: date,
+    end: date,
+    year: int | None = None,
+    month: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> str:
+    """Hisobot sarlavhasi uchun davr nomi."""
+    if date_from and date_to:
+        return f"{start.strftime('%d.%m.%Y')} — {end.strftime('%d.%m.%Y')}"
+    if period == "year" and year:
+        return str(year)
+    if period == "month" and year and month:
+        return f"{_MONTH_NAMES.get(month, '')} {year}"
+    return _PERIOD_LABELS.get(period, _PERIOD_LABELS["week"])
 
 
 @dataclass
@@ -73,6 +121,7 @@ class ReportData:
     departments: list[DeptRow] = field(default_factory=list)
     projects: list[ProjectRow] = field(default_factory=list)
     logo_path: Path = DEFAULT_LOGO
+    org_name: str = ""
 
 
 def user_label(name: str, username: str | None) -> str:
@@ -101,14 +150,22 @@ def _schedule_label(
     return f"Orqada qolmoqda — {days_left} kun qoldi (vaqt {time_percent}%, bajarildi {percent}%)"
 
 
-async def collect_report_data(session: AsyncSession, period: str) -> ReportData:
+async def collect_report_data(
+    session: AsyncSession,
+    period: str,
+    year: int | None = None,
+    month: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> ReportData:
     if period not in _PERIOD_DAYS:
         period = "week"
 
-    end = date.today()
-    start = end - timedelta(days=_PERIOD_DAYS[period] - 1)
+    start, end = resolve_period_range(period, year, month, date_from, date_to)
     period_start = datetime.combine(start, datetime.min.time())
+    period_end = datetime.combine(end, datetime.max.time())
     now = datetime.now()
+    label = period_label(period, start, end, year, month, date_from, date_to)
 
     columns = await board_service.list_columns(session)
     done_keys = {c.key for c in columns if c.is_done}
@@ -139,7 +196,11 @@ async def collect_report_data(session: AsyncSession, period: str) -> ReportData:
     created_in_period = await session.scalar(
         select(func.count())
         .select_from(Task)
-        .where(Task.type != TaskType.PROJECT.value, Task.created_at >= period_start)
+        .where(
+            Task.type != TaskType.PROJECT.value,
+            Task.created_at >= period_start,
+            Task.created_at <= period_end,
+        )
     ) or 0
 
     done_in_period = await session.scalar(
@@ -149,6 +210,7 @@ async def collect_report_data(session: AsyncSession, period: str) -> ReportData:
             Task.type != TaskType.PROJECT.value,
             done_filter,
             Task.updated_at >= period_start,
+            Task.updated_at <= period_end,
         )
     ) or 0
 
@@ -225,16 +287,18 @@ async def collect_report_data(session: AsyncSession, period: str) -> ReportData:
         ))
 
     logo_path = await _resolve_logo(session)
+    org_name = await settings_service.get_org_name(session)
 
     return ReportData(
         period=period,
-        period_label=_PERIOD_LABELS[period],
+        period_label=label,
         start=start, end=end, generated_at=now,
         total=total, overdue=overdue,
         created_in_period=created_in_period, done_in_period=done_in_period,
         statuses=statuses, departments=departments,
         projects=projects,
         logo_path=logo_path,
+        org_name=org_name,
     )
 
 

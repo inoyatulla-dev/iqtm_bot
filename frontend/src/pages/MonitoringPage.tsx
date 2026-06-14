@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
 import { reportsApi, statsApi } from "../api/client";
-import type { ReportFormat, ReportPeriod } from "../api/client";
+import type { ReportFormat } from "../api/client";
 import type { DashboardData } from "../api/types";
 import { useI18n } from "../i18n";
-
-const PERIODS: ReportPeriod[] = ["week", "month", "year"];
+import { PeriodPicker, defaultPeriodValue, toPeriodParams, type PeriodValue } from "../components/PeriodPicker";
 
 export function MonitoringPage() {
   const { t } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<ReportPeriod>("month");
+  const [period, setPeriod] = useState<PeriodValue>(() => defaultPeriodValue("month"));
   const [sending, setSending] = useState<ReportFormat | null>(null);
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    statsApi.dashboard(period).then((d) => {
+    statsApi.dashboard(period.period, toPeriodParams(period)).then((d) => {
       setData(d);
       setLoading(false);
     });
@@ -26,7 +25,7 @@ export function MonitoringPage() {
     setSending(fmt);
     setSent(false);
     try {
-      await reportsApi.send(period, fmt);
+      await reportsApi.send(period.period, fmt, toPeriodParams(period));
       setSent(true);
     } catch (e: any) {
       alert(e?.response?.data?.detail || t("common.error"));
@@ -49,17 +48,7 @@ export function MonitoringPage() {
 
   return (
     <div className="page-content">
-      <div className="report-row" style={{ marginBottom: 16 }}>
-        {PERIODS.map((p) => (
-          <button
-            key={p}
-            className={`btn ${period === p ? "btn--primary" : "btn--ghost"}`}
-            onClick={() => { setPeriod(p); setSent(false); }}
-          >
-            {t(`stats.period.${p}`)}
-          </button>
-        ))}
-      </div>
+      <PeriodPicker value={period} onChange={(v) => { setPeriod(v); setSent(false); }} />
 
       <div className="stat-grid">
         <div className="stat-card">

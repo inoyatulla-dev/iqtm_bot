@@ -4,7 +4,7 @@ import type { Topic } from "../api/types";
 import { useI18n } from "../i18n";
 import { Sheet } from "./Sheet";
 
-export function TopicsSection() {
+export function TopicsSection({ onChange }: { onChange?: (topics: Topic[]) => void }) {
   const { t } = useI18n();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,8 +12,10 @@ export function TopicsSection() {
   const [creating, setCreating] = useState(false);
 
   async function load() {
-    setTopics(await topicsApi.list());
+    const data = await topicsApi.list();
+    setTopics(data);
     setLoading(false);
+    onChange?.(data);
   }
 
   useEffect(() => {

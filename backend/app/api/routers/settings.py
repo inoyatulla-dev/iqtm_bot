@@ -11,6 +11,7 @@ from app.services.settings_service import (
     get_logo_path,
     get_logo_size,
     get_max_file_mb,
+    get_org_name,
     get_route,
     get_setting,
     get_storage_limit_gb,
@@ -47,6 +48,7 @@ async def get_settings(_: BossUser, session: SessionDep):
     out.archive_channel_id = str(archive_id) if archive_id else ""
     out.logo_path = await get_logo_path(session)
     out.logo_size = await get_logo_size(session)
+    out.org_name = await get_org_name(session)
     return out
 
 
@@ -74,6 +76,8 @@ async def update_settings(body: SettingsUpdate, _: BossUser, session: SessionDep
         await set_setting(session, "logo_path", body.logo_path)
     if body.logo_size is not None:
         await set_setting(session, "logo_size", str(body.logo_size))
+    if body.org_name is not None:
+        await set_setting(session, "org_name", body.org_name.strip())
     await session.flush()
     return await get_settings(_, session)
 

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  depsApi, settingsApi, updateProfile, uploadProfilePhoto, type AppSettings,
+  depsApi, settingsApi, topicsApi, updateProfile, uploadProfilePhoto, type AppSettings,
 } from "../api/client";
-import { PROFILE_EMOJI_OPTIONS } from "../api/types";
+import { PROFILE_EMOJI_OPTIONS, type Topic } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n, LANGS, type Lang } from "../i18n";
 import { BoardColumnsSection } from "../components/BoardColumnsSection";
@@ -24,7 +24,6 @@ type View =
   | "group-main"
   | "group-departments"
   | "templates"
-  | "topics"
   | "board"
   | "branding";
 
@@ -42,8 +41,6 @@ function viewTitleKey(view: View): string {
       return "settings.group.departments";
     case "templates":
       return "settings.menu.templates";
-    case "topics":
-      return "settings.topics.title";
     case "board":
       return "settings.menu.board";
     case "branding":
@@ -84,7 +81,6 @@ export function SettingsPage() {
       {view === "group-main" && <GroupMainView />}
       {view === "group-departments" && <DepartmentsSection />}
       {view === "templates" && <TemplatesSection />}
-      {view === "topics" && <TopicsSection />}
       {view === "board" && <BoardColumnsSection />}
       {view === "branding" && <BrandingTab />}
     </div>
@@ -99,7 +95,6 @@ function MenuView({ isBoss, onNav }: { isBoss: boolean; onNav: (v: View) => void
       ? ([
           { key: "group-menu", label: t("settings.menu.group") },
           { key: "templates", label: t("settings.menu.templates") },
-          { key: "topics", label: t("settings.topics.title") },
           { key: "board", label: t("settings.menu.board") },
           { key: "branding", label: t("settings.menu.branding") },
         ] as { key: View; label: string }[])
@@ -303,6 +298,7 @@ function GroupMainView() {
   const { t } = useI18n();
   const [s, setS] = useState<AppSettings | null>(null);
   const [depTopics, setDepTopics] = useState<Record<string, string>>({});
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -358,18 +354,30 @@ function GroupMainView() {
         </button>
       </div>
 
+      <div className="section-title">{t("settings.topics.title")}</div>
+      <TopicsSection onChange={setTopics} />
+
       <div className="section-title">{t("settings.deptTopics")}</div>
       <div className="sheet__pad">
+        <p style={{ color: "var(--hint)", fontSize: 13, margin: "0 0 12px" }}>
+          {t("settings.deptTopicsHint")}
+        </p>
         {deps.map((d) => (
           <div className="field" key={d.id}>
             <label>
               {d.emoji} {d.name}
             </label>
-            <input
+            <select
               value={depTopics[d.id] ?? ""}
-              placeholder="topic ID"
               onChange={(e) => setDepTopics({ ...depTopics, [d.id]: e.target.value })}
-            />
+            >
+              <option value="">{t("settings.topics.routeDefault")}</option>
+              {topics.map((tp) => (
+                <option key={tp.id} value={tp.topic_id}>
+                  {tp.name} (#{tp.topic_id})
+                </option>
+              ))}
+            </select>
           </div>
         ))}
         <button className="btn btn--primary" onClick={saveDepTopics}>
@@ -404,6 +412,7 @@ function BrandingTab() {
       max_file_mb: s!.max_file_mb,
       storage_limit_gb: s!.storage_limit_gb,
       archive_channel_id: s!.archive_channel_id,
+      org_name: s!.org_name,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
@@ -461,6 +470,14 @@ function BrandingTab() {
             max={120}
             value={s.logo_size}
             onChange={(e) => setS({ ...s, logo_size: Number(e.target.value) })}
+          />
+        </div>
+        <div className="field">
+          <label>{t("settings.orgName")}</label>
+          <input
+            value={s.org_name}
+            onChange={(e) => setS({ ...s, org_name: e.target.value })}
+            placeholder={t("settings.orgNamePh")}
           />
         </div>
         {err && <div className="form-error">{err}</div>}

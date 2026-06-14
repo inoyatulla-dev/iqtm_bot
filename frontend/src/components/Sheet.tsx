@@ -11,7 +11,12 @@ export function Sheet({ title, subtitle, onClose, children }: SheetProps) {
   return (
     <div className="sheet-overlay" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet__handle" />
+        <div className="sheet__top">
+          <div className="sheet__handle" />
+          <button className="sheet__close" onClick={onClose} aria-label="Yopish">
+            ×
+          </button>
+        </div>
         {title && (
           <div className="sheet__title">
             {title}

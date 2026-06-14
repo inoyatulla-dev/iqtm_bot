@@ -10,6 +10,7 @@ class SettingsOut(BaseModel):
     archive_channel_id: str = ""
     logo_path: str = "/logo.png"
     logo_size: int = 40
+    org_name: str = ""
 
 
 class BrandingOut(BaseModel):
@@ -26,3 +27,4 @@ class SettingsUpdate(BaseModel):
     archive_channel_id: str | None = None
     logo_path: str | None = None
     logo_size: int | None = None
+    org_name: str | None = None

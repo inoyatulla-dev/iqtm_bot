@@ -10,7 +10,7 @@ from app import notifications as notify
 from app.api.deps import CurrentUser, SessionDep
 from app.core import permissions
 from app.core.constants import TaskType
-from app.models import Attachment, Comment, Log, Task, User
+from app.models import Attachment, Comment, Log, Project, Task, User
 from app.schemas.attachment import AttachmentOut
 from app.schemas.comment import CommentCreate, CommentOut
 from app.schemas.task import TaskCreate, TaskOut, TaskStatusUpdate, TaskUpdate
@@ -243,6 +243,9 @@ async def _to_out_batch(
     masul_ids = {t.masul_id for t in tasks if t.masul_id}
     info = await _author_info(session, masul_ids)
 
+    project_ids = {t.project_id for t in tasks if t.project_id}
+    project_names = await _project_names(session, project_ids)
+
     counts: dict[int, int] = {}
     task_ids = [t.id for t in tasks]
     if task_ids:
@@ -261,9 +264,19 @@ async def _to_out_batch(
         out.masul_name = masul_info[0] if masul_info else None
         out.masul_photo = masul_info[1] if masul_info else None
         out.masul_emoji = masul_info[2] if masul_info else None
+        out.project_name = project_names.get(task.project_id) if task.project_id else None
         out.attachments_count = counts.get(task.id, 0)
         out_list.append(out)
     return out_list
+
+
+async def _project_names(session: SessionDep, project_ids: set[int]) -> dict[int, str]:
+    if not project_ids:
+        return {}
+    result = await session.execute(
+        select(Project.id, Project.name).where(Project.id.in_(project_ids))
+    )
+    return dict(result.all())
 
 
 async def _author_names(session: SessionDep, user_ids: set[int]) -> dict[int, str]:

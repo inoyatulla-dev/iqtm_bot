@@ -216,7 +216,11 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
   }
 
   return (
-    <Sheet title={task ? `#${task.id}` : t("task.new")} onClose={onClose}>
+    <Sheet
+      title={task ? `#${task.id}` : t("task.new")}
+      subtitle={task?.project_name ? `🗂 ${task.project_name}` : undefined}
+      onClose={onClose}
+    >
       <div className="sheet__pad">
         <div className="field">
           <label>{t("task.name")}</label>
@@ -529,12 +533,6 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
           </button>
         </div>
       )}
-
-      <div className="sheet__pad">
-        <button className="btn btn--ghost" onClick={onClose}>
-          {t("common.close")}
-        </button>
-      </div>
     </Sheet>
   );
 }

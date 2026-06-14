@@ -1,5 +1,6 @@
 """Statistik hisobotlarni PDF/DOCX formatida yuklab olish va Telegramga yuborish."""
 import io
+from datetime import date
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -19,7 +20,11 @@ _PERIODS = {"week", "month", "year"}
 
 
 @router.get("/{period}.{fmt}")
-async def download_report(period: str, fmt: str, _: BossUser, session: SessionDep):
+async def download_report(
+    period: str, fmt: str, _: BossUser, session: SessionDep,
+    year: int | None = None, month: int | None = None,
+    date_from: date | None = None, date_to: date | None = None,
+):
     if period not in _PERIODS:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Davr topilmadi")
     builder = _FORMATS.get(fmt)
@@ -27,7 +32,9 @@ async def download_report(period: str, fmt: str, _: BossUser, session: SessionDe
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Format topilmadi")
 
     build_fn, media_type = builder
-    data = await report_service.collect_report_data(session, period)
+    data = await report_service.collect_report_data(
+        session, period, year=year, month=month, date_from=date_from, date_to=date_to
+    )
     content = build_fn(data)
     filename = f"hisobot_{period}_{data.end.isoformat()}.{fmt}"
     return StreamingResponse(
@@ -38,7 +45,11 @@ async def download_report(period: str, fmt: str, _: BossUser, session: SessionDe
 
 
 @router.post("/send/{period}.{fmt}")
-async def send_report(period: str, fmt: str, user: DashboardUser, session: SessionDep):
+async def send_report(
+    period: str, fmt: str, user: DashboardUser, session: SessionDep,
+    year: int | None = None, month: int | None = None,
+    date_from: date | None = None, date_to: date | None = None,
+):
     """Hisobotni generatsiya qilib so'rovchining shaxsiy Telegram chatiga yuboradi."""
     if period not in _PERIODS:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Davr topilmadi")
@@ -47,7 +58,9 @@ async def send_report(period: str, fmt: str, user: DashboardUser, session: Sessi
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Format topilmadi")
 
     build_fn, _media_type = builder
-    data = await report_service.collect_report_data(session, period)
+    data = await report_service.collect_report_data(
+        session, period, year=year, month=month, date_from=date_from, date_to=date_to
+    )
     content = build_fn(data)
     filename = f"hisobot_{period}_{data.end.isoformat()}.{fmt}"
     ok = await notify.send_document_bytes(

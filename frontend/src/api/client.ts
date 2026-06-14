@@ -149,6 +149,7 @@ export interface AppSettings {
   archive_channel_id: string;
   logo_path: string;
   logo_size: number;
+  org_name: string;
 }
 
 export interface Branding {
@@ -186,12 +187,22 @@ export const topicsApi = {
 };
 
 // ── Stats ──────────────────────────────────────────────
+export interface PeriodParams {
+  year?: number;
+  month?: number;
+  date_from?: string;
+  date_to?: string;
+}
+
 export const statsApi = {
-  me: (period?: string) => api.get<StatusCounts>("/stats/me", { params: { period } }).then((r) => r.data),
-  global: (period?: string) => api.get<StatusCounts>("/stats/global", { params: { period } }).then((r) => r.data),
-  rating: (period?: string) => api.get<RatingRow[]>("/stats/rating", { params: { period } }).then((r) => r.data),
-  dashboard: (period?: string) =>
-    api.get<DashboardData>("/stats/dashboard", { params: { period } }).then((r) => r.data),
+  me: (period?: string, extra?: PeriodParams) =>
+    api.get<StatusCounts>("/stats/me", { params: { period, ...extra } }).then((r) => r.data),
+  global: (period?: string, extra?: PeriodParams) =>
+    api.get<StatusCounts>("/stats/global", { params: { period, ...extra } }).then((r) => r.data),
+  rating: (period?: string, extra?: PeriodParams) =>
+    api.get<RatingRow[]>("/stats/rating", { params: { period, ...extra } }).then((r) => r.data),
+  dashboard: (period?: string, extra?: PeriodParams) =>
+    api.get<DashboardData>("/stats/dashboard", { params: { period, ...extra } }).then((r) => r.data),
 };
 
 // ── Loyihalar ──────────────────────────────────────────
@@ -210,8 +221,8 @@ export type ReportPeriod = "week" | "month" | "year";
 export type ReportFormat = "pdf" | "docx";
 
 export const reportsApi = {
-  download: (period: ReportPeriod, fmt: ReportFormat) =>
-    api.get(`/reports/${period}.${fmt}`, { responseType: "blob" }).then((r) => r.data as Blob),
-  send: (period: ReportPeriod, fmt: ReportFormat) =>
-    api.post(`/reports/send/${period}.${fmt}`).then((r) => r.data as { ok: boolean }),
+  download: (period: ReportPeriod, fmt: ReportFormat, extra?: PeriodParams) =>
+    api.get(`/reports/${period}.${fmt}`, { params: extra, responseType: "blob" }).then((r) => r.data as Blob),
+  send: (period: ReportPeriod, fmt: ReportFormat, extra?: PeriodParams) =>
+    api.post(`/reports/send/${period}.${fmt}`, null, { params: extra }).then((r) => r.data as { ok: boolean }),
 };

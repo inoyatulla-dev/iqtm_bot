@@ -1,5 +1,5 @@
 """Statistika va xodimlar reytingi."""
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from fastapi import APIRouter
 from sqlalchemy import case, func, select
@@ -8,32 +8,51 @@ from app.api.deps import BossUser, CurrentUser, DashboardUser, SessionDep
 from app.core.constants import TaskType
 from app.models import Department, Task, User
 from app.schemas.stats import DashboardOut, DeptProgress, DistributionSlice, RatingRow, StatusCounts
-from app.services import board_service
+from app.services import board_service, report_service
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
-_PERIOD_DAYS = {"week": 7, "month": 30, "year": 365}
 
-
-def _period_start(period: str) -> datetime:
-    days = _PERIOD_DAYS.get(period, _PERIOD_DAYS["month"])
-    return datetime.combine(date.today() - timedelta(days=days - 1), datetime.min.time())
+def _period_range(
+    period: str, year: int | None, month: int | None,
+    date_from: date | None, date_to: date | None,
+) -> tuple[datetime, datetime]:
+    start, end = report_service.resolve_period_range(period, year, month, date_from, date_to)
+    return datetime.combine(start, datetime.min.time()), datetime.combine(end, datetime.max.time())
 
 
 @router.get("/me", response_model=StatusCounts)
-async def my_stats(user: CurrentUser, session: SessionDep, period: str = "month"):
-    return await _counts(session, masul_id=user.id, period=period)
+async def my_stats(
+    user: CurrentUser, session: SessionDep, period: str = "month",
+    year: int | None = None, month: int | None = None,
+    date_from: date | None = None, date_to: date | None = None,
+):
+    return await _counts(
+        session, masul_id=user.id, period=period,
+        year=year, month=month, date_from=date_from, date_to=date_to,
+    )
 
 
 @router.get("/global", response_model=StatusCounts)
-async def global_stats(_: BossUser, session: SessionDep, period: str = "month"):
-    return await _counts(session, period=period)
+async def global_stats(
+    _: BossUser, session: SessionDep, period: str = "month",
+    year: int | None = None, month: int | None = None,
+    date_from: date | None = None, date_to: date | None = None,
+):
+    return await _counts(
+        session, period=period,
+        year=year, month=month, date_from=date_from, date_to=date_to,
+    )
 
 
 @router.get("/rating", response_model=list[RatingRow])
-async def rating(_: BossUser, session: SessionDep, period: str = "month"):
+async def rating(
+    _: BossUser, session: SessionDep, period: str = "month",
+    year: int | None = None, month: int | None = None,
+    date_from: date | None = None, date_to: date | None = None,
+):
     today = date.today()
-    period_start = _period_start(period)
+    period_start, period_end = _period_range(period, year, month, date_from, date_to)
     done_keys = await board_service.get_done_keys(session)
     is_done = Task.status.in_(done_keys) if done_keys else False
     is_active = Task.status.not_in(done_keys) if done_keys else True
@@ -56,7 +75,7 @@ async def rating(_: BossUser, session: SessionDep, period: str = "month"):
             ).label("overdue"),
             func.sum(
                 case(
-                    (is_done & (Task.updated_at >= period_start), 1),
+                    (is_done & (Task.updated_at >= period_start) & (Task.updated_at <= period_end), 1),
                     else_=0,
                 )
             ).label("done_in_period"),
@@ -78,7 +97,11 @@ async def rating(_: BossUser, session: SessionDep, period: str = "month"):
 
 
 @router.get("/dashboard", response_model=DashboardOut)
-async def dashboard(_: DashboardUser, session: SessionDep, period: str = "month"):
+async def dashboard(
+    _: DashboardUser, session: SessionDep, period: str = "month",
+    year: int | None = None, month: int | None = None,
+    date_from: date | None = None, date_to: date | None = None,
+):
     done_keys = await board_service.get_done_keys(session)
     initial_keys = await board_service.get_initial_keys(session)
 
@@ -89,7 +112,7 @@ async def dashboard(_: DashboardUser, session: SessionDep, period: str = "month"
     rows = result.all()
 
     now = datetime.now()
-    period_start = _period_start(period)
+    period_start, period_end = _period_range(period, year, month, date_from, date_to)
 
     total = len(rows)
     done = overdue = new_count = new_in_period = closed_in_period = 0
@@ -106,9 +129,9 @@ async def dashboard(_: DashboardUser, session: SessionDep, period: str = "month"
         elif st in initial_keys:
             new_count += 1
 
-        if created_at and created_at >= period_start:
+        if created_at and period_start <= created_at <= period_end:
             new_in_period += 1
-        if is_done and updated_at and updated_at >= period_start:
+        if is_done and updated_at and period_start <= updated_at <= period_end:
             closed_in_period += 1
 
         if dep_id:
@@ -158,8 +181,11 @@ async def dashboard(_: DashboardUser, session: SessionDep, period: str = "month"
 
 
 async def _counts(
-    session: SessionDep, masul_id: int | None = None, period: str = "month"
+    session: SessionDep, masul_id: int | None = None, period: str = "month",
+    year: int | None = None, month: int | None = None,
+    date_from: date | None = None, date_to: date | None = None,
 ) -> StatusCounts:
+    period_start, period_end = _period_range(period, year, month, date_from, date_to)
     done_keys = await board_service.get_done_keys(session)
     stmt = select(Task.status, func.count()).where(Task.type != TaskType.PROJECT.value)
     if masul_id:
@@ -194,7 +220,8 @@ async def _counts(
         .where(
             Task.type != TaskType.PROJECT.value,
             Task.status.in_(done_keys) if done_keys else False,
-            Task.updated_at >= _period_start(period),
+            Task.updated_at >= period_start,
+            Task.updated_at <= period_end,
         )
     )
     if masul_id:

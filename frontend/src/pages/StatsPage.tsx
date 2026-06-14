@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { statsApi } from "../api/client";
-import type { ReportPeriod } from "../api/client";
 import type { RatingRow, StatusCounts } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
-
-const PERIODS: ReportPeriod[] = ["week", "month", "year"];
+import { PeriodPicker, defaultPeriodValue, toPeriodParams, type PeriodValue } from "../components/PeriodPicker";
 
 export function StatsPage() {
   const { isBoss, columns } = useAuth();
@@ -13,14 +11,15 @@ export function StatsPage() {
   const [counts, setCounts] = useState<StatusCounts | null>(null);
   const [rating, setRating] = useState<RatingRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<ReportPeriod>("week");
+  const [period, setPeriod] = useState<PeriodValue>(() => defaultPeriodValue("week"));
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const c = isBoss ? await statsApi.global(period) : await statsApi.me(period);
+      const params = toPeriodParams(period);
+      const c = isBoss ? await statsApi.global(period.period, params) : await statsApi.me(period.period, params);
       setCounts(c);
-      if (isBoss) setRating(await statsApi.rating(period));
+      if (isBoss) setRating(await statsApi.rating(period.period, params));
       setLoading(false);
     })();
   }, [isBoss, period]);
@@ -46,17 +45,7 @@ export function StatsPage() {
         {isBoss ? t("stats.titleGlobal") : t("stats.titleMy")}
       </div>
 
-      <div className="report-row" style={{ marginBottom: 16 }}>
-        {PERIODS.map((p) => (
-          <button
-            key={p}
-            className={`btn ${period === p ? "btn--primary" : "btn--ghost"}`}
-            onClick={() => setPeriod(p)}
-          >
-            {t(`stats.period.${p}`)}
-          </button>
-        ))}
-      </div>
+      <PeriodPicker value={period} onChange={setPeriod} />
 
       <div className="stat-grid">
         {cards.map((c) => (

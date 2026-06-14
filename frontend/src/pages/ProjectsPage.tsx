@@ -1,13 +1,14 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { projectsApi, tasksApi, usersApi } from "../api/client";
-import type { ProjectDetail, ProjectStatus, ProjectTaskCreate, User } from "../api/types";
+import type { ProjectDetail, ProjectStatus, ProjectTaskCreate, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
+import { TaskForm } from "./TaskForm";
 import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
 
 export function ProjectsPage() {
-  const { isBoss, columns } = useAuth();
+  const { isBoss, isObserver, columns } = useAuth();
   const { t, lang } = useI18n();
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,9 @@ export function ProjectsPage() {
   const [taskName, setTaskName] = useState("");
   const [taskMasul, setTaskMasul] = useState<number | "">("");
   const [taskSaving, setTaskSaving] = useState(false);
+
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
 
   const sel = projects.find((p) => p.id === selId) || null;
 
@@ -124,7 +128,7 @@ export function ProjectsPage() {
       await tasksApi.create({
         name: taskName.trim(),
         masul_id: taskMasul === "" ? null : taskMasul,
-        type: "project",
+        type: "standalone",
         project_id: sel.id,
       });
       await load();
@@ -171,7 +175,12 @@ export function ProjectsPage() {
             style = { background: "var(--surface)", color: "var(--hint)" };
           }
           return (
-            <div className="project-task" key={task.id}>
+            <div
+              className="project-task"
+              key={task.id}
+              style={{ cursor: "pointer" }}
+              onClick={() => { setEditingTask(task); setTaskFormOpen(true); }}
+            >
               <span className={cls} style={style}>{icon}</span>
               {task.name}
               <span className="project-task__assignee">
@@ -413,6 +422,22 @@ export function ProjectsPage() {
             </button>
           </div>
         </Sheet>
+      )}
+
+      {taskFormOpen && (
+        <TaskForm
+          key={editingTask?.id ?? "new"}
+          task={editingTask}
+          isBoss={isBoss}
+          isObserver={isObserver}
+          onClose={() => setTaskFormOpen(false)}
+          onSaved={() => {
+            setTaskFormOpen(false);
+            setEditingTask(null);
+            load();
+          }}
+          onStatusChanged={(updated) => setEditingTask(updated)}
+        />
       )}
     </div>
   );

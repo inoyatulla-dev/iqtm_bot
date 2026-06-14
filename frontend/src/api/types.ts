@@ -52,6 +52,7 @@ export interface Task {
   status: string;
   type: TaskType;
   project_id: number | null;
+  project_name?: string | null;
   is_overdue: boolean;
   attachments_count: number;
   created_at?: string;
