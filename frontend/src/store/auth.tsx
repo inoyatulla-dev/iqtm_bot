@@ -2,7 +2,7 @@ import {
   createContext, useContext, useEffect, useState, type ReactNode,
 } from "react";
 import {
-  authenticate, boardColumnsApi, clearToken, depsApi, fetchMe, getToken,
+  authenticate, boardColumnsApi, brandingApi, clearToken, depsApi, fetchMe, getToken,
   loginWithCredentials, updateLang,
 } from "../api/client";
 import type { BoardColumn, Department, User } from "../api/types";
@@ -18,6 +18,7 @@ interface AuthState {
   needsLogin: boolean;
   isBoss: boolean;
   isObserver: boolean;
+  timezone: string;
   reload: () => void;
   loginWeb: (login: string, password: string) => Promise<void>;
   logout: () => void;
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [lang, setLangState] = useState<Lang>(detectLang());
+  const [timezone, setTimezone] = useState("Asia/Tashkent");
 
   async function applyUser(u: User) {
     setUser(u);
@@ -82,6 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     load();
   }, []);
 
+  useEffect(() => {
+    brandingApi
+      .get()
+      .then((b) => setTimezone(b.timezone || "Asia/Tashkent"))
+      .catch(() => {});
+  }, []);
+
   async function loginWeb(login: string, password: string) {
     const { user } = await loginWithCredentials(login, password);
     await applyUser(user);
@@ -108,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user, deps, columns, loading, error, needsLogin,
         isBoss: user?.role === "boss",
         isObserver: user?.role === "observer",
+        timezone,
         reload: load,
         loginWeb,
         logout,

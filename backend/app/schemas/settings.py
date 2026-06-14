@@ -12,11 +12,13 @@ class SettingsOut(BaseModel):
     logo_size: int = 40
     logo_doc_path: str = ""
     org_name: str = ""
+    timezone: str = "Asia/Tashkent"
 
 
 class BrandingOut(BaseModel):
     logo_path: str = "/logo.png"
     logo_size: int = 40
+    timezone: str = "Asia/Tashkent"
 
 
 class SettingsUpdate(BaseModel):
@@ -29,3 +31,4 @@ class SettingsUpdate(BaseModel):
     logo_path: str | None = None
     logo_size: int | None = None
     org_name: str | None = None
+    timezone: str | None = None

@@ -479,6 +479,7 @@ function GroupMainView() {
 function BrandingTab() {
   const { t } = useI18n();
   const [s, setS] = useState<AppSettings | null>(null);
+  const [timezones, setTimezones] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -489,8 +490,9 @@ function BrandingTab() {
   const fileDocRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    settingsApi.get().then((data) => {
+    Promise.all([settingsApi.get(), settingsApi.timezones()]).then(([data, tzs]) => {
       setS(data);
+      setTimezones(tzs);
       setLoading(false);
     });
   }, []);
@@ -504,6 +506,7 @@ function BrandingTab() {
       storage_limit_gb: s!.storage_limit_gb,
       archive_channel_id: s!.archive_channel_id,
       org_name: s!.org_name,
+      timezone: s!.timezone,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
@@ -627,6 +630,22 @@ function BrandingTab() {
             placeholder={t("settings.orgNamePh")}
           />
         </div>
+        <div className="field">
+          <label>{t("settings.timezone")}</label>
+          <select
+            value={s.timezone}
+            onChange={(e) => setS({ ...s, timezone: e.target.value })}
+          >
+            {timezones.map((tz) => (
+              <option key={tz} value={tz}>
+                {tz}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
+          {t("settings.timezoneHint")}
+        </p>
       </div>
 
       <div className="section-title">{t("settings.fileLimits")}</div>

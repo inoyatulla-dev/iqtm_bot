@@ -95,7 +95,39 @@ async def init_models() -> None:
             )
         except Exception:
             pass
+        await _fix_utc_timestamps(conn)
     logger.info("Jadvallar tayyor.")
+
+
+# created_at/updated_at avval SQLite "func.now()" (UTC) bilan to'ldirilgan,
+# endi Python datetime.now() (server vaqti, Asia/Tashkent, UTC+5) ishlatiladi —
+# eski yozuvlarni bir martalik +5 soatga surish bilan moslashtiramiz.
+_TZ_FIX_COLUMNS = {
+    "users": ["created_at"],
+    "comments": ["created_at"],
+    "attachments": ["created_at"],
+    "logs": ["created_at"],
+    "projects": ["created_at"],
+    "tasks": ["created_at", "updated_at"],
+}
+
+
+async def _fix_utc_timestamps(conn) -> None:
+    result = await conn.exec_driver_sql(
+        "SELECT value FROM settings WHERE key='_tz_fix_applied'"
+    )
+    if result.first():
+        return
+    for table, cols in _TZ_FIX_COLUMNS.items():
+        for col in cols:
+            await conn.exec_driver_sql(
+                f"UPDATE {table} SET {col} = datetime({col}, '+5 hours') "
+                f"WHERE {col} IS NOT NULL"
+            )
+    await conn.exec_driver_sql(
+        "INSERT INTO settings (key, value) VALUES ('_tz_fix_applied', '1')"
+    )
+    logger.info("Eski created_at/updated_at qiymatlari +5 soatga surildi (UTC -> Tashkent).")
 
 
 async def seed_data() -> None:

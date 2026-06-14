@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import ProjectStatus, StageStatus
@@ -16,7 +16,7 @@ class Project(Base):
     description: Mapped[str | None] = mapped_column(Text, default=None)
     status: Mapped[ProjectStatus] = mapped_column(EnumCol(ProjectStatus), default=ProjectStatus.ACTIVE)
     created_by: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     deadline: Mapped[date | None] = mapped_column(Date, default=None)
 
     stages: Mapped[list["ProjectStage"]] = relationship(

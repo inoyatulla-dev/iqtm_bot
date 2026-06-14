@@ -180,11 +180,13 @@ export interface AppSettings {
   logo_size: number;
   logo_doc_path: string;
   org_name: string;
+  timezone: string;
 }
 
 export interface Branding {
   logo_path: string;
   logo_size: number;
+  timezone: string;
 }
 
 export const brandingApi = {
@@ -195,6 +197,7 @@ export const settingsApi = {
   get: () => api.get<AppSettings>("/settings").then((r) => r.data),
   update: (body: Partial<AppSettings>) =>
     api.put<AppSettings>("/settings", body).then((r) => r.data),
+  timezones: () => api.get<string[]>("/settings/timezones").then((r) => r.data),
   uploadLogo: (file: File) => {
     const form = new FormData();
     form.append("file", file);

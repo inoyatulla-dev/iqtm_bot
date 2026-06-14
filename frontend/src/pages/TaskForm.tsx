@@ -6,6 +6,7 @@ import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { EmojiIcon } from "../utils/emojiIcon";
+import { formatDateTime } from "../utils/datetime";
 
 interface Props {
   task: Task | null; // null = yangi
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusChanged }: Props) {
-  const { deps, columns, user } = useAuth();
+  const { deps, columns, user, timezone } = useAuth();
   const { t } = useI18n();
   const [name, setName] = useState(task?.name || "");
   const [desc, setDesc] = useState(task?.description || "");
@@ -434,7 +435,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
                       {c.user_name}
                       {c.target_name ? ` → ${c.target_name}` : ""}
                     </span>
-                    <span>{formatDateTime(c.created_at)}</span>
+                    <span>{formatDateTime(c.created_at, timezone)}</span>
                   </div>
                   {c.reply_to && (
                     <div
@@ -546,13 +547,4 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDateTime(value?: string): string {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString(undefined, {
-    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
-  });
 }

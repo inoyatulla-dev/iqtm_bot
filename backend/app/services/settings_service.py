@@ -19,6 +19,21 @@ DEFAULT_STORAGE_LIMIT_GB = 3
 DEFAULT_LOGO_PATH = "/logo.png"
 DEFAULT_LOGO_SIZE = 40
 DEFAULT_ORG_NAME = ""
+DEFAULT_TIMEZONE = "Asia/Tashkent"
+
+# Sozlamalarda tanlash mumkin bo'lgan vaqt zonalari
+AVAILABLE_TIMEZONES = [
+    "Asia/Tashkent",
+    "Asia/Almaty",
+    "Asia/Bishkek",
+    "Asia/Dushanbe",
+    "Asia/Ashgabat",
+    "Asia/Yekaterinburg",
+    "Europe/Moscow",
+    "Asia/Dubai",
+    "Europe/Istanbul",
+    "UTC",
+]
 
 # Xabar shablonlari — har bir voqea uchun tahrirlanadigan matn ({var} qoliplari bilan)
 TEMPLATE_EVENTS = ROUTE_EVENTS
@@ -161,6 +176,11 @@ async def get_logo_doc_path(session) -> str:
 
 async def get_org_name(session) -> str:
     return await get_setting(session, "org_name") or DEFAULT_ORG_NAME
+
+
+async def get_timezone(session) -> str:
+    val = await get_setting(session, "timezone")
+    return val if val in AVAILABLE_TIMEZONES else DEFAULT_TIMEZONE
 
 
 def with_cache_bust(path: str) -> str:

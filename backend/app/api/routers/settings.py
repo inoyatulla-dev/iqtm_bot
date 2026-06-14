@@ -5,6 +5,7 @@ from app.api.deps import BossUser, SessionDep
 from app.config import settings as env_settings
 from app.schemas.settings import BrandingOut, SettingsOut, SettingsUpdate
 from app.services.settings_service import (
+    AVAILABLE_TIMEZONES,
     ROUTE_EVENTS,
     TEMPLATE_EVENTS,
     get_archive_channel_id,
@@ -17,6 +18,7 @@ from app.services.settings_service import (
     get_setting,
     get_storage_limit_gb,
     get_template,
+    get_timezone,
     set_setting,
     with_cache_bust,
 )
@@ -27,11 +29,18 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 
 @router.get("/branding", response_model=BrandingOut)
 async def get_branding(session: SessionDep):
-    """Logotip — barcha foydalanuvchilar (hatto tasdiqlanmagan) uchun ochiq."""
+    """Logotip va vaqt zonasi — barcha foydalanuvchilar (hatto tasdiqlanmagan) uchun ochiq."""
     return BrandingOut(
         logo_path=with_cache_bust(await get_logo_path(session)),
         logo_size=await get_logo_size(session),
+        timezone=await get_timezone(session),
     )
+
+
+@router.get("/timezones", response_model=list[str])
+async def list_timezones():
+    """Sozlamalarda tanlash mumkin bo'lgan vaqt zonalari ro'yxati."""
+    return AVAILABLE_TIMEZONES
 
 
 @router.get("", response_model=SettingsOut)
@@ -52,6 +61,7 @@ async def get_settings(_: BossUser, session: SessionDep):
     out.logo_size = await get_logo_size(session)
     out.logo_doc_path = with_cache_bust(await get_logo_doc_path(session))
     out.org_name = await get_org_name(session)
+    out.timezone = await get_timezone(session)
     return out
 
 
@@ -81,6 +91,10 @@ async def update_settings(body: SettingsUpdate, _: BossUser, session: SessionDep
         await set_setting(session, "logo_size", str(body.logo_size))
     if body.org_name is not None:
         await set_setting(session, "org_name", body.org_name.strip())
+    if body.timezone is not None:
+        if body.timezone not in AVAILABLE_TIMEZONES:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Noma'lum vaqt zonasi")
+        await set_setting(session, "timezone", body.timezone)
     await session.flush()
     return await get_settings(_, session)
 

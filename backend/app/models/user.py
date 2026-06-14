@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, String, func
+from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import Role, UserStatus
@@ -25,7 +25,7 @@ class User(Base):
     custom_emoji: Mapped[str | None] = mapped_column(String(8), default=None)
     login: Mapped[str | None] = mapped_column(String(32), unique=True, default=None)
     password_hash: Mapped[str | None] = mapped_column(String(255), default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     department: Mapped["Department"] = relationship(  # noqa: F821
         back_populates="members", foreign_keys=[dep_id]
