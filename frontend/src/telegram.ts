@@ -75,8 +75,11 @@ export function copyText(text: string): Promise<boolean> {
 
 export function getInitData(): string {
   if (tg?.initData) return tg.initData;
-  // Dev fallback (brauzerda sinash uchun)
-  return import.meta.env.VITE_DEV_INIT_DATA || "";
+  // Dev fallback (faqat `vite dev` rejimida — production buildga kirmaydi)
+  if (import.meta.env.DEV) {
+    return import.meta.env.VITE_DEV_INIT_DATA || "";
+  }
+  return "";
 }
 
 export function haptic() {
