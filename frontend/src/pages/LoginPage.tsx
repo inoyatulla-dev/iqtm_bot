@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff, Lock, LogIn, User } from "lucide-react";
 import { useAuth } from "../store/auth";
 import { useI18n, LANGS, type Lang } from "../i18n";
 import { Logo } from "../components/Logo";
@@ -8,6 +9,7 @@ export function LoginPage() {
   const { t, lang, setLang } = useI18n();
   const [login, setLoginVal] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -26,46 +28,73 @@ export function LoginPage() {
   }
 
   return (
-    <div className="center-screen" style={{ justifyContent: "flex-start", paddingTop: 40 }}>
-      <Logo />
-      <div style={{ display: "flex", gap: 8 }}>
-        {LANGS.map((l) => (
-          <button
-            key={l.code}
-            onClick={() => setLang(l.code as Lang)}
-            className={`btn ${lang === l.code ? "btn--primary" : "btn--ghost"}`}
-            style={{ width: "auto", padding: "8px 12px", fontSize: 14 }}
-          >
-            {l.label}
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-card__logo">
+          <Logo />
+        </div>
+        <h1 className="login-card__title">{t("login.title")}</h1>
+        <p className="login-card__subtitle">{t("login.subtitle")}</p>
+
+        <form className="login-form" onSubmit={submit}>
+          <div className="login-field">
+            <User className="login-field__icon" size={18} />
+            <input
+              value={login}
+              onChange={(e) => setLoginVal(e.target.value)}
+              placeholder={t("login.loginLabel")}
+              autoComplete="username"
+              autoCapitalize="none"
+              autoFocus
+            />
+          </div>
+          <div className="login-field">
+            <Lock className="login-field__icon" size={18} />
+            <input
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t("login.passwordLabel")}
+              autoComplete="current-password"
+              style={{ paddingRight: 44 }}
+            />
+            <button
+              type="button"
+              className="login-field__toggle"
+              onClick={() => setShowPw((v) => !v)}
+              tabIndex={-1}
+            >
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
+          {err && <div className="form-error">{err}</div>}
+
+          <button className="btn btn--primary login-submit" type="submit" disabled={busy}>
+            {busy ? (
+              t("login.submitting")
+            ) : (
+              <>
+                <LogIn size={18} />
+                {t("login.submit")}
+              </>
+            )}
           </button>
-        ))}
+        </form>
+
+        <div className="login-card__langs">
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              onClick={() => setLang(l.code as Lang)}
+              className={`login-lang${lang === l.code ? " login-lang--active" : ""}`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <h3 style={{ marginBottom: 0 }}>{t("login.title")}</h3>
-      <p style={{ color: "var(--hint)", marginTop: 4 }}>{t("login.subtitle")}</p>
-      <form className="sheet__pad" style={{ width: "100%", maxWidth: 360 }} onSubmit={submit}>
-        <div className="field">
-          <label>{t("login.loginLabel")}</label>
-          <input
-            value={login}
-            onChange={(e) => setLoginVal(e.target.value)}
-            autoComplete="username"
-            autoCapitalize="none"
-          />
-        </div>
-        <div className="field">
-          <label>{t("login.passwordLabel")}</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-        </div>
-        {err && <div className="form-error">{err}</div>}
-        <button className="btn btn--primary" type="submit" disabled={busy}>
-          {busy ? t("login.submitting") : t("login.submit")}
-        </button>
-      </form>
     </div>
   );
 }

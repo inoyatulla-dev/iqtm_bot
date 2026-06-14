@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import {
   depsApi, setCredentials, settingsApi, topicsApi, updateProfile, uploadProfilePhoto,
   type AppSettings,
@@ -93,6 +93,7 @@ export function SettingsPage() {
 
 function MenuView({ isBoss, onNav }: { isBoss: boolean; onNav: (v: View) => void }) {
   const { t } = useI18n();
+  const { logout } = useAuth();
   const items: { key: View; label: string }[] = [
     { key: "profile", label: t("settings.menu.profile") },
     ...(isBoss
@@ -116,12 +117,20 @@ function MenuView({ isBoss, onNav }: { isBoss: boolean; onNav: (v: View) => void
           <span className="list-item__after">›</span>
         </div>
       ))}
+      {!tg?.initData && (
+        <div className="list-item list-item--danger" onClick={logout}>
+          <LogOut size={18} />
+          <div className="list-item__body">
+            <div className="list-item__title">{t("settings.logout")}</div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 function ProfileView() {
-  const { user, reload, logout } = useAuth();
+  const { user, reload } = useAuth();
   const { t } = useI18n();
   const [first0, last0] = splitName(user?.name);
   const [firstName, setFirstName] = useState(first0);
@@ -251,14 +260,6 @@ function ProfileView() {
       </div>
 
       <CredentialsSection />
-
-      {!tg?.initData && (
-        <div className="sheet__pad">
-          <button className="btn btn--ghost" onClick={logout}>
-            {t("settings.logout")}
-          </button>
-        </div>
-      )}
     </>
   );
 }
