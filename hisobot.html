@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hisobot — IQTM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#0E7C5A;          /* IQTM emerald */
+    --brand-dark:#0A5B42;
+    --brand-tint:#E7F4EF;
+    --ink:#111827;
+    --muted:#6B7280;
+    --line:#E6E8EB;
+    --surface:#FFFFFF;
+    --page:#EEF1F4;
+
+    --done:#16A34A;   --done-bg:#DCFCE7;
+    --prog:#2563EB;   --prog-bg:#DBEAFE;
+    --new:#64748B;    --new-bg:#F1F5F9;
+    --review:#7C3AED; --review-bg:#EDE9FE;
+    --return:#D97706; --return-bg:#FEF3C7;
+    --pause:#6B7280;  --pause-bg:#F3F4F6;
+    --late:#DC2626;   --late-bg:#FEE2E2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    background:var(--page);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+    padding:32px 16px;
+  }
+  .sheet{
+    width:210mm;
+    max-width:100%;
+    margin:0 auto;
+    background:var(--surface);
+    box-shadow:0 4px 24px rgba(17,24,39,.08);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .pad{padding:34px 40px}
+
+  h2.section{
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:13px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--brand-dark);
+    display:flex;align-items:center;gap:10px;
+    margin:34px 0 16px;
+  }
+  h2.section::before{content:"";width:5px;height:16px;border-radius:3px;background:var(--brand)}
+  h2.section:first-child{margin-top:0}
+
+  /* ---------- HEADER ---------- */
+  .header{
+    background:linear-gradient(135deg,var(--brand-dark),var(--brand));
+    color:#fff;padding:30px 40px;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:24px;
+  }
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{
+    width:46px;height:46px;border-radius:11px;background:#fff;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    font-family:'Plus Jakarta Sans';font-weight:800;color:var(--brand);font-size:15px;letter-spacing:-.02em;
+  }
+  .brand .name{font-size:13px;font-weight:600;opacity:.92;max-width:280px;line-height:1.3}
+  .header .doc-type{
+    font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;opacity:.8;margin-top:18px;display:block;
+  }
+  .header h1{font-family:'Plus Jakarta Sans';font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+  .header .meta{text-align:right;font-size:12px;opacity:.9;white-space:nowrap}
+  .header .meta .period{font-weight:700;font-size:14px;opacity:1}
+  .header .meta .gen{margin-top:6px;opacity:.8}
+
+  /* ---------- KPI CARDS ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .kpi{
+    border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fff;
+    position:relative;overflow:hidden;
+  }
+  .kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand)}
+  .kpi.accent-amber::after{background:var(--return)}
+  .kpi.accent-red::after{background:var(--late)}
+  .kpi .label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .kpi .value{font-family:'Plus Jakarta Sans';font-size:30px;font-weight:800;line-height:1.1;margin-top:6px}
+  .kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .kpi.accent-red .value{color:var(--late)}
+
+  /* ---------- STATUS: donut + legend ---------- */
+  .status-wrap{display:grid;grid-template-columns:180px 1fr;gap:30px;align-items:center;
+    border:1px solid var(--line);border-radius:12px;padding:22px 26px;background:#fff}
+  .donut{
+    width:160px;height:160px;border-radius:50%;
+    background:conic-gradient(
+      var(--done) 0deg 200deg,
+      var(--prog) 200deg 300deg,
+      var(--new)  300deg 340deg,
+      var(--return) 340deg 360deg
+    );
+    display:flex;align-items:center;justify-content:center;margin:0 auto;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.03);
+  }
+  .donut .hole{
+    width:104px;height:104px;border-radius:50%;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:0 1px 6px rgba(17,24,39,.08);
+  }
+  .donut .hole .n{font-family:'Plus Jakarta Sans';font-size:30px;font-weight:800;line-height:1}
+  .donut .hole .t{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:12px 26px}
+  .leg{display:flex;align-items:center;gap:10px;font-size:13px}
+  .leg .dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+  .leg .ln{flex:1;color:var(--ink);font-weight:500}
+  .leg .cnt{font-family:'Plus Jakarta Sans';font-weight:700}
+  .leg.zero{opacity:.45}
+
+  /* ---------- DEPARTMENTS: progress bars ---------- */
+  .dept{display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .dept:last-child{border-bottom:none}
+  .dept .nm{width:130px;font-weight:600;font-size:13px;flex-shrink:0}
+  .dept .track{flex:1;height:9px;border-radius:6px;background:#EFF2F4;overflow:hidden}
+  .dept .fill{height:100%;border-radius:6px;background:var(--brand);transition:width .3s}
+  .dept .fill.full{background:var(--done)}
+  .dept .fill.mid{background:var(--prog)}
+  .dept .fill.low{background:var(--return)}
+  .dept .pct{width:84px;text-align:right;font-size:12px;color:var(--muted);flex-shrink:0}
+  .dept .pct b{font-family:'Plus Jakarta Sans';color:var(--ink);font-size:13px}
+
+  /* ---------- PROJECTS ---------- */
+  .project{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px;background:#fff}
+  .project.late{border-color:#F5C2C2}
+  .proj-head{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;
+    background:linear-gradient(180deg,#FAFBFC,#fff);border-bottom:1px solid var(--line)}
+  .project.late .proj-head{background:linear-gradient(180deg,#FEF4F4,#fff);border-bottom-color:#F5C2C2}
+  .proj-title{display:flex;align-items:center;gap:11px}
+  .proj-title .pn{font-family:'Plus Jakarta Sans';font-size:16px;font-weight:700}
+  .pill{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 9px;border-radius:20px;background:var(--brand-tint);color:var(--brand-dark)}
+  .pill.late{background:var(--late-bg);color:var(--late)}
+  .proj-prog{display:flex;align-items:center;gap:12px;min-width:200px}
+  .proj-prog .ptrack{width:120px;height:7px;border-radius:6px;background:#EFF2F4;overflow:hidden}
+  .proj-prog .pfill{height:100%;background:var(--brand)}
+  .proj-prog .ptxt{font-size:12px;color:var(--muted);white-space:nowrap}
+  .proj-prog .ptxt b{font-family:'Plus Jakarta Sans';color:var(--ink)}
+  .proj-sub{padding:8px 20px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);
+    display:flex;gap:22px;flex-wrap:wrap}
+  .proj-sub span b{color:var(--ink);font-weight:600}
+  .proj-sub .warn{color:var(--late);font-weight:600}
+
+  table{width:100%;border-collapse:collapse}
+  thead th{
+    font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+    text-align:left;padding:9px 20px;background:#F8FAFB;border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:11px 20px;font-size:13px;border-bottom:1px solid #F0F2F4;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  td.num{width:34px;color:var(--muted);font-family:'Plus Jakarta Sans';font-weight:700;text-align:center}
+  td.who{white-space:nowrap;color:var(--ink);font-weight:500}
+  td.due{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+  td.due.over{color:var(--late);font-weight:600}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
+    padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .b-done{background:var(--done-bg);color:#15803D}
+  .b-prog{background:var(--prog-bg);color:#1D4ED8}
+  .b-new{background:var(--new-bg);color:#475569}
+  .b-review{background:var(--review-bg);color:#6D28D9}
+  .b-return{background:var(--return-bg);color:#B45309}
+  .b-pause{background:var(--pause-bg);color:#4B5563}
+
+  .footer{padding:18px 40px;border-top:1px solid var(--line);display:flex;
+    justify-content:space-between;font-size:11px;color:var(--muted)}
+
+  @media print{
+    body{background:#fff;padding:0}
+    .sheet{box-shadow:none;border-radius:0;width:auto}
+    .project,.status-wrap,.kpi{break-inside:avoid}
+    h2.section{break-after:avoid}
+    @page{size:A4;margin:14mm}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="brand">
+        <div class="logo">IQTM</div>
+        <div class="name">Innovatsiyalarni qo'llab-quvvatlash va tijoratlashtirish markazi</div>
+      </div>
+      <span class="doc-type">Oylik hisobot</span>
+      <h1>Hisobot</h1>
+    </div>
+    <div class="meta">
+      <div class="period">01.06.2026 — 30.06.2026</div>
+      <div class="gen">Yaratildi: 14.06.2026, 09:18</div>
+    </div>
+  </div>
+
+  <div class="pad">
+
+    <!-- KPI -->
+    <h2 class="section">Umumiy ko'rsatkichlar</h2>
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">Jami vazifalar</div>
+        <div class="value">18</div>
+        <div class="sub">joriy faol</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Yaratilgan</div>
+        <div class="value">18</div>
+        <div class="sub">shu davrda</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Bajarilgan</div>
+        <div class="value">10</div>
+        <div class="sub">56% bajarilish</div>
+      </div>
+      <div class="kpi accent-red">
+        <div class="label">Kechikkan</div>
+        <div class="value">1</div>
+        <div class="sub">e'tibor talab etadi</div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <h2 class="section">Holatlar bo'yicha</h2>
+    <div class="status-wrap">
+      <div class="donut">
+        <div class="hole">
+          <div class="n">18</div>
+          <div class="t">vazifa</div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="leg"><span class="dot" style="background:var(--done)"></span><span class="ln">Bajarildi</span><span class="cnt">10</span></div>
+        <div class="leg"><span class="dot" style="background:var(--prog)"></span><span class="ln">Jarayonda</span><span class="cnt">5</span></div>
+        <div class="leg"><span class="dot" style="background:var(--new)"></span><span class="ln">Yangi</span><span class="cnt">2</span></div>
+        <div class="leg"><span class="dot" style="background:var(--return)"></span><span class="ln">Qaytarildi</span><span class="cnt">1</span></div>
+        <div class="leg zero"><span class="dot" style="background:var(--review)"></span><span class="ln">Tekshiruvda</span><span class="cnt">0</span></div>
+        <div class="leg zero"><span class="dot" style="background:var(--pause)"></span><span class="ln">To'xtatib turish</span><span class="cnt">0</span></div>
+      </div>
+    </div>
+
+    <!-- DEPARTMENTS -->
+    <h2 class="section">Bo'limlar bo'yicha</h2>
+    <div class="depts">
+      <div class="dept"><div class="nm">Dasturlash</div><div class="track"><div class="fill full" style="width:100%"></div></div><div class="pct"><b>100%</b> · 3/3</div></div>
+      <div class="dept"><div class="nm">Konstruktor</div><div class="track"><div class="fill full" style="width:100%"></div></div><div class="pct"><b>100%</b> · 2/2</div></div>
+      <div class="dept"><div class="nm">Elektronika</div><div class="track"><div class="fill mid" style="width:50%"></div></div><div class="pct"><b>50%</b> · 1/2</div></div>
+      <div class="dept"><div class="nm">Ustaxona</div><div class="track"><div class="fill low" style="width:3%"></div></div><div class="pct"><b>0%</b> · 0/1</div></div>
+      <div class="dept"><div class="nm">Vazifalar</div><div class="track"><div class="fill low" style="width:3%"></div></div><div class="pct"><b>0%</b> · 0/2</div></div>
+      <div class="dept"><div class="nm">Bo'yash</div><div class="track"><div class="fill" style="width:0%"></div></div><div class="pct"><b>—</b> · 0/0</div></div>
+    </div>
+
+    <!-- PROJECTS -->
+    <h2 class="section">Loyihalar</h2>
+
+    <!-- Project 1 -->
+    <div class="project">
+      <div class="proj-head">
+        <div class="proj-title">
+          <span class="pn">Industry 4.0 mini</span>
+          <span class="pill">Faol</span>
+        </div>
+        <div class="proj-prog">
+          <div class="ptrack"><div class="pfill" style="width:20%"></div></div>
+          <div class="ptxt"><b>1/5</b> · 20%</div>
+        </div>
+      </div>
+      <div class="proj-sub">
+        <span>Muddat: <b>belgilanmagan</b></span>
+        <span>Joriy jarayon: <b>muddat belgilanmagan</b></span>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Vazifa</th><th>Mas'ul</th><th>Muddat</th><th>Holat</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Stentlarni konveyer qismni yig'ish</td><td class="who">Diyorbek Khojayorov</td><td class="due">—</td><td><span class="badge b-prog">Jarayonda</span></td></tr>
+          <tr><td class="num">2</td><td>Stent karkasni yig'ish</td><td class="who">Orifjon Siddikov</td><td class="due">—</td><td><span class="badge b-prog">Jarayonda</span></td></tr>
+          <tr><td class="num">3</td><td>Elektron va hardware qismlar ro'yxatini shakllantirish</td><td class="who">Inoyatulla Rajabboyev</td><td class="due">—</td><td><span class="badge b-done">Bajarildi</span></td></tr>
+          <tr><td class="num">4</td><td>Yon panel elementlarini joylashish konstruksiyasini chizish</td><td class="who">Sardor Shomirzayev</td><td class="due">—</td><td><span class="badge b-new">Yangi</span></td></tr>
+          <tr><td class="num">5</td><td>Stent yon panel elektron komponentlari 3D konstruksiyasini modellashtirish</td><td class="who">Rustam Musurmonov</td><td class="due">—</td><td><span class="badge b-new">Yangi</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Project 2 (late) -->
+    <div class="project late">
+      <div class="proj-head">
+        <div class="proj-title">
+          <span class="pn">BYD</span>
+          <span class="pill late">Orqada qolmoqda</span>
+        </div>
+        <div class="proj-prog">
+          <div class="ptrack"><div class="pfill" style="width:3%;background:var(--late)"></div></div>
+          <div class="ptxt"><b>0/1</b> · 0%</div>
+        </div>
+      </div>
+      <div class="proj-sub">
+        <span>Muddat: <b>30.06.2026</b></span>
+        <span class="warn">⚠ 0 kun qoldi · vaqt 100%, bajarildi 0%</span>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Vazifa</th><th>Mas'ul</th><th>Muddat</th><th>Holat</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>BYD avtomobilni ko'zdan kechirish</td><td class="who">Inoyatulla Rajabboyev</td><td class="due over">15.06.2026 17:00</td><td><span class="badge b-prog">Jarayonda</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>IQTM — Innovatsiyalarni qo'llab-quvvatlash va tijoratlashtirish markazi</span>
+    <span>Avtomatik yaratilgan hisobot</span>
+  </div>
+
+</div>
+</body>
+</html>
