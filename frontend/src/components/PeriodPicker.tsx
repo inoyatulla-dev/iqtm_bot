@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Calendar } from "lucide-react";
 import type { PeriodParams, ReportPeriod } from "../api/client";
 import { useI18n } from "../i18n";
 
@@ -123,8 +124,14 @@ export function PeriodPicker({ value, onChange }: PeriodPickerProps) {
 
       {customOpen && (
         <div className="report-row period-extra">
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <div className="date-field">
+            <span className="date-field__label">{t("stats.dateFrom")}</span>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} max={to || undefined} />
+          </div>
+          <div className="date-field">
+            <span className="date-field__label">{t("stats.dateTo")}</span>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} min={from || undefined} />
+          </div>
           <button className="btn btn--primary" onClick={applyCustom} disabled={!from || !to}>
             {t("stats.apply")}
           </button>
@@ -133,7 +140,10 @@ export function PeriodPicker({ value, onChange }: PeriodPickerProps) {
 
       {isCustom && (
         <div className="report-row period-extra">
-          <span className="period-extra__hint">{value.date_from} — {value.date_to}</span>
+          <span className="period-extra__hint">
+            <Calendar size={15} />
+            {value.date_from} — {value.date_to}
+          </span>
           <button className="btn btn--ghost" onClick={clearCustom}>{t("stats.clear")}</button>
         </div>
       )}

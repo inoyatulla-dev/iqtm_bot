@@ -817,32 +817,95 @@ body {
 
 /* ── Davr tanlash (PeriodPicker) ────────────────────── */
 .period-row {
-  padding: 16px 16px 0;
-  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin: 16px 16px;
+  background: var(--secondary-bg);
+  border-radius: 14px;
+}
+
+.period-row .btn {
+  flex: 1 1 calc(50% - 4px);
+  width: auto;
+  padding: 10px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+.period-row .btn--ghost {
+  background: transparent;
+  color: var(--hint);
+}
+
+.period-row .btn--primary {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 .period-extra {
+  align-items: center;
   padding: 0 16px;
   margin-bottom: 16px;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 130px;
+}
+
+.date-field__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--hint);
+  padding-left: 2px;
 }
 
 .period-extra select,
 .period-extra input[type="date"] {
   flex: 1;
   min-width: 110px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--secondary-bg);
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
+  color-scheme: dark;
+  transition: border-color .15s, background .15s;
+}
+
+.period-extra select:focus,
+.period-extra input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
 }
 
 .period-extra__hint {
-  align-self: center;
-  color: var(--hint);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--secondary-bg);
+  color: var(--text);
   font-size: 13px;
+  font-weight: 600;
+}
+
+.period-extra__hint svg {
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .stat-card {
@@ -1538,7 +1601,7 @@ body {
   }
 
   .period-row {
-    padding: 20px 24px 0;
+    margin: 20px 24px;
   }
 
   .period-extra {
