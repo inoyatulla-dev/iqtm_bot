@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IQTM Workspace — UI/UX prototip</title>
+<style>
+:root {
+  --bg: #1b2536;
+  --bg-elev: #232f44;
+  --secondary-bg: #0f1521;
+  --text: #f1f5f9;
+  --hint: #8b9bb4;
+  --accent: #3b82f6;
+  --accent-2: #8b5cf6;
+  --accent-text: #ffffff;
+  --danger: #f87171;
+  --warn: #fbbf24;
+  --ok: #4ade80;
+  --line: rgba(148, 163, 184, 0.14);
+  --surface: rgba(255, 255, 255, 0.04);
+  --radius: 16px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin:0; padding:0; height:100%; background: var(--secondary-bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+/* ══════════ Shell ══════════ */
+.shell { display:flex; height:100vh; overflow:hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 252px; min-width: 252px; background: var(--bg);
+  border-right: 1px solid var(--line);
+  padding: 18px 12px; display:flex; flex-direction:column; gap: 4px;
+}
+.sidebar__brand {
+  display:flex; align-items:center; gap:12px;
+  padding: 8px 10px 18px; margin-bottom: 6px; border-bottom: 1px solid var(--line);
+}
+.sidebar__logo {
+  width:38px; height:38px; border-radius:11px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:#fff;
+}
+.sidebar__brand-name { font-weight:800; font-size:18px; letter-spacing:.4px; }
+.sidebar__brand-sub { font-size:11px; color: var(--hint); margin-top:1px; }
+
+.nav-item {
+  display:flex; align-items:center; gap:12px; padding: 12px 14px; border-radius: 12px;
+  color: var(--hint); font-size:14px; font-weight:600; cursor:pointer; transition: background .12s, color .12s;
+  text-decoration:none; border:none; background:transparent; width:100%; text-align:left;
+}
+.nav-item:hover { background: var(--surface); color: var(--text); }
+.nav-item.active { background: linear-gradient(135deg, rgba(59,130,246,.22), rgba(139,92,246,.16)); color: var(--text); }
+.nav-item.active .nav-icon { color: var(--accent); }
+.nav-icon { font-size:19px; width:24px; text-align:center; flex-shrink:0; }
+
+/* ── Main ── */
+.main { flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; }
+.topbar {
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding: 16px 28px; border-bottom: 1px solid var(--line); background: var(--bg);
+}
+.topbar h1 { font-size:21px; font-weight:800; margin:0; }
+.topbar__sub { font-size:12px; color:var(--hint); margin-top:2px; }
+.topbar__right { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+.user-chip { display:flex; align-items:center; gap:10px; cursor:pointer; }
+.user-chip__name { font-size:14px; font-weight:700; }
+.user-chip__role { font-size:11px; color:var(--hint); }
+.role-switch select {
+  padding:9px 10px; border-radius:10px; border:1px solid var(--line);
+  background: var(--surface); color: var(--text); font-size:12.5px; font-weight:600; max-width:172px;
+}
+
+.content { flex:1; overflow-y:auto; padding: 24px 28px 48px; }
+.page { display:none; max-width: 1180px; }
+.page.active { display:block; animation: fadeIn .18s ease; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)} }
+
+/* ── Avatar ── */
+.avatar-wrap { position:relative; display:inline-flex; flex-shrink:0; }
+.avatar {
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-weight:800; color:#fff; flex-shrink:0; overflow:hidden;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.avatar img { width:100%; height:100%; object-fit:cover; }
+.avatar-wrap .avatar { width:100%; height:100%; }
+.emoji-badge {
+  position:absolute; bottom:-2px; right:-2px; background: var(--bg-elev);
+  border-radius:50%; width:1.1em; height:1.1em; min-width:17px; min-height:17px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.55em; border: 2px solid var(--bg); line-height:1;
+}
+
+/* ── Buttons / chips ── */
+.btn { padding: 11px 18px; border-radius: 12px; border:none; font-size:14px; font-weight:700; cursor:pointer; transition: opacity .1s, transform .1s; }
+.btn--primary { background: linear-gradient(135deg, var(--accent), #6366f1); color:#fff; box-shadow: 0 4px 14px rgba(59,130,246,.35); }
+.btn--ghost { background: var(--surface); color: var(--text); }
+.btn--danger { background: rgba(248,113,113,0.14); color: var(--danger); }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity:.6; cursor:default; }
+
+.chip { font-size:12px; font-weight:600; padding:4px 10px; border-radius:8px; background: var(--surface); color:var(--hint); display:inline-flex; align-items:center; gap:5px; }
+.badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:8px; }
+.badge--ok { background: rgba(74,222,128,.15); color: var(--ok); }
+.badge--danger { background: rgba(248,113,113,.15); color: var(--danger); }
+.badge--warn { background: rgba(251,191,36,.15); color: var(--warn); }
+.badge--accent { background: rgba(59,130,246,.15); color: var(--accent); }
+
+.card { background: var(--bg-elev); border-radius: var(--radius); border:1px solid var(--line); padding: 18px; }
+.section-title { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--hint); margin: 26px 0 12px; }
+.section-title:first-child { margin-top:0; }
+
+/* ══════════ BOARD ══════════ */
+.board-row { display:flex; gap:16px; overflow-x:auto; padding-bottom:8px; }
+.board-col { flex: 0 0 280px; background: var(--bg-elev); border-radius: var(--radius); padding:14px; border:1px solid var(--line); }
+.board-col__head { display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; margin-bottom:12px; }
+.board-col__dot { width:10px; height:10px; border-radius:50%; }
+.board-col__count { margin-left:auto; font-size:11px; font-weight:700; color:var(--hint); background:var(--surface); border-radius:8px; padding:2px 8px; }
+.task-card { background: var(--bg); border-radius:13px; padding:13px 14px; margin-bottom:10px; border-left:3px solid var(--card-color, var(--accent)); box-shadow: 0 2px 10px rgba(0,0,0,.18); cursor:pointer; }
+.task-card__title { font-weight:700; font-size:13.5px; margin-bottom:9px; line-height:1.4; }
+.task-card__meta { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.task-card__avatars { display:flex; align-items:center; margin-top:10px; }
+.task-card__avatars .avatar { width:24px; height:24px; font-size:10px; border:2px solid var(--bg); margin-left:-6px; }
+.task-card__avatars .avatar:first-child { margin-left:0; }
+.fab { position:fixed; right:36px; bottom:36px; width:58px; height:58px; border-radius:50%; border:none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; font-size:28px;
+  box-shadow: 0 8px 22px rgba(59,130,246,.4); cursor:pointer; z-index:40; }
+
+/* ══════════ EMPLOYEES ══════════ */
+.birthday-banner {
+  display:flex; align-items:center; gap:14px; background: linear-gradient(135deg, rgba(251,191,36,.16), rgba(139,92,246,.12));
+  border:1px solid rgba(251,191,36,.3); border-radius: var(--radius); padding:16px 20px; margin-bottom:22px;
+}
+.birthday-banner__icon { font-size:32px; }
+.birthday-banner__title { font-weight:800; font-size:15px; }
+.birthday-banner__sub { font-size:13px; color:var(--hint); margin-top:2px; }
+
+.toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+.search-input { flex:1; min-width:200px; max-width:340px; padding:11px 14px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; }
+
+.emp-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.emp-card { background: var(--bg-elev); border:1px solid var(--line); border-radius: var(--radius); padding:18px; display:flex; flex-direction:column; gap:10px; transition: border-color .12s; }
+.emp-card:hover { border-color: rgba(59,130,246,.4); }
+.emp-card__head { display:flex; align-items:center; gap:14px; }
+.emp-card .avatar-wrap { width:54px; height:54px; font-size:19px; }
+.emp-card__name { font-weight:800; font-size:15px; display:flex; align-items:center; gap:6px; }
+.emp-card__role { font-size:12px; color:var(--hint); margin-top:2px; }
+.emp-card__row { display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--hint); }
+.emp-card__menu { margin-left:auto; background:none; border:none; color:var(--hint); font-size:18px; cursor:pointer; padding:4px; }
+
+/* ── Bot message preview (Telegram bubble) ── */
+.tg-preview { background:#0e1a26; border-radius: var(--radius); padding:18px; border:1px solid var(--line); }
+.tg-preview__label { font-size:12px; color:var(--hint); margin-bottom:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+.tg-bubble { background:#1f2c3d; border-radius:14px; padding:14px 16px; max-width:420px; font-size:14px; line-height:1.6; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+.tg-bubble__name { font-weight:700; color:#7dd3fc; font-size:12.5px; margin-bottom:4px; }
+.tg-bubble__time { font-size:10.5px; color:var(--hint); text-align:right; margin-top:6px; }
+
+/* ══════════ PROJECTS ══════════ */
+.project-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }
+.project-card { display:flex; flex-direction:column; gap:10px; }
+.project-card__head { display:flex; justify-content:space-between; align-items:center; }
+.project-card__name { font-weight:800; font-size:16px; }
+.progress-bar { height:8px; border-radius:6px; background: var(--surface); overflow:hidden; }
+.progress-bar__fill { height:100%; border-radius:6px; }
+.project-tasks { display:flex; flex-direction:column; gap:7px; margin-top:4px; }
+.project-task { display:flex; align-items:center; gap:8px; font-size:13px; }
+.project-task__assignee { margin-left:auto; color:var(--hint); font-size:12px; }
+
+/* ══════════ MONITORING ══════════ */
+.stat-grid { display:grid; grid-template-columns: repeat(6,1fr); gap:14px; margin-bottom:8px; }
+.stat-card { background: var(--bg-elev); border:1px solid var(--line); border-radius: var(--radius); padding:18px 14px; text-align:center; }
+.stat-card__num { font-size:27px; font-weight:800; }
+.stat-card__label { font-size:11.5px; color:var(--hint); margin-top:6px; }
+.dept-row { margin-bottom:16px; }
+.dept-row:last-child { margin-bottom:0; }
+.dept-row__head { display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px; }
+.dept-row__name { font-weight:700; display:flex; align-items:center; gap:8px; }
+.dept-row__count { color:var(--hint); font-size:12.5px; }
+.dot { width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.grid-2 { display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; }
+.donut-wrap { display:flex; align-items:center; gap:18px; }
+.donut { width:130px; height:130px; border-radius:50%; flex-shrink:0;
+  background: conic-gradient(var(--ok) 0% 45%, var(--accent) 45% 75%, var(--warn) 75% 88%, var(--danger) 88% 100%); position:relative; }
+.donut::after { content:""; position:absolute; inset:22px; background: var(--bg-elev); border-radius:50%; }
+.donut-legend { font-size:12.5px; display:flex; flex-direction:column; gap:8px; }
+.donut-legend span { display:flex; align-items:center; gap:7px; }
+.legend-dot { width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+/* ══════════ STATS (worker) ══════════ */
+.report-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.report-row .btn { padding:10px 16px; font-size:13px; }
+.loading-spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; display:inline-block; animation: spin .7s linear infinite; vertical-align:middle; margin-right:8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { display:flex; align-items:center; gap:10px; background: rgba(74,222,128,.12); border:1px solid rgba(74,222,128,.35); color:var(--ok); border-radius:12px; padding:12px 16px; font-size:13.5px; font-weight:600; margin-top:14px; max-width:420px; }
+
+/* ══════════ SETTINGS: menu / drill-down ══════════ */
+.settings-view { display:none; }
+.settings-view.active { display:block; animation: fadeIn .15s ease; }
+.menu-list { display:flex; flex-direction:column; gap:8px; max-width:560px; }
+.menu-item {
+  display:flex; align-items:center; gap:14px; background: var(--bg-elev); border:1px solid var(--line);
+  border-radius: var(--radius); padding:14px 16px; cursor:pointer; transition:border-color .12s;
+  text-align:left; width:100%; font-family:inherit; color:var(--text);
+}
+.menu-item:hover { border-color: rgba(59,130,246,.4); }
+.menu-item__icon { font-size:21px; width:28px; text-align:center; flex-shrink:0; }
+.menu-item__body { flex:1; min-width:0; }
+.menu-item__title { font-weight:700; font-size:14px; }
+.menu-item__sub { font-size:12px; color:var(--hint); margin-top:2px; }
+.menu-item__arrow { color:var(--hint); font-size:18px; flex-shrink:0; }
+.menu-item--dashed { border-style:dashed; justify-content:center; color:var(--hint); font-weight:700; }
+.back-btn {
+  display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:var(--accent);
+  font-size:13.5px; font-weight:700; cursor:pointer; padding:8px 0; margin-bottom:14px; font-family:inherit;
+}
+
+.field { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.field label { font-size:12.5px; color:var(--hint); font-weight:700; }
+.field input, .field select, .field textarea { padding:11px 14px; border-radius:11px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px; font-family:inherit; }
+.emoji-picker { display:flex; gap:8px; flex-wrap:wrap; }
+.emoji-opt { width:42px; height:42px; border-radius:11px; border:1px solid var(--line); background:var(--surface); font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.emoji-opt.selected { border-color: var(--accent); background: rgba(59,130,246,.15); }
+.color-picker { display:flex; gap:8px; flex-wrap:wrap; }
+.color-opt { width:30px; height:30px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+.color-opt.selected { border-color: var(--text); }
+
+/* ══════════ Task card assignee ══════════ */
+.task-card__assignee { display:flex; align-items:center; gap:6px; margin-top:10px; font-size:12px; color:var(--hint); font-weight:600; }
+.task-card__assignee .avatar-wrap { width:22px; height:22px; font-size:9px; }
+
+/* ══════════ Modal (yangi vazifa / yangi loyiha) ══════════ */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.active { display:flex; }
+.modal { background: var(--bg-elev); border-radius: var(--radius); border:1px solid var(--line); padding:22px; width:100%; max-width:540px; max-height:90vh; overflow-y:auto; }
+.modal__head { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.modal__title { font-size:17px; font-weight:800; }
+.modal__close { background:none; border:none; color:var(--hint); font-size:24px; cursor:pointer; line-height:1; padding:4px; }
+.attach-row { display:flex; gap:10px; flex-wrap:wrap; }
+.attach-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.attach-chip { display:flex; align-items:center; gap:8px; background:var(--surface); border-radius:9px; padding:8px 10px; font-size:13px; }
+.attach-chip__remove { margin-left:auto; background:none; border:none; color:var(--hint); cursor:pointer; font-size:16px; }
+.work-row { display:flex; gap:8px; margin-bottom:8px; }
+.work-row input { flex:2; }
+.work-row select { flex:1; }
+.work-row__remove { background: rgba(248,113,113,.14); color:var(--danger); border:none; border-radius:10px; width:42px; cursor:pointer; font-size:16px; flex-shrink:0; }
+
+/* ══════════ Toast (fixed) ══════════ */
+.toast-fixed { position:fixed; top:18px; right:18px; z-index:200; display:none; max-width:340px; }
+.toast-fixed.show { display:flex; animation: fadeIn .2s ease; }
+
+/* ══════════ Message template editor ══════════ */
+.tpl-textarea {
+  width:100%; min-height:150px; padding:14px; border-radius:12px; border:1px solid var(--line);
+  background:var(--surface); color:var(--text); font-size:13.5px; font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  line-height:1.7; resize:vertical;
+}
+.var-chips { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 16px; }
+.var-chip {
+  font-size:12px; font-weight:700; padding:5px 10px; border-radius:8px; background: rgba(59,130,246,.12);
+  color: var(--accent); border:1px solid rgba(59,130,246,.25); cursor:pointer; font-family: ui-monospace, monospace;
+}
+.var-chip:hover { background: rgba(59,130,246,.22); }
+.tpl-preview-wrap { margin-top:18px; }
+.tpl-preview-wrap label { font-size:12.5px; color:var(--hint); font-weight:700; display:block; margin-bottom:8px; }
+.save-flash { color: var(--ok) !important; }
+
+/* ══════════ Mobile bottom tabbar ══════════ */
+.tabbar-mobile { display:none; }
+
+@media (max-width: 1100px) {
+  .stat-grid { grid-template-columns: repeat(3,1fr); }
+  .emp-grid { grid-template-columns: repeat(2,1fr); }
+  .project-grid, .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .sidebar { display:none; }
+  .shell { flex-direction:column; }
+  .topbar { padding:12px 14px; }
+  .topbar h1 { font-size:17px; }
+  .topbar__sub { display:none; }
+  .content { padding: 14px 14px 88px; }
+  .stat-grid { grid-template-columns: repeat(2,1fr) !important; }
+  .emp-grid { grid-template-columns: 1fr !important; }
+  .project-grid, .grid-2 { grid-template-columns: 1fr !important; }
+  .donut-wrap { flex-direction:column; align-items:flex-start; }
+  .fab { right:18px; bottom:88px; width:50px; height:50px; font-size:24px; }
+  .role-switch select { max-width:128px; font-size:11.5px; }
+
+  .tabbar-mobile {
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background: var(--bg); border-top:1px solid var(--line); padding: 6px 4px 8px;
+  }
+  .tabbar-mobile .nav-item {
+    flex:1; flex-direction:column; gap:2px; padding:6px 2px; font-size:10.5px; text-align:center; border-radius:10px;
+  }
+  .tabbar-mobile .nav-icon { font-size:19px; width:auto; }
+}
+
+@media (max-width: 520px) {
+  .user-chip > div { display:none; }
+}
+</style>
+</head>
+<body data-role="boss">
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <div class="sidebar__logo">IQ</div>
+      <div>
+        <div class="sidebar__brand-name">IQTM</div>
+        <div class="sidebar__brand-sub">Workspace</div>
+      </div>
+    </div>
+
+    <button class="nav-item active" data-tab="board" onclick="setTab('board')"><span class="nav-icon">📋</span> Doska</button>
+    <button class="nav-item" data-tab="employees" data-roles="boss,worker" onclick="setTab('employees')"><span class="nav-icon">👥</span> Xodimlar</button>
+    <button class="nav-item" data-tab="projects" data-roles="boss,worker" onclick="setTab('projects')"><span class="nav-icon">🗂</span> Loyihalar</button>
+    <button class="nav-item" data-tab="monitoring" data-roles="boss,observer" onclick="setTab('monitoring')"><span class="nav-icon">📊</span> Monitoring</button>
+    <button class="nav-item" data-tab="stats" onclick="setTab('stats')"><span class="nav-icon">📈</span> Statistika</button>
+    <button class="nav-item" data-tab="settings" onclick="setTab('settings')"><span class="nav-icon">⚙️</span> Sozlamalar</button>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Doska</h1>
+        <div class="topbar__sub" id="pageSub">Joriy vazifalar va ularning holati</div>
+      </div>
+      <div class="topbar__right">
+        <div class="role-switch">
+          <select onchange="setRole(this.value)">
+            <option value="boss">👑 Admin (Boss)</option>
+            <option value="worker">🧑‍💻 Xodim (Worker)</option>
+            <option value="observer">👁 Kuzatuvchi (Observer)</option>
+          </select>
+        </div>
+        <div class="user-chip" onclick="setTab('settings')">
+          <div class="avatar" style="width:38px;height:38px;font-size:14px;">AK</div>
+          <div>
+            <div class="user-chip__name">Aziz Karimov</div>
+            <div class="user-chip__role" id="userRoleLabel">👑 Admin</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ══════════ BOARD ══════════ -->
+      <section id="page-board" class="page active">
+        <div class="board-row">
+          <div class="board-col">
+            <div class="board-col__head"><span class="board-col__dot" style="background:#94a3b8"></span> 🆕 Yangi <span class="board-col__count">3</span></div>
+            <div class="task-card" style="--card-color:#3b82f6">
+              <div class="task-card__title">Sayt dizaynini yangilash</div>
+              <div class="task-card__meta">
+                <span class="chip">💻 IT bo'limi</span>
+                <span class="chip">⏰ 18-iyun · 5 kun</span>
+              </div>
+              <div class="task-card__assignee">
+                <div class="avatar-wrap"><div class="avatar" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">AK</div></div>
+                Aziz Karimov
+              </div>
+            </div>
+            <div class="task-card" style="--card-color:#22c55e">
+              <div class="task-card__title">Reklama bannerlari</div>
+              <div class="task-card__meta">
+                <span class="chip">📣 Marketing</span>
+                <span class="chip">📎 2</span>
+              </div>
+              <div class="task-card__assignee">
+                <div class="avatar-wrap"><div class="avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">DY</div></div>
+                Dilnoza Yusupova
+              </div>
+            </div>
+            <div class="task-card" style="--card-color:#a855f7">
+              <div class="task-card__title">👤 Hisobot tayyorlash (shaxsiy)</div>
+              <div class="task-card__meta">
+                <span class="chip">⏰ 20-iyun · 7 kun</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="board-col">
+            <div class="board-col__head"><span class="board-col__dot" style="background:#3b82f6"></span> 🔄 Jarayonda <span class="board-col__count">2</span></div>
+            <div class="task-card" style="--card-color:#3b82f6">
+              <div class="task-card__title">API integratsiya</div>
+              <div class="task-card__meta">
+                <span class="chip">💻 IT bo'limi</span>
+                <span class="chip badge--accent">🗂 ROBOT KIUT</span>
+              </div>
+              <div class="task-card__assignee">
+                <div class="avatar-wrap"><div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ea580c)">ST</div></div>
+                Sardor Toshev
+              </div>
+            </div>
+            <div class="task-card" style="--card-color:#a855f7">
+              <div class="task-card__title">Yillik hisobot tayyorlash</div>
+              <div class="task-card__meta">
+                <span class="chip">💰 Buxgalteriya</span>
+                <span class="chip" style="background:rgba(248,113,113,.15); color:var(--danger)">⚠️ Kechikkan</span>
+              </div>
+              <div class="task-card__assignee">
+                <div class="avatar-wrap"><div class="avatar" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">MA</div></div>
+                Madina Aliyeva
+              </div>
+            </div>
+          </div>
+
+          <div class="board-col">
+            <div class="board-col__head"><span class="board-col__dot" style="background:#f59e0b"></span> 👀 Tekshirishda <span class="board-col__count">1</span></div>
+            <div class="task-card" style="--card-color:#f59e0b">
+              <div class="task-card__title">Treninglar jadvali</div>
+              <div class="task-card__meta">
+                <span class="chip">🎓 O'quv markazi</span>
+              </div>
+              <div class="task-card__assignee">
+                <div class="avatar-wrap"><div class="avatar" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">BR</div></div>
+                Bekzod Rashidov
+              </div>
+            </div>
+          </div>
+
+          <div class="board-col">
+            <div class="board-col__head"><span class="board-col__dot" style="background:#22c55e"></span> ✅ Bajarildi <span class="board-col__count">12</span></div>
+            <div class="task-card" style="--card-color:#22c55e; opacity:.7">
+              <div class="task-card__title">Backend API</div>
+              <div class="task-card__meta">
+                <span class="chip">💻 IT bo'limi</span>
+              </div>
+              <div class="task-card__assignee">
+                <div class="avatar-wrap"><div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ea580c)">ST</div></div>
+                Sardor Toshev
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="fab" data-roles="boss,worker" onclick="openModal('task')">+</button>
+      </section>
+
+      <!-- ══════════ EMPLOYEES ══════════ -->
+      <section id="page-employees" class="page">
+        <div class="birthday-banner">
+          <div class="birthday-banner__icon">🎉</div>
+          <div>
+            <div class="birthday-banner__title">Bugun Dilnoza Yusupovaning tug'ilgan kuni!</div>
+            <div class="birthday-banner__sub">Tabrik xabari guruhga avtomatik yuborildi · 09:00</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input class="search-input" placeholder="🔍 Xodim qidirish...">
+          <button class="btn btn--primary" data-roles="boss">+ Xodim taklif qilish</button>
+        </div>
+
+        <div class="emp-grid">
+          <div class="emp-card">
+            <div class="emp-card__head">
+              <div class="avatar-wrap">
+                <div class="avatar" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">AK</div>
+                <span class="emoji-badge">🚀</span>
+              </div>
+              <div>
+                <div class="emp-card__name">👑 Aziz Karimov</div>
+                <div class="emp-card__role">Admin · 💻 IT bo'limi</div>
+              </div>
+              <button class="emp-card__menu" data-roles="boss">⋮</button>
+            </div>
+            <div class="emp-card__row"><span>🎂 Tug'ilgan kun</span><span class="badge badge--accent">12-iyul · 29 kun</span></div>
+          </div>
+
+          <div class="emp-card">
+            <div class="emp-card__head">
+              <div class="avatar-wrap">
+                <div class="avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">DY</div>
+                <span class="emoji-badge">🎨</span>
+              </div>
+              <div>
+                <div class="emp-card__name">Dilnoza Yusupova</div>
+                <div class="emp-card__role">Xodim · 📣 Marketing</div>
+              </div>
+              <button class="emp-card__menu" data-roles="boss">⋮</button>
+            </div>
+            <div class="emp-card__row"><span>🎂 Tug'ilgan kun</span><span class="badge badge--warn">Bugun! 🎉</span></div>
+          </div>
+
+          <div class="emp-card">
+            <div class="emp-card__head">
+              <div class="avatar-wrap">
+                <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ea580c)">ST</div>
+                <span class="emoji-badge">⚡</span>
+              </div>
+              <div>
+                <div class="emp-card__name">Sardor Toshev</div>
+                <div class="emp-card__role">Xodim · 💻 IT bo'limi</div>
+              </div>
+              <button class="emp-card__menu" data-roles="boss">⋮</button>
+            </div>
+            <div class="emp-card__row"><span>🎂 Tug'ilgan kun</span><span class="badge badge--accent">3-sentabr · 82 kun</span></div>
+          </div>
+
+          <div class="emp-card">
+            <div class="emp-card__head">
+              <div class="avatar-wrap">
+                <div class="avatar" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">MA</div>
+                <span class="emoji-badge">📊</span>
+              </div>
+              <div>
+                <div class="emp-card__name">Madina Aliyeva</div>
+                <div class="emp-card__role">Xodim · 💰 Buxgalteriya</div>
+              </div>
+              <button class="emp-card__menu" data-roles="boss">⋮</button>
+            </div>
+            <div class="emp-card__row"><span>🎂 Tug'ilgan kun</span><span class="badge badge--accent">28-avgust · 76 kun</span></div>
+          </div>
+
+          <div class="emp-card">
+            <div class="emp-card__head">
+              <div class="avatar-wrap">
+                <div class="avatar" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">BR</div>
+                <span class="emoji-badge">🎯</span>
+              </div>
+              <div>
+                <div class="emp-card__name">Bekzod Rashidov</div>
+                <div class="emp-card__role">Xodim · 🎓 O'quv markazi</div>
+              </div>
+              <button class="emp-card__menu" data-roles="boss">⋮</button>
+            </div>
+            <div class="emp-card__row"><span>🎂 Tug'ilgan kun</span><span class="badge badge--warn">25-iyun · 12 kun</span></div>
+          </div>
+
+          <div class="emp-card" style="opacity:.6; border-style:dashed;">
+            <div class="emp-card__head">
+              <div class="avatar-wrap">
+                <div class="avatar" style="background:linear-gradient(135deg,#64748b,#475569)">JY</div>
+              </div>
+              <div>
+                <div class="emp-card__name">Jasur Yo'ldoshev</div>
+                <div class="emp-card__role">Tasdiq kutmoqda</div>
+              </div>
+            </div>
+            <div class="emp-card__row" data-roles="boss"><button class="btn btn--primary" style="width:100%; padding:8px;">✅ Qabul qilish</button></div>
+          </div>
+        </div>
+
+        <div class="section-title">Bot xabari namunasi (guruhga yuboriladi)</div>
+        <div class="tg-preview">
+          <div class="tg-preview__label">📨 IQTM Workspace bot · Asosiy guruh</div>
+          <div class="tg-bubble">
+            <div class="tg-bubble__name">🤖 IQTM Workspace</div>
+            🎉🎂 Bugun <b>Dilnoza Yusupova</b>ning tug'ilgan kuni!<br><br>
+            Jamoamiz nomidan tabriklaymiz, sog'lik, omad va yangi yutuqlar tilaymiz! 🎈🥳
+            <div class="tg-bubble__time">09:00</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ PROJECTS ══════════ -->
+      <section id="page-projects" class="page">
+        <div class="toolbar">
+          <div></div>
+          <button class="btn btn--primary" data-roles="boss" onclick="openModal('project')">+ Yangi loyiha</button>
+        </div>
+        <div class="project-grid">
+          <div class="card project-card">
+            <div class="project-card__head">
+              <div class="project-card__name">🤖 ROBOT KIUT</div>
+              <span class="badge badge--ok">Faol</span>
+            </div>
+            <div class="dept-row__head"><div class="dept-row__count">2 / 4 ish bajarildi</div><div class="dept-row__count">50%</div></div>
+            <div class="progress-bar"><div class="progress-bar__fill" style="width:50%; background:#3b82f6"></div></div>
+            <div class="project-tasks">
+              <div class="project-task"><span class="badge badge--ok">✅</span> TTZ tarqatish <span class="project-task__assignee">Aziz K.</span></div>
+              <div class="project-task"><span class="badge badge--ok">✅</span> Konstruksiya loyihasi <span class="project-task__assignee">Sardor T.</span></div>
+              <div class="project-task"><span class="badge badge--accent">🔄</span> Dasturi (firmware) <span class="project-task__assignee">Dilnoza Y.</span></div>
+              <div class="project-task"><span class="badge" style="background:var(--surface); color:var(--hint)">🆕</span> Marketing materiallari <span class="project-task__assignee">Madina A.</span></div>
+            </div>
+          </div>
+          <div class="card project-card">
+            <div class="project-card__head">
+              <div class="project-card__name">🌐 IQTM Workspace 2.0</div>
+              <span class="badge badge--ok">Faol</span>
+            </div>
+            <div class="dept-row__head"><div class="dept-row__count">1 / 3 ish bajarildi</div><div class="dept-row__count">33%</div></div>
+            <div class="progress-bar"><div class="progress-bar__fill" style="width:33%; background:#22c55e"></div></div>
+            <div class="project-tasks">
+              <div class="project-task"><span class="badge badge--ok">✅</span> Backend API <span class="project-task__assignee">Sardor T.</span></div>
+              <div class="project-task"><span class="badge badge--accent">🔄</span> Frontend UI <span class="project-task__assignee">Aziz K.</span></div>
+              <div class="project-task"><span class="badge badge--danger">⚠️</span> Hisobotlar moduli <span class="project-task__assignee">Bekzod R. · kechikkan</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ MONITORING ══════════ -->
+      <section id="page-monitoring" class="page">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-card__num">128</div><div class="stat-card__label">Jami vazifalar</div></div>
+          <div class="stat-card"><div class="stat-card__num" style="color:var(--ok)">76</div><div class="stat-card__label">✅ Bajarilgan</div></div>
+          <div class="stat-card"><div class="stat-card__num" style="color:var(--accent)">39</div><div class="stat-card__label">🔄 Jarayonda</div></div>
+          <div class="stat-card"><div class="stat-card__num" style="color:var(--danger)">13</div><div class="stat-card__label">⚠️ Kechikkan</div></div>
+          <div class="stat-card"><div class="stat-card__num">21</div><div class="stat-card__label">🆕 Yangi (oy)</div></div>
+          <div class="stat-card"><div class="stat-card__num">18</div><div class="stat-card__label">🏁 Yopilgan (oy)</div></div>
+        </div>
+
+        <div class="section-title">Bo'limlar bo'yicha progress</div>
+        <div class="card">
+          <div class="dept-row">
+            <div class="dept-row__head"><div class="dept-row__name"><span class="dot" style="background:#3b82f6"></span> 💻 IT bo'limi</div><div class="dept-row__count">18 / 24 · 75%</div></div>
+            <div class="progress-bar"><div class="progress-bar__fill" style="width:75%; background:#3b82f6"></div></div>
+          </div>
+          <div class="dept-row">
+            <div class="dept-row__head"><div class="dept-row__name"><span class="dot" style="background:#22c55e"></span> 📣 Marketing</div><div class="dept-row__count">14 / 20 · 70%</div></div>
+            <div class="progress-bar"><div class="progress-bar__fill" style="width:70%; background:#22c55e"></div></div>
+          </div>
+          <div class="dept-row">
+            <div class="dept-row__head"><div class="dept-row__name"><span class="dot" style="background:#f59e0b"></span> 🧪 Loyihalar bo'limi</div><div class="dept-row__count">9 / 22 · 41%</div></div>
+            <div class="progress-bar"><div class="progress-bar__fill" style="width:41%; background:#f59e0b"></div></div>
+          </div>
+        </div>
+
+        <div class="section-title">Holatlar bo'yicha taqsimot</div>
+        <div class="card donut-wrap">
+          <div class="donut"></div>
+          <div class="donut-legend">
+            <span><span class="legend-dot" style="background:var(--ok)"></span> Bajarilgan — 45%</span>
+            <span><span class="legend-dot" style="background:var(--accent)"></span> Jarayonda — 30%</span>
+            <span><span class="legend-dot" style="background:var(--warn)"></span> Yangi — 13%</span>
+            <span><span class="legend-dot" style="background:var(--danger)"></span> Kechikkan — 12%</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ STATS ══════════ -->
+      <section id="page-stats" class="page">
+        <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="stat-card"><div class="stat-card__num">24</div><div class="stat-card__label">Jami vazifalarim</div></div>
+          <div class="stat-card"><div class="stat-card__num" style="color:var(--ok)">17</div><div class="stat-card__label">✅ Bajarilgan</div></div>
+          <div class="stat-card"><div class="stat-card__num" style="color:var(--accent)">5</div><div class="stat-card__label">🔄 Jarayonda</div></div>
+          <div class="stat-card"><div class="stat-card__num" style="color:var(--danger)">2</div><div class="stat-card__label">⚠️ Kechikkan</div></div>
+        </div>
+
+        <div class="section-title">Hisobot eksport</div>
+        <div class="card">
+          <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+            <button class="btn btn--primary" style="flex:none; padding:9px 16px; font-size:13px;">Hafta</button>
+            <button class="btn btn--ghost" style="flex:none; padding:9px 16px; font-size:13px;">Oy</button>
+            <button class="btn btn--ghost" style="flex:none; padding:9px 16px; font-size:13px;">Yil</button>
+          </div>
+          <div class="report-row">
+            <button class="btn btn--ghost" disabled><span class="loading-spinner"></span>PDF generatsiya qilinmoqda...</button>
+            <button class="btn btn--ghost">📝 DOCX</button>
+            <button class="btn btn--ghost">📊 XLSX</button>
+          </div>
+          <div class="toast">✅ Hisobot tayyor — Telegram chatingizga yuborildi</div>
+        </div>
+      </section>
+
+      <!-- ══════════ SETTINGS ══════════ -->
+      <section id="page-settings" class="page">
+
+        <!-- Main menu -->
+        <div id="settings-menu" class="settings-view active">
+          <div class="menu-list">
+            <button class="menu-item" onclick="openSettings('profile')">
+              <span class="menu-item__icon">👤</span>
+              <div class="menu-item__body"><div class="menu-item__title">Profil</div><div class="menu-item__sub">Ism, rasm, tug'ilgan kun, mahsus emoji</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+            <button class="menu-item" data-roles="boss" onclick="openSettings('group')">
+              <span class="menu-item__icon">👥</span>
+              <div class="menu-item__body"><div class="menu-item__title">Guruh sozlamalari</div><div class="menu-item__sub">Bo'limlar, asosiy guruh</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+            <button class="menu-item" data-roles="boss" onclick="openSettings('templates')">
+              <span class="menu-item__icon">✉️</span>
+              <div class="menu-item__body"><div class="menu-item__title">Xabar shablonlari</div><div class="menu-item__sub">Bildirishnoma matnlari va yo'naltirish</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+            <button class="menu-item" data-roles="boss" onclick="openSettings('board')">
+              <span class="menu-item__icon">📋</span>
+              <div class="menu-item__body"><div class="menu-item__title">Doska sozlamalari</div><div class="menu-item__sub">Ustunlar va holatlar</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+            <button class="menu-item" data-roles="boss" onclick="openSettings('branding')">
+              <span class="menu-item__icon">🎨</span>
+              <div class="menu-item__body"><div class="menu-item__title">Brending</div><div class="menu-item__sub">Logo va rang sxemasi</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+            <button class="menu-item" onclick="openSettings('language')">
+              <span class="menu-item__icon">🌐</span>
+              <div class="menu-item__body"><div class="menu-item__title">Til</div><div class="menu-item__sub">O'zbek</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Profile subpage -->
+        <div id="settings-profile" class="settings-view">
+          <button class="back-btn" onclick="openSettings('menu')">‹ Sozlamalar</button>
+          <div class="card" style="max-width:520px;">
+            <div style="display:flex; align-items:center; gap:18px; margin-bottom:18px;">
+              <div class="avatar-wrap" style="width:72px;height:72px;font-size:24px;">
+                <div class="avatar" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">AK</div>
+                <span class="emoji-badge">🚀</span>
+              </div>
+              <button class="btn btn--ghost">📷 Rasm yuklash</button>
+            </div>
+            <div class="field"><label>Ism</label><input value="Aziz"></div>
+            <div class="field"><label>Familiya</label><input value="Karimov"></div>
+            <div class="field"><label>Tug'ilgan kun</label><input type="date" value="2026-07-12"></div>
+            <div class="field">
+              <label>Maxsus emoji</label>
+              <div class="emoji-picker">
+                <div class="emoji-opt selected">🚀</div>
+                <div class="emoji-opt">🎯</div>
+                <div class="emoji-opt">⚡</div>
+                <div class="emoji-opt">🎨</div>
+                <div class="emoji-opt">📊</div>
+                <div class="emoji-opt">🧠</div>
+                <div class="emoji-opt">🔥</div>
+                <div class="emoji-opt">🌟</div>
+              </div>
+            </div>
+            <button class="btn btn--primary" style="width:100%; margin-top:6px;" onclick="flashSave(this)">Saqlash</button>
+          </div>
+        </div>
+
+        <!-- Group settings menu -->
+        <div id="settings-group" class="settings-view">
+          <button class="back-btn" onclick="openSettings('menu')">‹ Sozlamalar</button>
+          <div class="menu-list">
+            <button class="menu-item" onclick="openSettings('departments')">
+              <span class="menu-item__icon">🏢</span>
+              <div class="menu-item__body"><div class="menu-item__title">Bo'limlar</div><div class="menu-item__sub">4 bo'lim · mavzu va rang sozlamalari</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+            <button class="menu-item" onclick="openSettings('group-chat')">
+              <span class="menu-item__icon">💬</span>
+              <div class="menu-item__body"><div class="menu-item__title">Asosiy guruh</div><div class="menu-item__sub">IQTM Workspace · ID: -1001234567890</div></div>
+              <span class="menu-item__arrow">›</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Departments list -->
+        <div id="settings-departments" class="settings-view">
+          <button class="back-btn" onclick="openSettings('group')">‹ Guruh sozlamalari</button>
+          <div class="menu-list" id="deptList"></div>
+        </div>
+
+        <!-- Department edit -->
+        <div id="settings-dept-edit" class="settings-view">
+          <button class="back-btn" onclick="openSettings('departments')">‹ Bo'limlar</button>
+          <div class="card" style="max-width:480px;">
+            <div class="field"><label>Emoji</label><input id="deptEmoji" style="max-width:90px;" value="💻"></div>
+            <div class="field"><label>Nomi</label><input id="deptName" value="IT bo'limi"></div>
+            <div class="field">
+              <label>Rang (doska ustunidagi chip rangi)</label>
+              <div class="color-picker">
+                <div class="color-opt selected" style="background:#3b82f6"></div>
+                <div class="color-opt" style="background:#22c55e"></div>
+                <div class="color-opt" style="background:#f59e0b"></div>
+                <div class="color-opt" style="background:#ef4444"></div>
+                <div class="color-opt" style="background:#a855f7"></div>
+                <div class="color-opt" style="background:#06b6d4"></div>
+              </div>
+            </div>
+            <div class="field"><label>Telegram forum mavzu (Topic) ID</label><input id="deptTopic" placeholder="Masalan: 142" value="142"></div>
+            <button class="btn btn--primary" style="width:100%; margin-top:6px;" onclick="flashSave(this)">Saqlash</button>
+            <button class="btn btn--danger" style="width:100%; margin-top:8px;">🗑 Bo'limni o'chirish</button>
+          </div>
+        </div>
+
+        <!-- Main group chat -->
+        <div id="settings-group-chat" class="settings-view">
+          <button class="back-btn" onclick="openSettings('group')">‹ Guruh sozlamalari</button>
+          <div class="card" style="max-width:480px;">
+            <div class="field"><label>Guruh nomi</label><input value="IQTM Workspace" disabled></div>
+            <div class="field"><label>Guruh / Chat ID</label><input value="-1001234567890"></div>
+            <p style="color:var(--hint); font-size:12.5px; margin:0 0 14px;">Bot guruhga admin sifatida qo'shilgan bo'lishi kerak. ID ni guruhga <code>/set_group</code> buyrug'ini yuborib ham olish mumkin.</p>
+            <button class="btn btn--primary" style="width:100%;" onclick="flashSave(this)">Saqlash</button>
+          </div>
+        </div>
+
+        <!-- Templates list -->
+        <div id="settings-templates" class="settings-view">
+          <button class="back-btn" onclick="openSettings('menu')">‹ Sozlamalar</button>
+          <p style="color:var(--hint); font-size:13px; margin:-4px 0 16px;">Har bir voqea uchun guruhga yuboriladigan xabar matnini va qaysi mavzuga yuborilishini sozlang. <code>{o'zgaruvchi}</code> shaklidagi belgilar avtomatik almashtiriladi.</p>
+          <div class="menu-list" id="tplList"></div>
+        </div>
+
+        <!-- Template editor -->
+        <div id="settings-tpl-edit" class="settings-view">
+          <button class="back-btn" onclick="openSettings('templates')">‹ Xabar shablonlari</button>
+          <div class="section-title" id="tplTitle" style="margin-top:0;">📌 Yangi vazifa</div>
+          <p id="tplDesc" style="color:var(--hint); font-size:13px; margin:-6px 0 16px;"></p>
+          <div class="card" style="max-width:640px;">
+            <div class="field">
+              <label>Xabar matni</label>
+              <textarea class="tpl-textarea" id="tplTextarea" oninput="updateTplPreview()"></textarea>
+            </div>
+            <div class="var-chips" id="tplVarChips"></div>
+            <div class="field">
+              <label>Qaysi mavzuga yuborilsin</label>
+              <select id="tplTopic"></select>
+            </div>
+            <div class="tpl-preview-wrap">
+              <label>Ko'rinishi</label>
+              <div class="tg-preview">
+                <div class="tg-preview__label">📨 IQTM Workspace bot</div>
+                <div class="tg-bubble" id="tplPreview"></div>
+              </div>
+            </div>
+            <button class="btn btn--primary" style="width:100%; margin-top:16px;" onclick="flashSave(this)">Saqlash</button>
+          </div>
+        </div>
+
+        <!-- Board columns -->
+        <div id="settings-board" class="settings-view">
+          <button class="back-btn" onclick="openSettings('menu')">‹ Sozlamalar</button>
+          <div class="menu-list">
+            <div class="menu-item" style="cursor:default;"><span class="menu-item__icon">🆕</span><div class="menu-item__body"><div class="menu-item__title">Yangi</div><div class="menu-item__sub">Boshlang'ich ustun</div></div><span class="chip">✏️</span></div>
+            <div class="menu-item" style="cursor:default;"><span class="menu-item__icon">🔄</span><div class="menu-item__body"><div class="menu-item__title">Jarayonda</div><div class="menu-item__sub">Bildirishnoma yoqilgan</div></div><span class="chip">✏️</span></div>
+            <div class="menu-item" style="cursor:default;"><span class="menu-item__icon">👀</span><div class="menu-item__body"><div class="menu-item__title">Tekshirishda</div><div class="menu-item__sub">Bildirishnoma yoqilgan</div></div><span class="chip">✏️</span></div>
+            <div class="menu-item" style="cursor:default;"><span class="menu-item__icon">✅</span><div class="menu-item__body"><div class="menu-item__title">Bajarildi</div><div class="menu-item__sub">Yakuniy ustun (done)</div></div><span class="chip">✏️</span></div>
+            <button class="menu-item menu-item--dashed">+ Ustun qo'shish</button>
+          </div>
+        </div>
+
+        <!-- Branding -->
+        <div id="settings-branding" class="settings-view">
+          <button class="back-btn" onclick="openSettings('menu')">‹ Sozlamalar</button>
+          <div class="card" style="max-width:480px;">
+            <div class="field">
+              <label>Logo</label>
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div class="avatar" style="width:56px;height:56px;font-size:16px;border-radius:12px;">IQ</div>
+                <button class="btn btn--ghost">📷 Logo yuklash</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>Asosiy rang</label>
+              <div class="color-picker">
+                <div class="color-opt selected" style="background:#3b82f6"></div>
+                <div class="color-opt" style="background:#8b5cf6"></div>
+                <div class="color-opt" style="background:#22c55e"></div>
+                <div class="color-opt" style="background:#ef4444"></div>
+                <div class="color-opt" style="background:#f59e0b"></div>
+              </div>
+            </div>
+            <button class="btn btn--primary" style="width:100%; margin-top:6px;" onclick="flashSave(this)">Saqlash</button>
+          </div>
+
+          <div class="section-title">Fayl va saqlash cheklovlari</div>
+          <div class="card" style="max-width:480px;">
+            <div class="field"><label>Fayl hajmi chegarasi (MB)</label><input type="number" min="1" value="10"></div>
+            <div class="field"><label>Saqlash chegarasi (GB)</label><input type="number" min="1" value="3"></div>
+            <div class="field"><label>Arxiv kanal ID</label><input placeholder="-1001234567890"></div>
+            <p style="color:var(--hint); font-size:12.5px; margin:0 0 14px;">💡 Saqlash chegarasidan oshib ketgan fayllar shu Telegram kanaliga ko'chiriladi. Botni kanalga admin qiling.</p>
+            <button class="btn btn--primary" style="width:100%;" onclick="flashSave(this)">Saqlash</button>
+          </div>
+        </div>
+
+        <!-- Language -->
+        <div id="settings-language" class="settings-view">
+          <button class="back-btn" onclick="openSettings('menu')">‹ Sozlamalar</button>
+          <div class="menu-list">
+            <button class="menu-item" onclick="selectLang(this)"><span class="menu-item__icon">🇺🇿</span><div class="menu-item__body"><div class="menu-item__title">O'zbek</div></div><span class="menu-item__arrow">✓</span></button>
+            <button class="menu-item" onclick="selectLang(this)"><span class="menu-item__icon">🇷🇺</span><div class="menu-item__body"><div class="menu-item__title">Русский</div></div><span class="menu-item__arrow"></span></button>
+            <button class="menu-item" onclick="selectLang(this)"><span class="menu-item__icon">🇬🇧</span><div class="menu-item__body"><div class="menu-item__title">English</div></div><span class="menu-item__arrow"></span></button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- Mobile bottom tabbar -->
+    <nav class="tabbar-mobile">
+      <button class="nav-item active" data-tab="board" onclick="setTab('board')"><span class="nav-icon">📋</span> Doska</button>
+      <button class="nav-item" data-tab="employees" data-roles="boss,worker" onclick="setTab('employees')"><span class="nav-icon">👥</span> Xodimlar</button>
+      <button class="nav-item" data-tab="projects" data-roles="boss,worker" onclick="setTab('projects')"><span class="nav-icon">🗂</span> Loyihalar</button>
+      <button class="nav-item" data-tab="monitoring" data-roles="boss,observer" onclick="setTab('monitoring')"><span class="nav-icon">📊</span> Monitoring</button>
+      <button class="nav-item" data-tab="stats" onclick="setTab('stats')"><span class="nav-icon">📈</span> Statistika</button>
+      <button class="nav-item" data-tab="settings" onclick="setTab('settings')"><span class="nav-icon">⚙️</span> Sozlamalar</button>
+    </nav>
+  </div>
+</div>
+
+<!-- Toast (fixed, top-right) -->
+<div class="toast toast-fixed" id="toastFixed">✅ Vazifa yaratildi</div>
+
+<!-- Modal: Yangi vazifa -->
+<div class="modal-overlay" id="modal-task" onclick="if(event.target===this) closeModal('task')">
+  <div class="modal">
+    <div class="modal__head">
+      <div class="modal__title">🆕 Yangi vazifa</div>
+      <button class="modal__close" onclick="closeModal('task')">×</button>
+    </div>
+    <div class="field"><label>Vazifa nomi</label><input placeholder="Masalan: Sayt dizaynini yangilash"></div>
+    <div class="field"><label>Tavsif</label><textarea class="tpl-textarea" style="min-height:80px;" placeholder="Qo'shimcha ma'lumot..."></textarea></div>
+    <div class="field">
+      <label>Bo'lim</label>
+      <select>
+        <option>💻 IT bo'limi</option>
+        <option>📣 Marketing</option>
+        <option>💰 Buxgalteriya</option>
+        <option>🎓 O'quv markazi</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Mas'ul</label>
+      <select>
+        <option>Aziz Karimov</option>
+        <option>Dilnoza Yusupova</option>
+        <option>Sardor Toshev</option>
+        <option>Madina Aliyeva</option>
+        <option>Bekzod Rashidov</option>
+      </select>
+    </div>
+    <div class="field"><label>Muddat</label><input type="date"></div>
+    <div class="field">
+      <label>Loyihaga bog'lash (ixtiyoriy)</label>
+      <select>
+        <option value="">— Standart vazifa —</option>
+        <option>🤖 ROBOT KIUT</option>
+        <option>🌐 IQTM Workspace 2.0</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Biriktirilgan fayllar</label>
+      <div class="attach-row">
+        <button class="btn btn--ghost" type="button" onclick="document.getElementById('fileInput').click()">📎 Fayl tanlash</button>
+        <button class="btn btn--ghost" type="button" onclick="document.getElementById('cameraInput').click()">📷 Rasmga olish</button>
+      </div>
+      <input type="file" id="fileInput" multiple style="display:none" onchange="addAttachment(this)">
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="addAttachment(this)">
+      <div class="attach-list" id="attachList"></div>
+    </div>
+    <button class="btn btn--primary" style="width:100%; margin-top:6px;" onclick="submitTask()">Yaratish</button>
+  </div>
+</div>
+
+<!-- Modal: Yangi loyiha -->
+<div class="modal-overlay" id="modal-project" onclick="if(event.target===this) closeModal('project')">
+  <div class="modal">
+    <div class="modal__head">
+      <div class="modal__title">🗂 Yangi loyiha</div>
+      <button class="modal__close" onclick="closeModal('project')">×</button>
+    </div>
+    <div class="field"><label>Loyiha nomi</label><input placeholder="Masalan: ROBOT KIUT"></div>
+    <div class="field"><label>Tavsif</label><textarea class="tpl-textarea" style="min-height:70px;" placeholder="Loyiha haqida qisqacha..."></textarea></div>
+    <div class="field">
+      <label>Loyiha ishlari</label>
+      <div id="projectWorks">
+        <div class="work-row">
+          <input placeholder="Ish nomi (masalan: TTZ tarqatish)">
+          <select>
+            <option>Aziz Karimov</option>
+            <option>Dilnoza Yusupova</option>
+            <option>Sardor Toshev</option>
+            <option>Madina Aliyeva</option>
+            <option>Bekzod Rashidov</option>
+          </select>
+          <button class="work-row__remove" type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+      </div>
+      <button class="btn btn--ghost" type="button" onclick="addWorkRow()">+ Ish qo'shish</button>
+    </div>
+    <button class="btn btn--primary" style="width:100%; margin-top:6px;" onclick="submitProject()">Loyihani yaratish</button>
+  </div>
+</div>
+
+<script>
+const TITLES = {
+  board: ["Doska", "Joriy vazifalar va ularning holati"],
+  employees: ["Xodimlar", "Jamoa a'zolari, tug'ilgan kunlar va bo'limlar"],
+  projects: ["Loyihalar", "Loyihalar va ulardagi ishlar progresi"],
+  monitoring: ["Monitoring paneli", "Markazda olib borilayotgan ishlar umumiy ko'rinishi"],
+  stats: ["Statistika", "Shaxsiy ko'rsatkichlar va hisobotlar"],
+  settings: ["Sozlamalar", "Profil va tizim sozlamalari"],
+};
+const ROLE_LABELS = { boss: "👑 Admin", worker: "🧑‍💻 Xodim", observer: "👁 Kuzatuvchi" };
+const ROLE_TABS = { boss: "board", worker: "board", observer: "monitoring" };
+
+const DEPARTMENTS = {
+  it: { emoji:"💻", name:"IT bo'limi", topic:"142", color:"#3b82f6" },
+  marketing: { emoji:"📣", name:"Marketing", topic:"156", color:"#22c55e" },
+  buh: { emoji:"💰", name:"Buxgalteriya", topic:"", color:"#f59e0b" },
+  edu: { emoji:"🎓", name:"O'quv markazi", topic:"171", color:"#ef4444" },
+};
+
+const TOPICS = [
+  { id:"", name:"— Asosiy chat (mavzusiz)" },
+  { id:"auto", name:"🏢 Avtomatik — bo'lim mavzusi" },
+  { id:"142", name:"💻 IT bo'limi mavzusi" },
+  { id:"156", name:"📣 Marketing mavzusi" },
+  { id:"171", name:"🎓 O'quv markazi mavzusi" },
+];
+
+const TEMPLATES = {
+  new_task: {
+    icon:"📌", title:"Yangi vazifa",
+    desc:"Vazifa yaratilganda guruhga e'lon qilinadi va mas'ulga shaxsiy yuboriladi.",
+    vars: { id:"124", department:"💻 IT bo'limi", name:"Sayt dizaynini yangilash", assignee:"Sardor Toshev (@sardor_dev)", deadline:"18.06.2026", description:"Bosh sahifa va katalog bo'limi yangilanadi" },
+    text: "📌 <b>Yangi vazifa #{id}</b>\n🏢 {department}\n📝 {name}\n👤 Mas'ul: {assignee}\n⏰ Muddat: {deadline}\n📄 {description}",
+    topic: "auto"
+  },
+  status_change: {
+    icon:"🔄", title:"Holat o'zgardi",
+    desc:"Vazifa bir ustundan ikkinchisiga ko'chirilganda yuboriladi.",
+    vars: { department:"💻 IT bo'limi", id:"124", name:"Sayt dizaynini yangilash", status_emoji:"👀", status_name:"Tekshirishda", actor:"Sardor Toshev (@sardor_dev)" },
+    text: "📌 <b>Vazifa holati o'zgardi</b>\n🏢 {department}\n📝 #{id} {name}\n➡️ {status_emoji} {status_name}\n👤 O'zgartirdi: {actor}",
+    topic: "auto"
+  },
+  done: {
+    icon:"✅", title:"Vazifa tasdiqlandi",
+    desc:"Vazifa \"Bajarildi\" ustuniga o'tganda yuboriladi.",
+    vars: { id:"124", department:"💻 IT bo'limi", name:"Sayt dizaynini yangilash", assignee:"Sardor Toshev (@sardor_dev)", creator:"Aziz Karimov (@aziz_k)", checker:"Aziz Karimov (@aziz_k)", comment:"Hammasi tayyor, tasdiqlandi ✅" },
+    text: "✅ <b>Vazifa tasdiqlandi #{id}</b>\n🏢 {department}\n📝 {name}\n👤 Bajaruvchi: {assignee}\n📣 Qo'ygan: {creator}\n🔎 Tekshirdi: {checker}\n💬 {comment}",
+    topic: "auto"
+  },
+  overdue: {
+    icon:"🚨", title:"Kechikkan vazifalar",
+    desc:"Har kuni soat 09:00 — muddati o'tgan, hali bajarilmagan vazifalar ro'yxati guruhga yuboriladi.",
+    vars: { list:"• #12 Reklama bannerlari — muddat 10.06.2026\n• #18 Yillik hisobot — muddat 12.06.2026" },
+    text: "🚨 <b>Kechikkan vazifalar:</b>\n\n{list}",
+    topic: ""
+  },
+  weekly: {
+    icon:"📈", title:"Haftalik hisobot",
+    desc:"Har juma soat 18:00 — umumiy progress guruhga yuboriladi.",
+    vars: { date:"13.06.2026", total:"128", done:"76", percent:"59" },
+    text: "📈 <b>Haftalik hisobot — {date}</b>\n\nJami: {total} | ✅ {done} | {percent}%",
+    topic: ""
+  },
+  reminder: {
+    icon:"🔔", title:"Vazifa eslatmasi",
+    desc:"Muddatdan 1 kun oldin mas'ulga shaxsiy va guruhga yuboriladi.",
+    vars: { id:"124", name:"Sayt dizaynini yangilash", deadline:"18.06.2026" },
+    text: "🔔 <b>Vazifa eslatmasi!</b>\n📝 #{id}: {name}\n⏰ Muddat: {deadline}",
+    topic: "auto"
+  },
+  application: {
+    icon:"🆕", title:"Yangi ariza",
+    desc:"Yangi xodim ro'yxatdan o'tganda barcha boshliqlarga shaxsiy va guruhga yuboriladi.",
+    vars: { name:"Jasur Yo'ldoshev", id:"558433201", username:"jasur_dev" },
+    text: "🔔 <b>Yangi ariza!</b>\n\n👤 {name}\n🆔 {id}\n📛 @{username}\n\nIlovada tasdiqlang.",
+    topic: ""
+  },
+  birthday: {
+    icon:"🎂", title:"Tug'ilgan kun tabrigi",
+    desc:"Har kuni soat 08:00 — bugun tug'ilgan kuni bo'lgan xodimlar uchun guruhga va shaxsiga yuboriladi.",
+    vars: { name:"Dilnoza Yusupova" },
+    text: "🎉🎂 <b>Tug'ilgan kun tabriklari!</b>\n\nBugun {name}ning tug'ilgan kuni — tabriklaymiz! 🎁",
+    topic: ""
+  },
+};
+
+let currentTpl = null;
+
+function setTab(tab) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + tab).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.tab === tab));
+  document.getElementById("pageTitle").textContent = TITLES[tab][0];
+  document.getElementById("pageSub").textContent = TITLES[tab][1];
+  if (tab === "settings") openSettings("menu");
+  document.querySelector(".content").scrollTo(0, 0);
+}
+
+function setRole(role) {
+  document.body.dataset.role = role;
+  document.getElementById("userRoleLabel").textContent = ROLE_LABELS[role];
+  document.querySelectorAll("[data-roles]").forEach(el => {
+    const roles = el.dataset.roles.split(",");
+    el.style.display = roles.includes(role) ? "" : "none";
+  });
+  const activeNav = document.querySelector(".nav-item.active");
+  if (activeNav && activeNav.style.display === "none") {
+    setTab(ROLE_TABS[role]);
+  } else if (document.getElementById("page-settings").classList.contains("active")) {
+    openSettings("menu");
+  }
+}
+
+function openSettings(id) {
+  document.querySelectorAll("#page-settings .settings-view").forEach(v => v.classList.remove("active"));
+  document.getElementById("settings-" + id).classList.add("active");
+}
+
+function openDeptEdit(key) {
+  const d = DEPARTMENTS[key];
+  document.getElementById("deptEmoji").value = d.emoji;
+  document.getElementById("deptName").value = d.name;
+  document.getElementById("deptTopic").value = d.topic;
+  document.querySelectorAll("#settings-dept-edit .color-opt").forEach(c => {
+    c.classList.toggle("selected", c.style.background === hexToRgb(d.color));
+  });
+  openSettings("dept-edit");
+}
+
+function hexToRgb(hex) {
+  const v = hex.replace("#","");
+  const r = parseInt(v.slice(0,2),16), g = parseInt(v.slice(2,4),16), b = parseInt(v.slice(4,6),16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function openTplEdit(key) {
+  currentTpl = key;
+  const t = TEMPLATES[key];
+  document.getElementById("tplTitle").textContent = t.icon + " " + t.title;
+  document.getElementById("tplDesc").textContent = t.desc;
+  document.getElementById("tplTextarea").value = t.text;
+  document.getElementById("tplVarChips").innerHTML = Object.keys(t.vars)
+    .map(v => `<span class="var-chip" onclick="insertVar('{${v}}')">{${v}}</span>`).join("");
+  document.getElementById("tplTopic").innerHTML = TOPICS
+    .map(tp => `<option value="${tp.id}" ${tp.id === t.topic ? "selected" : ""}>${tp.name}</option>`).join("");
+  updateTplPreview();
+  openSettings("tpl-edit");
+}
+
+function insertVar(token) {
+  const ta = document.getElementById("tplTextarea");
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = start + token.length;
+  updateTplPreview();
+}
+
+function updateTplPreview() {
+  const t = TEMPLATES[currentTpl];
+  let txt = document.getElementById("tplTextarea").value;
+  for (const [k, v] of Object.entries(t.vars)) {
+    txt = txt.split("{" + k + "}").join(v);
+  }
+  document.getElementById("tplPreview").innerHTML = txt.replace(/\n/g, "<br>");
+}
+
+function flashSave(btn) {
+  const original = btn.textContent;
+  btn.textContent = "Saqlandi ✓";
+  btn.classList.add("save-flash");
+  setTimeout(() => { btn.textContent = original; btn.classList.remove("save-flash"); }, 1200);
+}
+
+function selectLang(el) {
+  document.querySelectorAll("#settings-language .menu-item__arrow").forEach(a => a.textContent = "");
+  el.querySelector(".menu-item__arrow").textContent = "✓";
+}
+
+/* ── Modals: yangi vazifa / yangi loyiha ── */
+function openModal(name) {
+  document.getElementById("modal-" + name).classList.add("active");
+}
+function closeModal(name) {
+  document.getElementById("modal-" + name).classList.remove("active");
+}
+
+function addAttachment(input) {
+  for (const file of input.files) {
+    const chip = document.createElement("div");
+    chip.className = "attach-chip";
+    const icon = file.type.startsWith("image/") ? "🖼" : "📄";
+    chip.innerHTML = `<span>${icon} ${file.name}</span><button class="attach-chip__remove" type="button" onclick="this.parentElement.remove()">×</button>`;
+    document.getElementById("attachList").appendChild(chip);
+  }
+  input.value = "";
+}
+
+function addWorkRow() {
+  const row = document.createElement("div");
+  row.className = "work-row";
+  row.innerHTML = `<input placeholder="Ish nomi">
+    <select>
+      <option>Aziz Karimov</option>
+      <option>Dilnoza Yusupova</option>
+      <option>Sardor Toshev</option>
+      <option>Madina Aliyeva</option>
+      <option>Bekzod Rashidov</option>
+    </select>
+    <button class="work-row__remove" type="button" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById("projectWorks").appendChild(row);
+}
+
+function showToast(text) {
+  const el = document.getElementById("toastFixed");
+  el.textContent = text;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+function submitTask() {
+  closeModal("task");
+  document.getElementById("attachList").innerHTML = "";
+  showToast("✅ Vazifa yaratildi");
+}
+
+function submitProject() {
+  closeModal("project");
+  showToast("✅ Loyiha yaratildi");
+}
+
+function renderDeptList() {
+  const html = Object.entries(DEPARTMENTS).map(([key, d]) => `
+    <button class="menu-item" onclick="openDeptEdit('${key}')">
+      <span class="menu-item__icon">${d.emoji}</span>
+      <div class="menu-item__body"><div class="menu-item__title">${d.name}</div><div class="menu-item__sub">Mavzu ID: ${d.topic || "—"}</div></div>
+      <span class="menu-item__arrow">›</span>
+    </button>`).join("") + `<button class="menu-item menu-item--dashed">+ Yangi bo'lim</button>`;
+  document.getElementById("deptList").innerHTML = html;
+}
+
+function renderTplList() {
+  const html = Object.entries(TEMPLATES).map(([key, t]) => `
+    <button class="menu-item" onclick="openTplEdit('${key}')">
+      <span class="menu-item__icon">${t.icon}</span>
+      <div class="menu-item__body"><div class="menu-item__title">${t.title}</div><div class="menu-item__sub">${t.desc}</div></div>
+      <span class="menu-item__arrow">›</span>
+    </button>`).join("");
+  document.getElementById("tplList").innerHTML = html;
+}
+
+renderDeptList();
+renderTplList();
+setRole("boss");
+</script>
+
+</body>
+</html>

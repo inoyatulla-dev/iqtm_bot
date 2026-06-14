@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile app/services/settings_service.py app/services/task_service.py app/bot/scheduler.py app/api/routers/auth.py app/schemas/settings.py app/api/routers/settings.py app/schemas/task.py app/api/routers/tasks.py)",
+      "Bash(cat .gitignore)",
+      "Bash(cat frontend/.gitignore)",
+      "Bash(git check-ignore *)"
+    ]
+  }
+}

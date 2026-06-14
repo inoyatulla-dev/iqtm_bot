@@ -64,7 +64,7 @@ async def send_report(
     content = build_fn(data)
     filename = f"hisobot_{period}_{data.end.isoformat()}.{fmt}"
     ok = await notify.send_document_bytes(
-        user.id, filename, content, caption=f"📊 {data.period_label} hisobot"
+        user.id, filename, content, caption=f"📊hisobot"
     )
     if not ok:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Telegramga yuborishda xato")

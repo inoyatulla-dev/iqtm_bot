@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring paneli — prototip</title>
+<style>
+:root {
+  --bg: #1e293b;
+  --secondary-bg: #0f172a;
+  --text: #f1f5f9;
+  --hint: #94a3b8;
+  --accent: #3b82f6;
+  --accent-text: #ffffff;
+  --danger: #f87171;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --line: rgba(148, 163, 184, 0.18);
+  --surface: rgba(255, 255, 255, 0.04);
+}
+* { box-sizing: border-box; margin:0; padding:0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--secondary-bg);
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.sidebar__logo {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--accent);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:16px;
+}
+.sidebar__brand-name { font-weight: 800; font-size: 17px; letter-spacing: 0.5px; }
+.sidebar__item {
+  display:flex; align-items:center; gap: 11px;
+  padding: 11px 14px; border-radius: 10px;
+  color: var(--hint); font-size: 14px; font-weight: 600;
+  cursor: pointer; text-decoration:none;
+}
+.sidebar__item.active { background: rgba(59,130,246,0.18); color: var(--accent); }
+.sidebar__item:hover:not(.active) { background: var(--surface); }
+.sidebar__icon { font-size: 20px; width: 24px; text-align:center; flex-shrink:0; }
+
+/* ── Main ── */
+.main { flex: 1; min-width: 0; }
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 18px 28px; border-bottom: 1px solid var(--line);
+}
+.topbar h1 { font-size: 20px; font-weight: 800; }
+.topbar__sub { color: var(--hint); font-size: 13px; margin-top: 2px; }
+.period-switch { display:flex; gap:6px; background: var(--surface); border-radius: 10px; padding: 4px; }
+.period-switch button {
+  border:none; background:transparent; color: var(--hint);
+  padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight:600; cursor:pointer;
+}
+.period-switch button.active { background: var(--accent); color: var(--accent-text); }
+
+.content { padding: 24px 28px 48px; max-width: 1180px; }
+
+/* ── Overview cards ── */
+.stat-grid {
+  display:grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--bg); border-radius: 16px; padding: 18px 16px;
+  text-align:center; border: 1px solid var(--line);
+}
+.stat-card__num { font-size: 28px; font-weight: 800; }
+.stat-card__label { font-size: 12px; color: var(--hint); margin-top: 6px; }
+
+/* ── Section ── */
+.section-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.4px; color: var(--hint); margin: 28px 0 12px;
+}
+.grid-2 { display:grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+
+/* ── Department progress ── */
+.card { background: var(--bg); border-radius: 16px; border: 1px solid var(--line); padding: 18px; }
+.dept-row { margin-bottom: 16px; }
+.dept-row:last-child { margin-bottom: 0; }
+.dept-row__head { display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 6px; }
+.dept-row__name { font-weight: 600; display:flex; align-items:center; gap:8px;}
+.dept-row__count { color: var(--hint); font-size: 13px; }
+.progress-bar { height: 8px; border-radius: 6px; background: var(--surface); overflow:hidden; }
+.progress-bar__fill { height:100%; border-radius:6px; background: var(--accent); }
+.dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+
+/* ── Loyihalar ── */
+.project-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.project-card { display:flex; flex-direction:column; gap: 8px; }
+.project-card__head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px; }
+.project-card__name { font-weight: 700; font-size: 15px; }
+.project-tasks { display:flex; flex-direction:column; gap: 6px; margin-top: 4px; }
+.project-task { display:flex; align-items:center; gap: 8px; font-size: 13px; }
+.project-task__assignee { margin-left:auto; color: var(--hint); font-size: 12px; }
+@media (max-width: 1000px) {
+  .project-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Trend chart (CSS bars) ── */
+.trend-chart {
+  display:flex; align-items:flex-end; gap: 10px; height: 160px; padding-top: 10px;
+}
+.trend-bar-group { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end;}
+.trend-bars { display:flex; gap:4px; align-items:flex-end; height: 120px; }
+.trend-bar { width: 14px; border-radius: 4px 4px 0 0; }
+.trend-bar--created { background: rgba(59,130,246,0.35); }
+.trend-bar--done { background: var(--accent); }
+.trend-label { font-size: 11px; color: var(--hint); }
+.trend-legend { display:flex; gap:16px; margin-top:14px; font-size:12px; color: var(--hint); }
+.trend-legend span { display:flex; align-items:center; gap:6px;}
+.legend-dot { width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+/* ── Rating list ── */
+.rating-item { display:flex; align-items:center; gap:12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.rating-item:last-child { border-bottom: none; }
+.rating-item__rank { font-size:18px; width:28px; text-align:center; }
+.rating-item__avatar {
+  width:36px; height:36px; border-radius:50%; background: var(--accent); color: var(--accent-text);
+  display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;
+}
+.rating-item__body { flex:1; min-width:0; }
+.rating-item__name { font-weight:600; font-size:14px; }
+.rating-item__sub { font-size:12px; color: var(--hint); margin-top:2px; }
+
+/* ── Activity feed ── */
+.activity-item { display:flex; gap:12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size:13px; }
+.activity-item:last-child { border-bottom:none; }
+.activity-icon { font-size:16px; width:24px; text-align:center; flex-shrink:0; }
+.activity-body { flex:1; }
+.activity-time { color: var(--hint); font-size:11px; margin-top:2px; }
+
+/* ── Mini board preview ── */
+.mini-board { display:flex; gap:12px; overflow-x:auto; padding-bottom: 4px; }
+.mini-col { flex: 0 0 200px; background: var(--surface); border-radius: 12px; padding: 10px; }
+.mini-col__head { font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.mini-col__count { margin-left:auto; color:var(--hint); background: rgba(140,150,160,0.18); border-radius:8px; padding:1px 6px; font-size:11px;}
+.mini-card { background: var(--bg); border-radius:10px; padding:8px 10px; font-size:12px; margin-bottom:6px; border-left:3px solid var(--card-color, var(--accent)); }
+.mini-card__title { font-weight:600; margin-bottom:4px; }
+.mini-card__meta { color: var(--hint); font-size:11px; }
+
+.badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.badge--danger { background: rgba(248,113,113,0.18); color: var(--danger); }
+.badge--ok { background: rgba(74,222,128,0.18); color: var(--ok); }
+
+@media (max-width: 1000px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  body { flex-direction: column; }
+  .sidebar { display:none; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar__brand">
+    <div class="sidebar__logo">IQ</div>
+    <div class="sidebar__brand-name">IQTM</div>
+  </div>
+  <a class="sidebar__item active"><span class="sidebar__icon">📊</span> Monitoring paneli</a>
+  <a class="sidebar__item"><span class="sidebar__icon">🏢</span> Bo'limlar</a>
+  <a class="sidebar__item"><span class="sidebar__icon">🏆</span> Xodimlar reytingi</a>
+  <a class="sidebar__item"><span class="sidebar__icon">🗂</span> Umumiy doska</a>
+  <a class="sidebar__item"><span class="sidebar__icon">📄</span> Hisobotlar</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>Monitoring paneli</h1>
+      <div class="topbar__sub">Markazda olib borilayotgan ishlar umumiy ko'rinishi</div>
+    </div>
+    <div class="period-switch">
+      <button>Hafta</button>
+      <button class="active">Oy</button>
+      <button>Yil</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Overview cards -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-card__num">128</div>
+        <div class="stat-card__label">Jami vazifalar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num" style="color:var(--ok)">76</div>
+        <div class="stat-card__label">✅ Bajarilgan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num" style="color:var(--accent)">39</div>
+        <div class="stat-card__label">🔄 Jarayonda</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num" style="color:var(--danger)">13</div>
+        <div class="stat-card__label">⚠️ Kechikkan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num">21</div>
+        <div class="stat-card__label">🆕 Yangi (shu oy)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num">18</div>
+        <div class="stat-card__label">🏁 Yopilgan (shu oy)</div>
+      </div>
+    </div>
+
+    <!-- Department progress -->
+    <div class="section-title">Bo'limlar bo'yicha progress</div>
+    <div class="card">
+      <div class="dept-row">
+        <div class="dept-row__head">
+          <div class="dept-row__name"><span class="dot" style="background:#3b82f6"></span> 💻 IT bo'limi</div>
+          <div class="dept-row__count">18 / 24 · 75%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:75%; background:#3b82f6"></div></div>
+      </div>
+      <div class="dept-row">
+        <div class="dept-row__head">
+          <div class="dept-row__name"><span class="dot" style="background:#22c55e"></span> 📣 Marketing</div>
+          <div class="dept-row__count">14 / 20 · 70%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:70%; background:#22c55e"></div></div>
+      </div>
+      <div class="dept-row">
+        <div class="dept-row__head">
+          <div class="dept-row__name"><span class="dot" style="background:#f59e0b"></span> 🧪 Loyihalar bo'limi</div>
+          <div class="dept-row__count">9 / 22 · 41%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:41%; background:#f59e0b"></div></div>
+      </div>
+      <div class="dept-row">
+        <div class="dept-row__head">
+          <div class="dept-row__name"><span class="dot" style="background:#a855f7"></span> 💰 Buxgalteriya</div>
+          <div class="dept-row__count">11 / 14 · 79%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:79%; background:#a855f7"></div></div>
+      </div>
+      <div class="dept-row">
+        <div class="dept-row__head">
+          <div class="dept-row__name"><span class="dot" style="background:#ef4444"></span> 🎓 O'quv markazi</div>
+          <div class="dept-row__count">24 / 48 · 50%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:50%; background:#ef4444"></div></div>
+      </div>
+    </div>
+
+    <!-- Loyihalar -->
+    <div class="section-title">Loyihalar bo'yicha progress</div>
+    <div class="project-grid">
+      <div class="card project-card">
+        <div class="project-card__head">
+          <div class="project-card__name">🤖 ROBOT KIUT</div>
+          <span class="badge badge--ok">Faol</span>
+        </div>
+        <div class="dept-row__head">
+          <div class="dept-row__count">2 / 4 ish bajarildi</div>
+          <div class="dept-row__count">50%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:50%; background:#3b82f6"></div></div>
+        <div class="project-tasks">
+          <div class="project-task"><span class="badge badge--ok">✅</span> TTZ tarqatish <span class="project-task__assignee">Aziz K.</span></div>
+          <div class="project-task"><span class="badge badge--ok">✅</span> Konstruksiya loyihasi <span class="project-task__assignee">Sardor T.</span></div>
+          <div class="project-task"><span class="badge" style="background:rgba(59,130,246,0.18); color:var(--accent)">🔄</span> Dasturi (firmware) <span class="project-task__assignee">Dilnoza Y.</span></div>
+          <div class="project-task"><span class="badge" style="background:rgba(148,163,184,0.18); color:var(--hint)">🆕</span> Marketing materiallari <span class="project-task__assignee">Madina A.</span></div>
+        </div>
+      </div>
+
+      <div class="card project-card">
+        <div class="project-card__head">
+          <div class="project-card__name">🌐 IQTM Workspace 2.0</div>
+          <span class="badge badge--ok">Faol</span>
+        </div>
+        <div class="dept-row__head">
+          <div class="dept-row__count">1 / 3 ish bajarildi</div>
+          <div class="dept-row__count">33%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:33%; background:#22c55e"></div></div>
+        <div class="project-tasks">
+          <div class="project-task"><span class="badge badge--ok">✅</span> Backend API <span class="project-task__assignee">Sardor T.</span></div>
+          <div class="project-task"><span class="badge" style="background:rgba(59,130,246,0.18); color:var(--accent)">🔄</span> Frontend UI <span class="project-task__assignee">Aziz K.</span></div>
+          <div class="project-task"><span class="badge badge--danger">⚠️</span> Hisobotlar moduli <span class="project-task__assignee">Bekzod R. · kechikkan</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Mini board -->
+      <div>
+        <div class="section-title">Umumiy doska (faqat ko'rish)</div>
+        <div class="card">
+          <div class="mini-board">
+            <div class="mini-col">
+              <div class="mini-col__head">🆕 Yangi <span class="mini-col__count">5</span></div>
+              <div class="mini-card" style="--card-color:#94a3b8">
+                <div class="mini-card__title">Sayt dizaynini yangilash</div>
+                <div class="mini-card__meta">💻 IT · Aziz K.</div>
+              </div>
+              <div class="mini-card" style="--card-color:#94a3b8">
+                <div class="mini-card__title">Reklama bannerlari</div>
+                <div class="mini-card__meta">📣 Marketing · Dilnoza Y.</div>
+              </div>
+            </div>
+            <div class="mini-col">
+              <div class="mini-col__head">🔄 Jarayonda <span class="mini-col__count">8</span></div>
+              <div class="mini-card" style="--card-color:#3b82f6">
+                <div class="mini-card__title">API integratsiya</div>
+                <div class="mini-card__meta">💻 IT · Sardor T.</div>
+              </div>
+              <div class="mini-card" style="--card-color:#3b82f6">
+                <div class="mini-card__title">Yillik hisobot tayyorlash</div>
+                <div class="mini-card__meta">💰 Buxgalteriya · Madina A.</div>
+              </div>
+            </div>
+            <div class="mini-col">
+              <div class="mini-col__head">✅ Bajarildi <span class="mini-col__count">12</span></div>
+              <div class="mini-card" style="--card-color:#4ade80">
+                <div class="mini-card__title">Treninglar jadvali</div>
+                <div class="mini-card__meta">🎓 O'quv markazi · Bekzod R.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity feed -->
+      <div>
+        <div class="section-title">So'nggi faollik</div>
+        <div class="card">
+          <div class="activity-item">
+            <div class="activity-icon">✅</div>
+            <div class="activity-body">
+              <div><b>Aziz Karimov</b> "API integratsiya" vazifasini bajardi</div>
+              <div class="activity-time">Bugun, 10:24</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">🆕</div>
+            <div class="activity-body">
+              <div><b>Dilnoza Yusupova</b> yangi vazifa yaratdi: "Reklama bannerlari"</div>
+              <div class="activity-time">Bugun, 09:50</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">⚠️</div>
+            <div class="activity-body">
+              <div><b>"Hisobot topshirish"</b> muddati o'tdi <span class="badge badge--danger">kechikkan</span></div>
+              <div class="activity-time">Kecha, 18:00</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">💬</div>
+            <div class="activity-body">
+              <div><b>Sardor Toshev</b> izoh qoldirdi: "Backend tayyor, test qilamiz"</div>
+              <div class="activity-time">Kecha, 16:12</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">🔄</div>
+            <div class="activity-body">
+              <div><b>Madina Aliyeva</b> "Yillik hisobot" statusini o'zgartirdi <span class="badge badge--ok">jarayonda</span></div>
+              <div class="activity-time">Kecha, 14:30</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
