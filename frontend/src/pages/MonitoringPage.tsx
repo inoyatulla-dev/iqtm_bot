@@ -12,8 +12,7 @@ export function MonitoringPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<PeriodValue>(() => defaultPeriodValue("month"));
-  const [sending, setSending] = useState<ReportFormat | null>(null);
-  const [sent, setSent] = useState(false);
+  const [downloading, setDownloading] = useState<ReportFormat | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -23,16 +22,22 @@ export function MonitoringPage() {
     });
   }, [period]);
 
-  async function sendReport(fmt: ReportFormat) {
-    setSending(fmt);
-    setSent(false);
+  async function downloadReport(fmt: ReportFormat) {
+    setDownloading(fmt);
     try {
-      await reportsApi.send(period.period, fmt, toPeriodParams(period));
-      setSent(true);
+      const blob = await reportsApi.download(period.period, fmt, toPeriodParams(period));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hisobot_${period.period}.${fmt}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (e: any) {
       alert(e?.response?.data?.detail || t("common.error"));
     } finally {
-      setSending(null);
+      setDownloading(null);
     }
   }
 
@@ -50,7 +55,7 @@ export function MonitoringPage() {
 
   return (
     <div className="page-content">
-      <PeriodPicker value={period} onChange={(v) => { setPeriod(v); setSent(false); }} />
+      <PeriodPicker value={period} onChange={setPeriod} />
 
       <div className="stat-grid">
         <div className="stat-card">
@@ -119,18 +124,13 @@ export function MonitoringPage() {
       <div className="section-title">{t("monitoring.exportTitle")}</div>
       <div className="report-controls">
         <div className="report-row">
-          <button className="btn btn--ghost" onClick={() => sendReport("pdf")} disabled={!!sending}>
-            {sending === "pdf" ? t("monitoring.sending") : <><FileText size={18} /> {t("stats.downloadPdf")}</>}
+          <button className="btn btn--ghost" onClick={() => downloadReport("pdf")} disabled={!!downloading}>
+            {downloading === "pdf" ? t("monitoring.downloading") : <><FileText size={18} /> {t("stats.downloadPdf")}</>}
           </button>
-          <button className="btn btn--ghost" onClick={() => sendReport("docx")} disabled={!!sending}>
-            {sending === "docx" ? t("monitoring.sending") : <><FileType size={18} /> {t("stats.downloadDocx")}</>}
+          <button className="btn btn--ghost" onClick={() => downloadReport("docx")} disabled={!!downloading}>
+            {downloading === "docx" ? t("monitoring.downloading") : <><FileType size={18} /> {t("stats.downloadDocx")}</>}
           </button>
         </div>
-        {sent && (
-          <div className="badge badge--ok" style={{ marginTop: 8 }}>
-            {t("monitoring.exportSent")}
-          </div>
-        )}
       </div>
     </div>
   );

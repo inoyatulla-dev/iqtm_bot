@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app import notifications as notify
-from app.api.deps import BossUser, DashboardUser, SessionDep
+from app.api.deps import DashboardUser, SessionDep
 from app.services import report_service
 from app.services.report_export import build_docx, build_pdf
 
@@ -21,7 +21,7 @@ _PERIODS = {"week", "month", "year"}
 
 @router.get("/{period}.{fmt}")
 async def download_report(
-    period: str, fmt: str, _: BossUser, session: SessionDep,
+    period: str, fmt: str, _: DashboardUser, session: SessionDep,
     year: int | None = None, month: int | None = None,
     date_from: date | None = None, date_to: date | None = None,
 ):

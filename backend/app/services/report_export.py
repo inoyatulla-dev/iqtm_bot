@@ -1,4 +1,4 @@
-"""Hisobotni PDF/DOCX formatida tayyorlash. PDF — HTML shabloni (HISOBOT_TEMPLATE.md) asosida."""
+"""Hisobotni PDF/DOCX formatida tayyorlash. PDF — hisobot.html dizayni asosida."""
 import base64
 import io
 import math
@@ -7,7 +7,7 @@ from html import escape
 from app.services.report_service import ProjectTaskRow, ReportData, StatusCount
 
 _SUMMARY_LABELS = [
-    ("Jami vazifalar (joriy)", "total"),
+    ("Jami vazifalar", "total"),
     ("Davrda yaratilgan", "created_in_period"),
     ("Davrda bajarilgan", "done_in_period"),
     ("Kechikkan", "overdue"),
@@ -32,14 +32,7 @@ def _summary_rows(data: ReportData) -> list[tuple[str, int]]:
     return [(label, getattr(data, attr)) for label, attr in _SUMMARY_LABELS]
 
 
-# ── HTML hisobot (HISOBOT_TEMPLATE.md) ──────────────────────────────────────
-
-_KPI_COLORS = {
-    "total": "var(--brand-dark)",
-    "created_in_period": "#2563EB",
-    "done_in_period": "#16A34A",
-    "overdue": "#DC2626",
-}
+# ── HTML hisobot (hisobot.html dizayni) ─────────────────────────────────────
 
 _HTML_CSS = """
 :root {
@@ -49,89 +42,134 @@ _HTML_CSS = """
   --ink: #111827;
   --muted: #6B7280;
   --line: #E6E8EB;
+  --surface: #FFFFFF;
+  --late: #DC2626;
+  --late-bg: #FEE2E2;
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Inter', -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
-  background: #f1f5f9;
-  margin: 0;
-  padding: 24px;
-}
-.sheet {
-  max-width: 900px;
-  margin: 0 auto;
   background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,.06);
 }
-.header {
-  background: linear-gradient(135deg, var(--brand-dark), var(--brand));
-  color: #fff;
-  padding: 24px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.header__brand { display: flex; align-items: center; gap: 14px; }
-.header__logo { width: 48px; height: 48px; border-radius: 10px; background: #fff; object-fit: contain; padding: 4px; }
-.header__title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; }
-.header__sub { font-size: 12px; opacity: .85; margin-top: 2px; }
-.header__meta { text-align: right; font-size: 12px; opacity: .9; line-height: 1.6; }
-.header__meta b { font-weight: 700; }
+.sheet { width: 100%; background: var(--surface); }
 .pad { padding: 24px 28px; }
+
 h2.section {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px; font-weight: 800; color: var(--brand-dark);
-  text-transform: uppercase; letter-spacing: .5px;
-  margin: 26px 0 12px; padding-bottom: 6px;
-  border-bottom: 2px solid var(--brand-tint);
+  font-size: 13px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--brand-dark);
+  display: flex; align-items: center; gap: 10px;
+  margin: 26px 0 14px;
 }
+h2.section::before { content: ""; width: 5px; height: 16px; border-radius: 3px; background: var(--brand); }
 h2.section:first-child { margin-top: 0; }
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; }
-.kpi .value { font-size: 24px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
-.kpi .label { font-size: 11px; color: var(--muted); margin-top: 4px; }
-.status-wrap { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
-.donut { width: 140px; height: 140px; flex-shrink: 0; }
-.donut-legend { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
-.legend-dot, .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 6px; flex-shrink: 0; }
-.dept { margin-bottom: 12px; }
-.dept-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; gap: 8px; }
-.dept-name { font-weight: 700; display: flex; align-items: center; }
-.dept-count { color: var(--muted); white-space: nowrap; }
-.dot { border-radius: 50%; }
-.track, .ptrack { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
-.fill, .pfill { height: 100%; border-radius: 4px; }
-.project { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
-.project.late { border-color: #FCA5A5; background: #FEF2F2; }
-.proj-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
-.proj-title { display: flex; align-items: center; gap: 10px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
-.pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--brand-tint); color: var(--brand-dark); }
-.pill.late { background: #FEE2E2; color: #DC2626; }
-.proj-prog { display: flex; align-items: center; gap: 10px; min-width: 170px; }
-.proj-prog .ptrack { flex: 1; }
-.ptxt { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.proj-sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-.proj-sub.late { color: #DC2626; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { text-align: left; background: var(--brand-tint); color: var(--brand-dark); padding: 6px 10px; font-weight: 700; }
-td { padding: 6px 10px; border-bottom: 1px solid var(--line); }
-tr:last-child td { border-bottom: none; }
-.badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
-.due.over { color: #DC2626; font-weight: 700; }
-.empty { color: var(--muted); font-size: 13px; padding: 6px 0 14px; }
-.footer { padding: 14px 28px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
-@media print {
-  body { background: #fff; padding: 0; }
-  .sheet { box-shadow: none; border-radius: 0; max-width: none; }
-  .project, .kpis, .status-wrap { break-inside: avoid; }
-  h2.section { break-after: avoid; }
-  @page { size: A4; margin: 14mm; }
+
+/* ---------- HEADER ---------- */
+.header {
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+  color: #fff; padding: 24px 28px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
 }
+.header__brand { display: flex; align-items: center; gap: 12px; }
+.header__logo {
+  width: 44px; height: 44px; border-radius: 10px; background: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; color: var(--brand);
+  font-size: 13px; letter-spacing: -.02em; object-fit: contain;
+}
+.header__name { font-size: 12px; font-weight: 600; opacity: .92; max-width: 280px; line-height: 1.3; }
+.header__doctype {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; opacity: .8; margin-top: 16px; display: block;
+}
+.header__h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin-top: 2px; }
+.header__meta { text-align: right; font-size: 12px; opacity: .9; white-space: nowrap; }
+.header__meta .period { font-weight: 700; font-size: 14px; opacity: 1; }
+.header__meta .gen { margin-top: 6px; opacity: .8; }
+
+/* ---------- KPI CARDS ---------- */
+.kpis { display: flex; gap: 12px; }
+.kpi {
+  flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: #fff;
+  position: relative; overflow: hidden;
+}
+.kpi::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--brand); }
+.kpi.accent-red::after { background: var(--late); }
+.kpi .label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.kpi .value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 800; line-height: 1.1; margin-top: 6px; }
+.kpi .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.kpi.accent-red .value { color: var(--late); }
+
+/* ---------- STATUS: donut + legend ---------- */
+.status-wrap {
+  display: flex; gap: 28px; align-items: center;
+  border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; background: #fff;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 10px 24px; flex: 1; }
+.leg { display: flex; align-items: center; gap: 8px; font-size: 12px; width: 46%; }
+.leg .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.leg .ln { flex: 1; color: var(--ink); font-weight: 500; }
+.leg .cnt { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+.leg.zero { opacity: .45; }
+
+/* ---------- DEPARTMENTS: progress bars ---------- */
+.dept { display: flex; align-items: center; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.dept:last-child { border-bottom: none; }
+.dept .nm { width: 120px; font-weight: 600; font-size: 12px; flex-shrink: 0; }
+.dept .track { flex: 1; height: 8px; border-radius: 6px; background: #EFF2F4; overflow: hidden; }
+.dept .fill { height: 100%; border-radius: 6px; }
+.dept .pct { width: 84px; text-align: right; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.dept .pct b { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--ink); font-size: 12px; }
+
+/* ---------- PROJECTS ---------- */
+.project { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 14px; background: #fff; }
+.project.late { border-color: #F5C2C2; }
+.proj-head {
+  padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 14px;
+  background: linear-gradient(180deg, #FAFBFC, #fff); border-bottom: 1px solid var(--line); flex-wrap: wrap;
+}
+.project.late .proj-head { background: linear-gradient(180deg, #FEF4F4, #fff); border-bottom-color: #F5C2C2; }
+.proj-title { display: flex; align-items: center; gap: 10px; }
+.proj-title .pn { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; }
+.pill {
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; background: var(--brand-tint); color: var(--brand-dark);
+}
+.pill.late { background: var(--late-bg); color: var(--late); }
+.proj-prog { display: flex; align-items: center; gap: 10px; min-width: 170px; }
+.proj-prog .ptrack { width: 110px; height: 7px; border-radius: 6px; background: #EFF2F4; overflow: hidden; }
+.proj-prog .pfill { height: 100%; }
+.proj-prog .ptxt { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.proj-prog .ptxt b { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--ink); }
+.proj-sub {
+  padding: 8px 16px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line);
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+.proj-sub span b { color: var(--ink); font-weight: 600; }
+.proj-sub .warn { color: var(--late); font-weight: 600; }
+
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  text-align: left; padding: 8px 16px; background: #F8FAFB; border-bottom: 1px solid var(--line);
+}
+tbody td { padding: 9px 16px; font-size: 12px; border-bottom: 1px solid #F0F2F4; vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+td.num { width: 28px; color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; text-align: center; }
+td.who { white-space: nowrap; color: var(--ink); font-weight: 500; }
+td.due { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+td.due.over { color: var(--late); font-weight: 600; }
+
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.empty { color: var(--muted); font-size: 13px; padding: 6px 0 14px; }
+.footer { padding: 16px 28px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+.project, .status-wrap, .kpis { break-inside: avoid; }
+h2.section { break-after: avoid; }
+@page { size: A4; margin: 14mm; }
 """
 
 
@@ -150,32 +188,43 @@ def _tint(hex_color: str, alpha: float = 0.15) -> str:
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
-def _donut_svg(statuses: list[StatusCount], total: int, size: int = 140) -> str:
-    """Holatlar taqsimoti — SVG donut diagramma (weasyprint CSS conic-gradient'ni qo'llamaydi)."""
+def _donut_svg(statuses: list[StatusCount], total: int, size: int = 160) -> str:
+    """Holatlar taqsimoti — to'ldirilgan pie + markazda umumiy son (CSS conic-gradient o'rniga SVG)."""
     cx = cy = size / 2
-    r = size / 2 - 13
-    circumference = 2 * math.pi * r
+    r = size / 2
+    hole_r = r * 0.65
+
+    nonzero = [s for s in statuses if s.count > 0]
     if total <= 0:
-        return (
-            f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
-            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#E6E8EB" stroke-width="26"/></svg>'
-        )
-    segments = []
-    offset = 0.0
-    for s in statuses:
-        if s.count == 0:
-            continue
-        length = s.count / total * circumference
-        segments.append(
-            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{s.color}" stroke-width="26" '
-            f'stroke-dasharray="{length:.3f} {circumference - length:.3f}" '
-            f'stroke-dashoffset="{-offset:.3f}"/>'
-        )
-        offset += length
-    return (
-        f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
-        f'<g transform="rotate(-90 {cx} {cy})">{"".join(segments)}</g></svg>'
+        pie = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="#EFF2F4"/>'
+    elif len(nonzero) == 1:
+        pie = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{nonzero[0].color}"/>'
+    else:
+        segments = []
+        angle = -90.0
+        for s in nonzero:
+            sweep = s.count / total * 360
+            start_rad, end_rad = math.radians(angle), math.radians(angle + sweep)
+            x1, y1 = cx + r * math.cos(start_rad), cy + r * math.sin(start_rad)
+            x2, y2 = cx + r * math.cos(end_rad), cy + r * math.sin(end_rad)
+            large = 1 if sweep > 180 else 0
+            segments.append(
+                f'<path d="M{cx},{cy} L{x1:.3f},{y1:.3f} A{r},{r} 0 {large} 1 {x2:.3f},{y2:.3f} Z" fill="{s.color}"/>'
+            )
+            angle += sweep
+        pie = "".join(segments)
+
+    hole = f'<circle cx="{cx}" cy="{cy}" r="{hole_r}" fill="#fff"/>'
+    n_size = hole_r * 0.5
+    l_size = hole_r * 0.17
+    text = (
+        f'<text x="{cx}" y="{cy + n_size * 0.32:.1f}" text-anchor="middle" '
+        f'font-family="\'Plus Jakarta Sans\',sans-serif" font-size="{n_size:.1f}" font-weight="800" fill="#111827">{total}</text>'
+        f'<text x="{cx}" y="{cy + n_size * 0.32 + l_size + 8:.1f}" text-anchor="middle" '
+        f'font-family="Inter,sans-serif" font-size="{l_size:.1f}" font-weight="600" '
+        f'letter-spacing="1" fill="#6B7280">VAZIFA</text>'
     )
+    return f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">{pie}{hole}{text}</svg>'
 
 
 def _progress_color(percent: int) -> str:
@@ -188,49 +237,64 @@ def _progress_color(percent: int) -> str:
     return "var(--line)"
 
 
+def _kpi_sub(data: ReportData, attr: str) -> str:
+    if attr == "total":
+        return "joriy faol"
+    if attr == "created_in_period":
+        return "shu davrda"
+    if attr == "done_in_period":
+        percent = round(data.done_in_period * 100 / data.total) if data.total else 0
+        return f"{percent}% bajarilish"
+    if attr == "overdue":
+        return "e'tibor talab etadi"
+    return ""
+
+
 def _task_row(t: ProjectTaskRow) -> str:
     if t.overdue:
         bg, color = "rgba(220, 38, 38, 0.12)", "#DC2626"
     else:
         bg, color = _tint(t.status_color), t.status_color
-    due_attr = ' class="due over"' if t.overdue else ""
+    due_attr = ' class="due over"' if t.overdue else ' class="due"'
     return (
-        f"<tr><td>{t.seq}</td><td>{_esc(t.name)}</td><td>{_esc(t.assignee)}</td>"
+        f'<tr><td class="num">{t.seq}</td><td>{_esc(t.name)}</td><td class="who">{_esc(t.assignee)}</td>'
         f"<td{due_attr}>{_esc(t.deadline)}</td>"
         f'<td><span class="badge" style="background:{bg};color:{color}">{_esc(t.status_label)}</span></td></tr>'
     )
 
 
 def build_html(data: ReportData) -> str:
-    """HISOBOT_TEMPLATE.md ko'rinishidagi to'liq hisobot — A4 chop etishga tayyor HTML."""
+    """hisobot.html ko'rinishidagi to'liq hisobot — A4 chop etishga tayyor HTML."""
     org_name = _clean(data.org_name) or ORG_FULL_NAME
 
-    logo_html = ""
     if data.logo_path.exists():
         logo_b64 = base64.b64encode(data.logo_path.read_bytes()).decode("ascii")
         logo_html = f'<img class="header__logo" src="data:image/png;base64,{logo_b64}" alt="logo">'
+    else:
+        logo_html = '<div class="header__logo">IQTM</div>'
 
     kpi_html = "".join(
-        f'<div class="kpi"><div class="value" style="color:{_KPI_COLORS[attr]}">{getattr(data, attr)}</div>'
-        f'<div class="label">{_esc(label)}</div></div>'
+        f'<div class="kpi{" accent-red" if attr == "overdue" else ""}">'
+        f'<div class="label">{_esc(label)}</div>'
+        f'<div class="value">{getattr(data, attr)}</div>'
+        f'<div class="sub">{_esc(_kpi_sub(data, attr))}</div></div>'
         for label, attr in _SUMMARY_LABELS
     )
 
     total_status = sum(s.count for s in data.statuses)
     donut_svg = _donut_svg(data.statuses, total_status)
     legend_html = "".join(
-        f'<span><span class="legend-dot" style="background:{s.color}"></span>'
-        f"{_esc(s.name)} — {round(s.count * 100 / total_status) if total_status else 0}% ({s.count})</span>"
+        f'<div class="leg{" zero" if s.count == 0 else ""}">'
+        f'<span class="dot" style="background:{s.color}"></span>'
+        f'<span class="ln">{_esc(s.name)}</span><span class="cnt">{s.count}</span></div>'
         for s in data.statuses
     ) or '<div class="empty">Holatlar mavjud emas</div>'
 
     depts_sorted = sorted(data.departments, key=lambda d: d.percent, reverse=True)
     depts_html = "".join(
-        f'<div class="dept"><div class="dept-head">'
-        f'<div class="dept-name"><span class="dot" style="background:{d.color}"></span>{_esc(d.name)}</div>'
-        f'<div class="dept-count">{d.done} / {d.total} · {d.percent}%</div></div>'
+        f'<div class="dept"><div class="nm">{_esc(d.name)}</div>'
         f'<div class="track"><div class="fill" style="width:{max(d.percent, 3) if d.total else 0}%;background:{d.color}"></div></div>'
-        f"</div>"
+        f'<div class="pct"><b>{f"{d.percent}%" if d.total else "—"}</b> · {d.done}/{d.total}</div></div>'
         for d in depts_sorted
     ) or '<div class="empty">Bo\'limlar mavjud emas</div>'
 
@@ -239,20 +303,27 @@ def build_html(data: ReportData) -> str:
         late = proj.schedule_label.startswith("Orqada qolmoqda") or proj.schedule_label.startswith("Muddat o'tgan")
         pill_label = "Orqada qolmoqda" if late else proj.status_label
         width = f"{max(proj.percent, 3)}%" if proj.total else "0%"
+        pfill_color = "var(--late)" if late else _progress_color(proj.percent)
         rows = "".join(_task_row(t) for t in proj.tasks) or (
             '<tr><td colspan="5" class="empty">Vazifalar mavjud emas</td></tr>'
+        )
+        second_span = (
+            f'<span class="warn">⚠ {_esc(proj.schedule_label)}</span>'
+            if late else
+            f'<span>Joriy jarayon: <b>{_esc(proj.schedule_label)}</b></span>'
         )
         projects_html += (
             f'<div class="project{" late" if late else ""}">'
             f'<div class="proj-head">'
-            f'<div class="proj-title"><span>{_esc(proj.name)}</span>'
+            f'<div class="proj-title"><span class="pn">{_esc(proj.name)}</span>'
             f'<span class="pill{" late" if late else ""}">{_esc(pill_label)}</span></div>'
             f'<div class="proj-prog"><div class="ptrack"><div class="pfill" '
-            f'style="width:{width};background:{_progress_color(proj.percent)}"></div></div>'
+            f'style="width:{width};background:{pfill_color}"></div></div>'
             f'<div class="ptxt"><b>{proj.done}/{proj.total}</b> · {proj.percent}%</div></div>'
             f"</div>"
-            f'<div class="proj-sub{" late" if late else ""}">Muddat: {_esc(proj.deadline_label)} · {_esc(proj.schedule_label)}</div>'
-            f"<table><tr><th>#</th><th>Vazifa</th><th>Mas'ul</th><th>Muddat</th><th>Holat</th></tr>{rows}</table>"
+            f'<div class="proj-sub"><span>Muddat: <b>{_esc(proj.deadline_label)}</b></span>{second_span}</div>'
+            f"<table><thead><tr><th>#</th><th>Vazifa</th><th>Mas'ul</th><th>Muddat</th><th>Holat</th></tr></thead>"
+            f"<tbody>{rows}</tbody></table>"
             f"</div>"
         )
     projects_html = projects_html or '<div class="empty">Loyihalar mavjud emas</div>'
@@ -264,35 +335,36 @@ def build_html(data: ReportData) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{_esc(data.period_title)} hisobot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>{_HTML_CSS}</style>
 </head>
 <body>
 <div class="sheet">
   <div class="header">
-    <div class="header__brand">
-      {logo_html}
-      <div>
-        <div class="header__title">{_esc(org_name)}</div>
-        <div class="header__sub">{_esc(data.period_title)} hisobot</div>
+    <div>
+      <div class="header__brand">
+        {logo_html}
+        <div class="header__name">{_esc(org_name)}</div>
       </div>
+      <span class="header__doctype">{_esc(data.period_title)} hisobot</span>
+      <div class="header__h1">Hisobot</div>
     </div>
     <div class="header__meta">
-      Davr: <b>{data.start.strftime('%d.%m.%Y')} — {data.end.strftime('%d.%m.%Y')}</b><br>
-      Yaratildi: <b>{data.generated_at.strftime('%d.%m.%Y %H:%M')}</b>
+      <div class="period">{data.start.strftime('%d.%m.%Y')} — {data.end.strftime('%d.%m.%Y')}</div>
+      <div class="gen">Yaratildi: {data.generated_at.strftime('%d.%m.%Y, %H:%M')}</div>
     </div>
   </div>
   <div class="pad">
     <h2 class="section">Umumiy ko'rsatkichlar</h2>
     <div class="kpis">{kpi_html}</div>
 
-    <h2 class="section">Holatlar bo'yicha taqsimot</h2>
+    <h2 class="section">Holatlar bo'yicha</h2>
     <div class="status-wrap">
-      <div class="donut">{donut_svg}</div>
-      <div class="donut-legend">{legend_html}</div>
+      {donut_svg}
+      <div class="legend">{legend_html}</div>
     </div>
 
-    <h2 class="section">Bo'limlar bo'yicha progress</h2>
+    <h2 class="section">Bo'limlar bo'yicha</h2>
     <div class="depts">{depts_html}</div>
 
     <h2 class="section">Loyihalar</h2>
@@ -300,7 +372,7 @@ def build_html(data: ReportData) -> str:
   </div>
   <div class="footer">
     <span>{_esc(org_name)}</span>
-    <span>{data.generated_at.strftime('%d.%m.%Y %H:%M')}</span>
+    <span>Avtomatik yaratilgan hisobot</span>
   </div>
 </div>
 </body>
@@ -308,7 +380,7 @@ def build_html(data: ReportData) -> str:
 
 
 def build_pdf(data: ReportData) -> bytes:
-    """HTML hisobotni (HISOBOT_TEMPLATE.md dizayni) PDF'ga aylantiradi."""
+    """HTML hisobotni (hisobot.html dizayni) PDF'ga aylantiradi."""
     from weasyprint import HTML
 
     return HTML(string=build_html(data)).write_pdf()
