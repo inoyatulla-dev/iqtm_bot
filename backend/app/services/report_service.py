@@ -315,7 +315,8 @@ async def collect_report_data(
 
 
 async def _resolve_logo(session: AsyncSession) -> Path:
-    logo_path = await settings_service.get_logo_path(session)
+    """Hujjatlar uchun original logotip — sozlanmagan bo'lsa standart logo."""
+    logo_path = await settings_service.get_logo_doc_path(session)
     if logo_path and logo_path.startswith("/uploads/"):
         path = resolve_path(logo_path)
         if path.exists():

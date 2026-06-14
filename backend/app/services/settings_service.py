@@ -154,5 +154,23 @@ async def get_logo_size(session) -> int:
     return int(val) if val and val.isdigit() else DEFAULT_LOGO_SIZE
 
 
+async def get_logo_doc_path(session) -> str:
+    """Hujjatlar (PDF/DOCX) uchun logotip — bo'sh bo'lsa standart logo ishlatiladi."""
+    return await get_setting(session, "logo_doc_path") or ""
+
+
 async def get_org_name(session) -> str:
     return await get_setting(session, "org_name") or DEFAULT_ORG_NAME
+
+
+def with_cache_bust(path: str) -> str:
+    """Yuklangan fayl URL'iga `?v=<mtime>` qo'shadi — brauzer keshini chetlab o'tish uchun."""
+    if not path or not path.startswith("/uploads/"):
+        return path
+    from app.services.upload_service import resolve_path
+
+    try:
+        mtime = int(resolve_path(path).stat().st_mtime)
+        return f"{path}?v={mtime}"
+    except OSError:
+        return path

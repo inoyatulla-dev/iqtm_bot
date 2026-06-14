@@ -314,26 +314,25 @@ def build_docx(data: ReportData) -> bytes:
 
     doc = Document()
 
-    # ── Har bir sahifada takrorlanuvchi header: logotip + tashkilot nomi + chiziq ──
-    header = doc.sections[0].header
-    header_table = header.add_table(rows=1, cols=2, width=Inches(6.5))
-    header_table.autofit = False
-    header_table.allow_autofit = False
-    header_table.columns[0].width = Inches(0.9)
-    header_table.columns[1].width = Inches(5.6)
-    logo_cell, org_cell = header_table.rows[0].cells
-    logo_cell.width = Inches(0.9)
-    org_cell.width = Inches(5.6)
+    # ── Faqat birinchi sahifa tepasida: logotip + tashkilot nomi + chiziq ──
+    top_table = doc.add_table(rows=1, cols=2)
+    top_table.autofit = False
+    top_table.allow_autofit = False
+    top_table.columns[0].width = Inches(0.6)
+    top_table.columns[1].width = Inches(5.9)
+    logo_cell, org_cell = top_table.rows[0].cells
+    logo_cell.width = Inches(0.6)
+    org_cell.width = Inches(5.9)
     logo_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     org_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     if data.logo_path.exists():
-        logo_cell.paragraphs[0].add_run().add_picture(str(data.logo_path), width=Inches(0.7))
+        logo_cell.paragraphs[0].add_run().add_picture(str(data.logo_path), width=Inches(0.45))
     run = org_cell.paragraphs[0].add_run(org_name)
     run.bold = True
-    run.font.size = Pt(12)
+    run.font.size = Pt(11)
     run.font.color.rgb = navy
 
-    line_p = header.add_paragraph()
+    line_p = doc.add_paragraph()
     line_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     pPr = line_p._p.get_or_add_pPr()
     pBdr = OxmlElement("w:pBdr")

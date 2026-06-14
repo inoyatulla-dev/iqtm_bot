@@ -396,8 +396,11 @@ function BrandingTab() {
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [err, setErr] = useState("");
+  const [errDoc, setErrDoc] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const fileDocRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     settingsApi.get().then((data) => {
@@ -436,9 +439,25 @@ function BrandingTab() {
     }
   }
 
+  async function onLogoDocChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    setErrDoc("");
+    try {
+      const updated = await settingsApi.uploadLogoDoc(file);
+      setS(updated);
+    } catch (e: any) {
+      setErrDoc(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setUploadingDoc(false);
+      e.target.value = "";
+    }
+  }
+
   return (
     <>
-      <div className="section-title">{t("settings.logo")}</div>
+      <div className="section-title">{t("settings.logoRound")}</div>
       <div className="sheet__pad">
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
           <img
@@ -474,6 +493,46 @@ function BrandingTab() {
             onChange={(e) => setS({ ...s, logo_size: Number(e.target.value) })}
           />
         </div>
+        <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
+          {t("settings.logoRoundHint")}
+        </p>
+        {err && <div className="form-error">{err}</div>}
+      </div>
+
+      <div className="section-title">{t("settings.logoDoc")}</div>
+      <div className="sheet__pad">
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
+          <img
+            src={s.logo_doc_path || "/logo.png"}
+            alt=""
+            style={{ height: 40, maxWidth: 160, objectFit: "contain" }}
+          />
+          <div>
+            <input
+              ref={fileDocRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={onLogoDocChange}
+            />
+            <button
+              className="btn btn--ghost"
+              style={{ width: "auto", padding: "8px 14px" }}
+              onClick={() => fileDocRef.current?.click()}
+              disabled={uploadingDoc}
+            >
+              {uploadingDoc ? t("common.loading") : t("settings.logoDocUpload")}
+            </button>
+          </div>
+        </div>
+        <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
+          {t("settings.logoDocHint")}
+        </p>
+        {errDoc && <div className="form-error">{errDoc}</div>}
+      </div>
+
+      <div className="section-title">{t("settings.org")}</div>
+      <div className="sheet__pad">
         <div className="field">
           <label>{t("settings.orgName")}</label>
           <input
@@ -482,7 +541,6 @@ function BrandingTab() {
             placeholder={t("settings.orgNamePh")}
           />
         </div>
-        {err && <div className="form-error">{err}</div>}
       </div>
 
       <div className="section-title">{t("settings.fileLimits")}</div>

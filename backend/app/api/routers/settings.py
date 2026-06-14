@@ -8,6 +8,7 @@ from app.services.settings_service import (
     ROUTE_EVENTS,
     TEMPLATE_EVENTS,
     get_archive_channel_id,
+    get_logo_doc_path,
     get_logo_path,
     get_logo_size,
     get_max_file_mb,
@@ -17,6 +18,7 @@ from app.services.settings_service import (
     get_storage_limit_gb,
     get_template,
     set_setting,
+    with_cache_bust,
 )
 from app.services.upload_service import IMAGE_EXTENSIONS, file_extension, save_file
 
@@ -27,7 +29,7 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 async def get_branding(session: SessionDep):
     """Logotip — barcha foydalanuvchilar (hatto tasdiqlanmagan) uchun ochiq."""
     return BrandingOut(
-        logo_path=await get_logo_path(session),
+        logo_path=with_cache_bust(await get_logo_path(session)),
         logo_size=await get_logo_size(session),
     )
 
@@ -46,8 +48,9 @@ async def get_settings(_: BossUser, session: SessionDep):
     out.storage_limit_gb = await get_storage_limit_gb(session)
     archive_id = await get_archive_channel_id(session)
     out.archive_channel_id = str(archive_id) if archive_id else ""
-    out.logo_path = await get_logo_path(session)
+    out.logo_path = with_cache_bust(await get_logo_path(session))
     out.logo_size = await get_logo_size(session)
+    out.logo_doc_path = with_cache_bust(await get_logo_doc_path(session))
     out.org_name = await get_org_name(session)
     return out
 
@@ -84,10 +87,23 @@ async def update_settings(body: SettingsUpdate, _: BossUser, session: SessionDep
 
 @router.post("/logo", response_model=SettingsOut)
 async def upload_logo(boss: BossUser, session: SessionDep, file: UploadFile = File(...)):
+    """Dumaloq logotip — mini-ilova sarlavhasida ishlatiladi."""
     ext = file_extension(file.filename, default=".png")
     if ext not in IMAGE_EXTENSIONS and ext != ".svg":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Faqat rasm fayllari (jpg, png, webp, svg)")
     path, _ = await save_file(file, "branding", f"logo{ext}")
     await set_setting(session, "logo_path", path)
+    await session.flush()
+    return await get_settings(boss, session)
+
+
+@router.post("/logo-doc", response_model=SettingsOut)
+async def upload_logo_doc(boss: BossUser, session: SessionDep, file: UploadFile = File(...)):
+    """Original logotip — PDF/DOCX hisobotlarda ishlatiladi."""
+    ext = file_extension(file.filename, default=".png")
+    if ext not in IMAGE_EXTENSIONS and ext != ".svg":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Faqat rasm fayllari (jpg, png, webp, svg)")
+    path, _ = await save_file(file, "branding", f"logo_doc{ext}")
+    await set_setting(session, "logo_doc_path", path)
     await session.flush()
     return await get_settings(boss, session)

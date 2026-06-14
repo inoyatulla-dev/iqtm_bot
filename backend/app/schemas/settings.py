@@ -10,6 +10,7 @@ class SettingsOut(BaseModel):
     archive_channel_id: str = ""
     logo_path: str = "/logo.png"
     logo_size: int = 40
+    logo_doc_path: str = ""
     org_name: str = ""
 
 

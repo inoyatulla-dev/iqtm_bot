@@ -59,12 +59,12 @@ async def send_report(
 
     build_fn, _media_type = builder
     data = await report_service.collect_report_data(
-        session, period, year=year, month=month, date_from=date_from, date_to=date_to
+        session, period,  year=year, month=month, date_from=date_from, date_to=date_to
     )
     content = build_fn(data)
     filename = f"hisobot_{period}_{data.end.isoformat()}.{fmt}"
     ok = await notify.send_document_bytes(
-        user.id, filename, content, caption=f"📊hisobot"
+        user.id, filename, content, caption=f"📊 Hisobot"
     )
     if not ok:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Telegramga yuborishda xato")

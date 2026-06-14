@@ -149,6 +149,7 @@ export interface AppSettings {
   archive_channel_id: string;
   logo_path: string;
   logo_size: number;
+  logo_doc_path: string;
   org_name: string;
 }
 
@@ -170,6 +171,15 @@ export const settingsApi = {
     form.append("file", file);
     return api
       .post<AppSettings>("/settings/logo", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
+  uploadLogoDoc: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api
+      .post<AppSettings>("/settings/logo-doc", form, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data);
