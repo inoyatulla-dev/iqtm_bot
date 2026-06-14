@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { Check, X } from "lucide-react";
 
 interface SheetProps {
   title?: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   onClose: () => void;
   children: ReactNode;
 }
@@ -14,7 +15,7 @@ export function Sheet({ title, subtitle, onClose, children }: SheetProps) {
         <div className="sheet__top">
           <div className="sheet__handle" />
           <button className="sheet__close" onClick={onClose} aria-label="Yopish">
-            ×
+            <X size={16} />
           </button>
         </div>
         {title && (
@@ -30,7 +31,7 @@ export function Sheet({ title, subtitle, onClose, children }: SheetProps) {
 }
 
 interface ActionRowProps {
-  icon: string;
+  icon: ReactNode;
   label: string;
   danger?: boolean;
   checked?: boolean;
@@ -42,7 +43,7 @@ export function ActionRow({ icon, label, danger, checked, onClick }: ActionRowPr
     <button className={`action-row${danger ? " danger" : ""}`} onClick={onClick}>
       <span className="action-row__icon">{icon}</span>
       <span>{label}</span>
-      {checked && <span className="check">✓</span>}
+      {checked && <span className="check"><Check size={18} /></span>}
     </button>
   );
 }

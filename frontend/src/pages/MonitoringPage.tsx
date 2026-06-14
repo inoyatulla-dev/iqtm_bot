@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FileText, FileType } from "lucide-react";
 import { reportsApi, statsApi } from "../api/client";
 import type { ReportFormat } from "../api/client";
 import type { DashboardData } from "../api/types";
@@ -118,10 +119,10 @@ export function MonitoringPage() {
       <div className="report-controls">
         <div className="report-row">
           <button className="btn btn--ghost" onClick={() => sendReport("pdf")} disabled={!!sending}>
-            {sending === "pdf" ? t("monitoring.sending") : `📄 ${t("stats.downloadPdf")}`}
+            {sending === "pdf" ? t("monitoring.sending") : <><FileText size={18} /> {t("stats.downloadPdf")}</>}
           </button>
           <button className="btn btn--ghost" onClick={() => sendReport("docx")} disabled={!!sending}>
-            {sending === "docx" ? t("monitoring.sending") : `📝 ${t("stats.downloadDocx")}`}
+            {sending === "docx" ? t("monitoring.sending") : <><FileType size={18} /> {t("stats.downloadDocx")}</>}
           </button>
         </div>
         {sent && (

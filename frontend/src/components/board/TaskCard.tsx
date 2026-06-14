@@ -1,5 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { AlertTriangle, Clock, Paperclip, User } from "lucide-react";
 import type { Department, Task } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { formatCountdown, formatDeadlineDate } from "../../utils/deadline";
@@ -31,7 +32,7 @@ export function TaskCard({ task, dep, onClick }: Props) {
       onClick={() => !isDragging && onClick(task)}
     >
       <div className="task-card__title">
-        {task.type === "personal" ? "👤 " : ""}
+        {task.type === "personal" && <User size={14} style={{ verticalAlign: "-2px", marginRight: 4 }} />}
         {task.name}
       </div>
       {task.masul_name && (
@@ -57,11 +58,11 @@ export function TaskCard({ task, dep, onClick }: Props) {
         )}
         {task.deadline && (
           <span className={`chip${task.is_overdue ? " chip--overdue" : ""}`}>
-            {task.is_overdue ? "⚠️" : "⏰"} {formatDeadlineDate(task.deadline)} · {formatCountdown(task.deadline, lang)}
+            {task.is_overdue ? <AlertTriangle size={12} /> : <Clock size={12} />} {formatDeadlineDate(task.deadline)} · {formatCountdown(task.deadline, lang)}
           </span>
         )}
         {task.attachments_count > 0 && (
-          <span className="chip">📎 {task.attachments_count}</span>
+          <span className="chip"><Paperclip size={12} /> {task.attachments_count}</span>
         )}
       </div>
     </div>

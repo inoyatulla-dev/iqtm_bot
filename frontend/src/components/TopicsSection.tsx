@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { topicsApi } from "../api/client";
 import type { Topic } from "../api/types";
 import { useI18n } from "../i18n";
@@ -143,7 +144,7 @@ function TopicForm({
             </button>
           ) : (
             <button className="btn btn--danger" onClick={() => setConfirmDelete(true)}>
-              🗑 {t("settings.topics.delete")}
+              <Trash2 size={18} /> {t("settings.topics.delete")}
             </button>
           )
         )}

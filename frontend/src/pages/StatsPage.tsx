@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertTriangle, CheckCircle2, Medal, RefreshCw } from "lucide-react";
 import { statsApi } from "../api/client";
 import type { RatingRow, StatusCounts } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -33,10 +34,12 @@ export function StatsPage() {
       label: `${col.emoji} ${col.name}`,
       color: col.color,
     })),
-    { num: counts.overdue, label: `⚠️ ${t("stats.overdue")}`, color: "#ff5a5a" },
-    { num: counts.done_in_period, label: `✅ ${t("stats.doneInPeriod")}`, color: "var(--ok)" },
+    { num: counts.overdue, label: t("stats.overdue"), color: "#ff5a5a", icon: <AlertTriangle size={14} /> },
+    { num: counts.done_in_period, label: t("stats.doneInPeriod"), color: "var(--ok)", icon: <CheckCircle2 size={14} /> },
   ];
-  const medal = (i: number) => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+  const medalColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
+  const medal = (i: number) =>
+    i < 3 ? <Medal size={20} color={medalColors[i]} /> : <span>{i + 1}.</span>;
   const maxDone = Math.max(1, ...rating.map((r) => r.done_in_period));
 
   return (
@@ -53,7 +56,9 @@ export function StatsPage() {
             <div className="stat-card__num" style={{ color: c.color }}>
               {c.num}
             </div>
-            <div className="stat-card__label">{c.label}</div>
+            <div className="stat-card__label" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+              {"icon" in c && c.icon}{c.label}
+            </div>
           </div>
         ))}
       </div>
@@ -63,11 +68,11 @@ export function StatsPage() {
           <div className="section-title">{t("stats.rating")}</div>
           {rating.map((r, i) => (
             <div className="list-item" key={r.user_id}>
-              <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{medal(i)}</span>
+              <span style={{ width: 28, display: "inline-flex", justifyContent: "center" }}>{medal(i)}</span>
               <div className="list-item__body">
                 <div className="list-item__title">{r.name}</div>
-                <div className="list-item__sub">
-                  ✅ {r.done} · 🔄 {r.active} · ⚠️ {r.overdue}
+                <div className="list-item__sub" style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                  <CheckCircle2 size={14} /> {r.done} · <RefreshCw size={14} /> {r.active} · <AlertTriangle size={14} /> {r.overdue}
                 </div>
               </div>
             </div>

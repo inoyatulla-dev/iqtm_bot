@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CornerUpLeft, FolderKanban, Image, Paperclip, X } from "lucide-react";
 import { attachmentsApi, commentsApi, tasksApi, usersApi } from "../api/client";
 import type { Attachment, BoardColumn, Comment, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -218,7 +219,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
   return (
     <Sheet
       title={task ? `#${task.id}` : t("task.new")}
-      subtitle={task?.project_name ? `🗂 ${task.project_name}` : undefined}
+      subtitle={task?.project_name ? <><FolderKanban size={14} /> {task.project_name}</> : undefined}
       onClose={onClose}
     >
       <div className="sheet__pad">
@@ -354,7 +355,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
                         className="attachment__name attachment__link"
                         onClick={() => openImage(a)}
                       >
-                        🖼 {a.file_name}
+                        <Image size={14} style={{ verticalAlign: "middle", marginRight: 4 }} /> {a.file_name}
                       </button>
                     ) : a.url ? (
                       <a
@@ -363,20 +364,20 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
                         target="_blank"
                         rel="noreferrer"
                       >
-                        📎 {a.file_name}
+                        <Paperclip size={14} style={{ verticalAlign: "middle", marginRight: 4 }} /> {a.file_name}
                       </a>
                     ) : (
                       <button
                         className="attachment__name attachment__link"
                         onClick={() => downloadAttachment(a)}
                       >
-                        📎 {a.file_name}
+                        <Paperclip size={14} style={{ verticalAlign: "middle", marginRight: 4 }} /> {a.file_name}
                       </button>
                     )}
                     <span className="attachment__size">{formatFileSize(a.size)}</span>
                     {(isBoss || a.uploaded_by === user?.id) && (
                       <button className="attachment__remove" onClick={() => removeAttachment(a)}>
-                        ✕
+                        <X size={14} />
                       </button>
                     )}
                   </div>
@@ -437,6 +438,9 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
                   {c.reply_to && (
                     <div
                       style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
                         fontSize: 12,
                         color: "var(--hint)",
                         borderLeft: "2px solid var(--line)",
@@ -444,7 +448,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
                         margin: "2px 0",
                       }}
                     >
-                      ↩ {c.reply_to}
+                      <CornerUpLeft size={12} /> {c.reply_to}
                     </div>
                   )}
                   <div className="comment__text">{c.text}</div>
@@ -478,14 +482,14 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
                   marginBottom: 6,
                 }}
               >
-                <span style={{ color: "var(--hint)" }}>
-                  ↩ {replyTo.user_name}: {replyTo.text.slice(0, 40)}
+                <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--hint)" }}>
+                  <CornerUpLeft size={14} /> {replyTo.user_name}: {replyTo.text.slice(0, 40)}
                 </span>
                 <button
                   onClick={() => setReplyTo(null)}
-                  style={{ background: "none", border: "none", color: "var(--hint)", cursor: "pointer" }}
+                  style={{ display: "flex", alignItems: "center", background: "none", border: "none", color: "var(--hint)", cursor: "pointer" }}
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
             )}
@@ -529,7 +533,7 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
         <div className="image-viewer" onClick={closeImage}>
           <img src={viewImage.src} alt={viewImage.name} onClick={(e) => e.stopPropagation()} />
           <button className="image-viewer__close" onClick={closeImage}>
-            ✕
+            <X size={18} />
           </button>
         </div>
       )}

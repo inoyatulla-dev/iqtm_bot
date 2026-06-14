@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { projectsApi, tasksApi, usersApi } from "../api/client";
 import type { ProjectDetail, ProjectStatus, ProjectTaskCreate, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -276,8 +277,8 @@ export function ProjectsPage() {
           </div>
           {isBoss && (
             <>
-              <ActionRow icon="✏️" label={t("projects.edit")} onClick={() => openEdit(sel)} />
-              <ActionRow icon="➕" label={t("projects.addTask")} onClick={openAddTask} />
+              <ActionRow icon={<Pencil size={20} />} label={t("projects.edit")} onClick={() => openEdit(sel)} />
+              <ActionRow icon={<Plus size={20} />} label={t("projects.addTask")} onClick={openAddTask} />
               {confirmDelete ? (
                 <div className="sheet__pad">
                   <button className="btn btn--danger" onClick={remove}>
@@ -285,7 +286,7 @@ export function ProjectsPage() {
                   </button>
                 </div>
               ) : (
-                <ActionRow icon="🗑" label={t("projects.delete")} danger onClick={() => setConfirmDelete(true)} />
+                <ActionRow icon={<Trash2 size={20} />} label={t("projects.delete")} danger onClick={() => setConfirmDelete(true)} />
               )}
             </>
           )}

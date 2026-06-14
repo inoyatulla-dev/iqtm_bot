@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Ban, Crown, Eye, User as UserIcon } from "lucide-react";
 import { usersApi } from "../api/client";
 import type { Department, Role, User } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -90,15 +91,15 @@ export function ArizalarPage({ onChange }: Props) {
             setSel(null);
           }}
         >
-          <ActionRow icon="👑" label={t("role.boss")} onClick={() => { setChosenRole("boss"); setView("dep"); }} />
-          <ActionRow icon="👤" label={t("role.worker")} onClick={() => { setChosenRole("worker"); setView("dep"); }} />
-          <ActionRow icon="👁" label={t("role.observer")} onClick={() => { setChosenRole("observer"); approve("observer", null); }} />
+          <ActionRow icon={<Crown size={20} />} label={t("role.boss")} onClick={() => { setChosenRole("boss"); setView("dep"); }} />
+          <ActionRow icon={<UserIcon size={20} />} label={t("role.worker")} onClick={() => { setChosenRole("worker"); setView("dep"); }} />
+          <ActionRow icon={<Eye size={20} />} label={t("role.observer")} onClick={() => { setChosenRole("observer"); approve("observer", null); }} />
         </Sheet>
       )}
 
       {sel && view === "dep" && chosenRole && (
         <Sheet title={t("applications.chooseDept")} subtitle={sel.name} onClose={() => setView("role")}>
-          <ActionRow icon="—" label={t("users.noDept")} onClick={() => approve(chosenRole, null)} />
+          <ActionRow icon={<Ban size={20} />} label={t("users.noDept")} onClick={() => approve(chosenRole, null)} />
           {deps.map((d: Department) => (
             <ActionRow key={d.id} icon={d.emoji} label={d.name} onClick={() => approve(chosenRole, d.id)} />
           ))}

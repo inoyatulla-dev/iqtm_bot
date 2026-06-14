@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { depsApi } from "../api/client";
 import type { Department } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -164,7 +165,7 @@ function DeptForm({
         </button>
         {dep && (
           <button className="btn btn--danger" onClick={remove}>
-            🗑 {t("common.delete")}
+            <Trash2 size={18} /> {t("common.delete")}
           </button>
         )}
       </div>

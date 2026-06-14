@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import {
   depsApi, settingsApi, topicsApi, updateProfile, uploadProfilePhoto, type AppSettings,
 } from "../api/client";
@@ -68,7 +69,7 @@ export function SettingsPage() {
       {view !== "menu" && (
         <div className="settings-header">
           <button className="btn btn--ghost settings-header__back" onClick={back}>
-            ←
+            <ArrowLeft size={18} />
           </button>
           <div className="settings-header__title">{t(viewTitleKey(view))}</div>
         </div>

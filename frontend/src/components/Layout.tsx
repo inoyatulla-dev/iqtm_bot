@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BarChart3, FolderKanban, Inbox, LayoutGrid, Settings, TrendingUp, Users } from "lucide-react";
 import type { User } from "../api/types";
 import { useI18n } from "../i18n";
 import { Logo } from "./Logo";
@@ -24,16 +25,16 @@ export function Layout({ tab, onTab, user, pendingCount, children }: Props) {
   const { t } = useI18n();
   const isBoss = user.role === "boss";
   const isObserver = user.role === "observer";
-  const tabs: { id: Tab; text: string; icon: string; badge?: number }[] = [
-    { id: "board", text: t("tabs.board"), icon: "📋" },
+  const tabs: { id: Tab; text: string; icon: ReactNode; badge?: number }[] = [
+    { id: "board", text: t("tabs.board"), icon: <LayoutGrid size={20} /> },
     ...(isBoss
-      ? [{ id: "applications" as Tab, text: t("tabs.applications"), icon: "📥", badge: pendingCount }]
+      ? [{ id: "applications" as Tab, text: t("tabs.applications"), icon: <Inbox size={20} />, badge: pendingCount }]
       : []),
-    ...(!isObserver ? [{ id: "users" as Tab, text: t("tabs.users"), icon: "👥" }] : []),
-    { id: "projects", text: t("tabs.projects"), icon: "🗂" },
-    ...(isBoss || isObserver ? [{ id: "monitoring" as Tab, text: t("tabs.monitoring"), icon: "📊" }] : []),
-    ...(!isObserver ? [{ id: "stats" as Tab, text: t("tabs.stats"), icon: "📈" }] : []),
-    { id: "settings", text: t("tabs.settings"), icon: "⚙️" },
+    ...(!isObserver ? [{ id: "users" as Tab, text: t("tabs.users"), icon: <Users size={20} /> }] : []),
+    { id: "projects", text: t("tabs.projects"), icon: <FolderKanban size={20} /> },
+    ...(isBoss || isObserver ? [{ id: "monitoring" as Tab, text: t("tabs.monitoring"), icon: <BarChart3 size={20} /> }] : []),
+    ...(!isObserver ? [{ id: "stats" as Tab, text: t("tabs.stats"), icon: <TrendingUp size={20} /> }] : []),
+    { id: "settings", text: t("tabs.settings"), icon: <Settings size={20} /> },
   ];
 
   return (

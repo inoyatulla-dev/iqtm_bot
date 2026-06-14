@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Ban, Cake, Check, Crown, PartyPopper, Pencil, Trash2 } from "lucide-react";
 import { usersApi } from "../api/client";
 import type { Department, Role, User } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -98,7 +99,7 @@ export function UsersPage() {
     <div className="page-content">
       {birthdayUser && (
         <div className="birthday-banner">
-          <div className="birthday-banner__icon">🎉</div>
+          <div className="birthday-banner__icon"><PartyPopper size={24} /></div>
           <div>
             <div className="birthday-banner__title">
               {t("users.birthdayToday").replace("{name}", birthdayUser.name)}
@@ -144,7 +145,7 @@ export function UsersPage() {
                 </div>
                 <div>
                   <div className="emp-card__name">
-                    {u.role === "boss" ? "👑 " : ""}
+                    {u.role === "boss" && <Crown size={16} />}
                     {u.name}
                   </div>
                   <div className="emp-card__role">
@@ -155,8 +156,8 @@ export function UsersPage() {
               {((days != null && days <= 3) || u.status === "blocked") && (
                 <div className="emp-card__row">
                   {days != null && days <= 3 ? (
-                    <span className={`badge ${days === 0 ? "badge--warn" : "badge--accent"}`}>
-                      🎂 {days === 0 ? t("users.birthdayBadgeToday") : t("users.birthdayIn").replace("{days}", String(days))}
+                    <span className={`badge ${days === 0 ? "badge--warn" : "badge--accent"}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <Cake size={12} /> {days === 0 ? t("users.birthdayBadgeToday") : t("users.birthdayIn").replace("{days}", String(days))}
                     </span>
                   ) : (
                     <span />
@@ -187,7 +188,7 @@ export function UsersPage() {
               </div>
               <div>
                 <div className="emp-card__name">
-                  {sel.role === "boss" ? "👑 " : ""}
+                  {sel.role === "boss" && <Crown size={16} />}
                   {sel.name}
                 </div>
                 <div className="emp-card__role">
@@ -198,8 +199,8 @@ export function UsersPage() {
             {((selDays != null && selDays <= 3) || sel.status === "blocked") && (
               <div className="emp-card__row" style={{ marginTop: 12 }}>
                 {selDays != null && selDays <= 3 ? (
-                  <span className={`badge ${selDays === 0 ? "badge--warn" : "badge--accent"}`}>
-                    🎂 {selDays === 0 ? t("users.birthdayBadgeToday") : t("users.birthdayIn").replace("{days}", String(selDays))}
+                  <span className={`badge ${selDays === 0 ? "badge--warn" : "badge--accent"}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <Cake size={12} /> {selDays === 0 ? t("users.birthdayBadgeToday") : t("users.birthdayIn").replace("{days}", String(selDays))}
                   </span>
                 ) : (
                   <span />
@@ -212,14 +213,14 @@ export function UsersPage() {
           </div>
           {isBoss && (
             <>
-              <ActionRow icon="✏️" label={t("users.edit")} onClick={() => openEdit(sel)} />
+              <ActionRow icon={<Pencil size={20} />} label={t("users.edit")} onClick={() => openEdit(sel)} />
               {sel.status === "blocked" ? (
-                <ActionRow icon="✅" label={t("users.unblock")} onClick={() => patch(sel.id, { status: "active" })} />
+                <ActionRow icon={<Check size={20} />} label={t("users.unblock")} onClick={() => patch(sel.id, { status: "active" })} />
               ) : (
-                <ActionRow icon="🚫" label={t("users.block")} onClick={() => patch(sel.id, { status: "blocked" })} />
+                <ActionRow icon={<Ban size={20} />} label={t("users.block")} onClick={() => patch(sel.id, { status: "blocked" })} />
               )}
               {sel.id !== me?.id && (
-                <ActionRow icon="🗑" label={t("users.delete")} danger onClick={() => setView("delete")} />
+                <ActionRow icon={<Trash2 size={20} />} label={t("users.delete")} danger onClick={() => setView("delete")} />
               )}
             </>
           )}

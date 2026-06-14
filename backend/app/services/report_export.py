@@ -16,6 +16,20 @@ _ACCENT = "#2563eb"
 _ROW_ALT = "#eef2f7"
 _GRID = "#cbd5e1"
 
+# Tashkilot nomi (sahifa tepasidagi takrorlanuvchi header uchun standart qiymat)
+ORG_FULL_NAME = "Innovatsiyalarni qo'llab-quvvatlash va tijoratlashtirish markazi"
+
+# Ba'zi qurilmalarda o'zbekcha tutuq belgisi (masalan U+02BB) standart shriftlarda
+# ko'rsatilmasligi mumkin (▀ bo'lib chiqadi) — bularni oddiy apostrofga almashtiramiz.
+_APOSTROPHE_VARIANTS = "ʻʼ‘’´`′"
+
+
+def _clean(value) -> str:
+    text = "" if value is None else str(value)
+    for ch in _APOSTROPHE_VARIANTS:
+        text = text.replace(ch, "'")
+    return text
+
 
 def _summary_rows(data: ReportData) -> list[tuple[str, int]]:
     return [(label, getattr(data, attr)) for label, attr in _SUMMARY_LABELS]
@@ -28,7 +42,6 @@ def build_pdf(data: ReportData) -> bytes:
     from reportlab.lib.units import mm
     from reportlab.lib.utils import ImageReader
     from reportlab.platypus import (
-        Image as RLImage,
         Paragraph,
         SimpleDocTemplate,
         Spacer,
@@ -36,10 +49,14 @@ def build_pdf(data: ReportData) -> bytes:
         TableStyle,
     )
 
+    org_name = _clean(data.org_name) or ORG_FULL_NAME
+    header_height = 24 * mm
+
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=A4,
-        topMargin=18 * mm, bottomMargin=18 * mm, leftMargin=18 * mm, rightMargin=18 * mm,
+        topMargin=18 * mm + header_height, bottomMargin=18 * mm,
+        leftMargin=18 * mm, rightMargin=18 * mm,
     )
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(
@@ -51,13 +68,9 @@ def build_pdf(data: ReportData) -> bytes:
         textColor=colors.HexColor(_ACCENT), spaceBefore=10, spaceAfter=4,
     ))
     styles.add(ParagraphStyle(
-        "OrgName", parent=styles["Heading2"],
-        textColor=colors.HexColor(_NAVY), fontSize=14, leading=18, spaceAfter=0,
-    ))
-    styles.add(ParagraphStyle(
         "Cell", parent=styles["Normal"], fontSize=8.5, leading=11,
     ))
-    cell = lambda text: Paragraph(str(text), styles["Cell"])
+    cell = lambda text: Paragraph(_clean(text), styles["Cell"])
 
     header_style = TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor(_GRID)),
@@ -84,28 +97,37 @@ def build_pdf(data: ReportData) -> bytes:
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ])
 
-    elements = []
-    logo_cell = ""
-    if data.logo_path.exists():
-        iw, ih = ImageReader(str(data.logo_path)).getSize()
-        logo_w = 18 * mm
-        logo_cell = RLImage(str(data.logo_path), width=logo_w, height=logo_w * ih / iw)
+    def draw_header(canvas, doc):
+        """Har bir sahifa tepasida: logotip, tashkilot nomi va ajratuvchi chiziq."""
+        canvas.saveState()
+        page_w, page_h = A4
+        left = doc.leftMargin
+        right = page_w - doc.rightMargin
+        line_y = page_h - 18 * mm - header_height + 8 * mm
+        text_x = left
+        if data.logo_path.exists():
+            logo_size = 14 * mm
+            iw, ih = ImageReader(str(data.logo_path)).getSize()
+            logo_h = logo_size * ih / iw
+            canvas.drawImage(
+                str(data.logo_path), left, line_y + 4 * mm,
+                width=logo_size, height=logo_h,
+                preserveAspectRatio=True, mask="auto",
+            )
+            text_x = left + logo_size + 4 * mm
+        available = right - text_x
+        font_size = 12
+        while canvas.stringWidth(org_name, "Helvetica-Bold", font_size) > available and font_size > 7:
+            font_size -= 0.5
+        canvas.setFont("Helvetica-Bold", font_size)
+        canvas.setFillColor(colors.HexColor(_NAVY))
+        canvas.drawString(text_x, line_y + 8 * mm, org_name)
+        canvas.setStrokeColor(colors.HexColor(_GRID))
+        canvas.setLineWidth(1)
+        canvas.line(left, line_y, right, line_y)
+        canvas.restoreState()
 
-    if logo_cell or data.org_name:
-        org_cell = Paragraph(data.org_name, styles["OrgName"]) if data.org_name else ""
-        header_table = Table(
-            [[logo_cell, org_cell]], colWidths=[24 * mm, 150 * mm],
-        )
-        header_table.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (0, 0), "LEFT"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-        ]))
-        elements.append(header_table)
-        elements.append(Spacer(1, 10))
+    elements = []
 
     elements.append(Paragraph(f"{data.period_label} hisobot", styles["Title"]))
     elements.append(Paragraph(f"Davr: {data.start} — {data.end}", styles["Normal"]))
@@ -122,32 +144,32 @@ def build_pdf(data: ReportData) -> bytes:
 
     if data.statuses:
         elements.append(Paragraph("Holatlar bo'yicha", styles["SectionTitle"]))
-        rows = [["Holat", "Soni"]] + [[s.name, str(s.count)] for s in data.statuses]
+        rows = [["Holat", "Soni"]] + [[_clean(s.name), str(s.count)] for s in data.statuses]
         elements.append(Table(rows, style=header_style, colWidths=[120 * mm, 54 * mm]))
 
     if data.departments:
         elements.append(Paragraph("Bo'limlar bo'yicha", styles["SectionTitle"]))
         rows = [["Bo'lim", "Jami", "Bajarilgan", "Foiz"]] + [
-            [d.name, str(d.total), str(d.done), f"{d.percent}%"] for d in data.departments
+            [_clean(d.name), str(d.total), str(d.done), f"{d.percent}%"] for d in data.departments
         ]
         elements.append(Table(rows, style=header_style, colWidths=[84 * mm, 30 * mm, 30 * mm, 30 * mm]))
 
     if data.projects:
         elements.append(Paragraph("Loyihalar", styles["SectionTitle"]))
         for proj in data.projects:
-            elements.append(Paragraph(proj.name, styles["ProjectTitle"]))
+            elements.append(Paragraph(_clean(proj.name), styles["ProjectTitle"]))
             info_rows = [
-                ["Holat", proj.status_label],
-                ["Muddat", proj.deadline_label],
+                ["Holat", _clean(proj.status_label)],
+                ["Muddat", _clean(proj.deadline_label)],
                 ["Bajarilgan vazifalar", f"{proj.done}/{proj.total} ({proj.percent}%)"],
-                ["Joriy jarayon", proj.schedule_label],
+                ["Joriy jarayon", _clean(proj.schedule_label)],
             ]
             elements.append(Table(info_rows, style=info_style, colWidths=[50 * mm, 124 * mm]))
             elements.append(Spacer(1, 4))
 
             if proj.tasks:
                 rows = [["#", "Vazifa", "Mas'ul", "Muddat", "Holat"]] + [
-                    [str(t.seq), cell(t.name), cell(t.assignee), t.deadline, t.status_label]
+                    [str(t.seq), cell(t.name), cell(t.assignee), _clean(t.deadline), _clean(t.status_label)]
                     for t in proj.tasks
                 ]
                 elements.append(Table(
@@ -158,38 +180,54 @@ def build_pdf(data: ReportData) -> bytes:
                 elements.append(Paragraph("Vazifalar mavjud emas", styles["Normal"]))
             elements.append(Spacer(1, 10))
 
-    doc.build(elements)
+    doc.build(elements, onFirstPage=draw_header, onLaterPages=draw_header)
     return buf.getvalue()
 
 
 def build_docx(data: ReportData) -> bytes:
     from docx import Document
     from docx.enum.table import WD_ALIGN_VERTICAL
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
     from docx.shared import Inches, Pt, RGBColor
 
     navy = RGBColor(0x1E, 0x3A, 0x5F)
     accent = RGBColor(0x25, 0x63, 0xEB)
+    org_name = _clean(data.org_name) or ORG_FULL_NAME
 
     doc = Document()
-    if data.logo_path.exists() or data.org_name:
-        header_table = doc.add_table(rows=1, cols=2)
-        header_table.autofit = False
-        header_table.allow_autofit = False
-        header_table.columns[0].width = Inches(0.9)
-        header_table.columns[1].width = Inches(5.6)
-        logo_cell, org_cell = header_table.rows[0].cells
-        logo_cell.width = Inches(0.9)
-        org_cell.width = Inches(5.6)
-        logo_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-        org_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-        if data.logo_path.exists():
-            logo_cell.paragraphs[0].add_run().add_picture(str(data.logo_path), width=Inches(0.7))
-        if data.org_name:
-            run = org_cell.paragraphs[0].add_run(data.org_name)
-            run.bold = True
-            run.font.size = Pt(14)
-            run.font.color.rgb = navy
-        doc.add_paragraph()
+
+    # ── Har bir sahifada takrorlanuvchi header: logotip + tashkilot nomi + chiziq ──
+    header = doc.sections[0].header
+    header_table = header.add_table(rows=1, cols=2, width=Inches(6.5))
+    header_table.autofit = False
+    header_table.allow_autofit = False
+    header_table.columns[0].width = Inches(0.9)
+    header_table.columns[1].width = Inches(5.6)
+    logo_cell, org_cell = header_table.rows[0].cells
+    logo_cell.width = Inches(0.9)
+    org_cell.width = Inches(5.6)
+    logo_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    org_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    if data.logo_path.exists():
+        logo_cell.paragraphs[0].add_run().add_picture(str(data.logo_path), width=Inches(0.7))
+    run = org_cell.paragraphs[0].add_run(org_name)
+    run.bold = True
+    run.font.size = Pt(12)
+    run.font.color.rgb = navy
+
+    line_p = header.add_paragraph()
+    line_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    pPr = line_p._p.get_or_add_pPr()
+    pBdr = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "6")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "1E3A5F")
+    pBdr.append(bottom)
+    pPr.append(pBdr)
 
     doc.add_heading(f"{data.period_label} hisobot", level=0)
     doc.add_paragraph(f"Davr: {data.start} — {data.end}")
@@ -211,7 +249,7 @@ def build_docx(data: ReportData) -> bytes:
         for row in rows:
             cells = table.add_row().cells
             for i, v in enumerate(row):
-                cells[i].text = str(v)
+                cells[i].text = _clean(v)
         if widths:
             for row in table.rows:
                 for i, w in enumerate(widths):
@@ -244,7 +282,7 @@ def build_docx(data: ReportData) -> bytes:
     if data.projects:
         section_title("Loyihalar")
         for proj in data.projects:
-            h = doc.add_heading(proj.name, level=3)
+            h = doc.add_heading(_clean(proj.name), level=3)
             for run in h.runs:
                 run.font.color.rgb = accent
 

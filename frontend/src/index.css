@@ -159,7 +159,9 @@ body {
 }
 
 .tabbar__icon {
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
 
@@ -448,6 +450,9 @@ body {
   font-size: 13px;
   font-weight: 400;
   margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Tugmali qatorlar (raqam yozish o'rniga) */
@@ -471,9 +476,11 @@ body {
 }
 
 .action-row__icon {
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 24px;
-  text-align: center;
+  flex-shrink: 0;
 }
 
 .action-row.danger {
@@ -532,6 +539,10 @@ body {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn--primary {
@@ -1164,6 +1175,9 @@ body {
   cursor: pointer;
   padding: 2px 4px;
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .comment-input {
@@ -1202,6 +1216,9 @@ body {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
   font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
