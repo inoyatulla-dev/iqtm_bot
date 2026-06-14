@@ -4,6 +4,7 @@ import { reportsApi, statsApi } from "../api/client";
 import type { ReportFormat } from "../api/client";
 import type { DashboardData } from "../api/types";
 import { useI18n } from "../i18n";
+import { getInitData } from "../telegram";
 import { PeriodPicker, defaultPeriodValue, toPeriodParams, type PeriodValue } from "../components/PeriodPicker";
 import { EmojiIcon } from "../utils/emojiIcon";
 
@@ -12,7 +13,8 @@ export function MonitoringPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<PeriodValue>(() => defaultPeriodValue("month"));
-  const [downloading, setDownloading] = useState<ReportFormat | null>(null);
+  const [exporting, setExporting] = useState<ReportFormat | null>(null);
+  const isTelegram = !!getInitData();
 
   useEffect(() => {
     setLoading(true);
@@ -22,22 +24,27 @@ export function MonitoringPage() {
     });
   }, [period]);
 
-  async function downloadReport(fmt: ReportFormat) {
-    setDownloading(fmt);
+  async function exportReport(fmt: ReportFormat) {
+    setExporting(fmt);
     try {
-      const blob = await reportsApi.download(period.period, fmt, toPeriodParams(period));
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `hisobot_${period.period}.${fmt}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      if (isTelegram) {
+        await reportsApi.send(period.period, fmt, toPeriodParams(period));
+        alert(t("monitoring.sentToTelegram"));
+      } else {
+        const blob = await reportsApi.download(period.period, fmt, toPeriodParams(period));
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `hisobot_${period.period}.${fmt}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
     } catch (e: any) {
       alert(e?.response?.data?.detail || t("common.error"));
     } finally {
-      setDownloading(null);
+      setExporting(null);
     }
   }
 
@@ -124,13 +131,16 @@ export function MonitoringPage() {
       <div className="section-title">{t("monitoring.exportTitle")}</div>
       <div className="report-controls">
         <div className="report-row">
-          <button className="btn btn--ghost" onClick={() => downloadReport("pdf")} disabled={!!downloading}>
-            {downloading === "pdf" ? t("monitoring.downloading") : <><FileText size={18} /> {t("stats.downloadPdf")}</>}
+          <button className="btn btn--ghost" onClick={() => exportReport("pdf")} disabled={!!exporting}>
+            {exporting === "pdf" ? (isTelegram ? t("monitoring.sending") : t("monitoring.downloading")) : <><FileText size={18} /> {isTelegram ? "📤 PDF" : t("stats.downloadPdf")}</>}
           </button>
-          <button className="btn btn--ghost" onClick={() => downloadReport("docx")} disabled={!!downloading}>
-            {downloading === "docx" ? t("monitoring.downloading") : <><FileType size={18} /> {t("stats.downloadDocx")}</>}
+          <button className="btn btn--ghost" onClick={() => exportReport("docx")} disabled={!!exporting}>
+            {exporting === "docx" ? (isTelegram ? t("monitoring.sending") : t("monitoring.downloading")) : <><FileType size={18} /> {isTelegram ? "📤 DOCX" : t("stats.downloadDocx")}</>}
           </button>
         </div>
+        {isTelegram && <div style={{ fontSize: "12px", color: "var(--hint)", marginTop: "8px" }}>
+          {t("monitoring.exportViaBot")}
+        </div>}
       </div>
     </div>
   );
