@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import {
-  depsApi, settingsApi, topicsApi, updateProfile, uploadProfilePhoto, type AppSettings,
+  depsApi, setCredentials, settingsApi, topicsApi, updateProfile, uploadProfilePhoto,
+  type AppSettings,
 } from "../api/client";
 import { PROFILE_EMOJI_OPTIONS, type Topic } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n, LANGS, type Lang } from "../i18n";
+import { tg } from "../telegram";
 import { BoardColumnsSection } from "../components/BoardColumnsSection";
 import { DepartmentsSection } from "../components/DepartmentsSection";
 import { TemplatesSection } from "../components/TemplatesSection";
@@ -119,7 +121,7 @@ function MenuView({ isBoss, onNav }: { isBoss: boolean; onNav: (v: View) => void
 }
 
 function ProfileView() {
-  const { user, reload } = useAuth();
+  const { user, reload, logout } = useAuth();
   const { t } = useI18n();
   const [first0, last0] = splitName(user?.name);
   const [firstName, setFirstName] = useState(first0);
@@ -245,6 +247,89 @@ function ProfileView() {
         {err && <div className="form-error">{err}</div>}
         <button className="btn btn--primary" onClick={save} disabled={saving}>
           {saved ? t("settings.profileSaved") : t("common.save")}
+        </button>
+      </div>
+
+      <CredentialsSection />
+
+      {!tg && (
+        <div className="sheet__pad">
+          <button className="btn btn--ghost" onClick={logout}>
+            {t("settings.logout")}
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function CredentialsSection() {
+  const { user, reload } = useAuth();
+  const { t } = useI18n();
+  const [login, setLogin] = useState(user?.login || "");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    setLogin(user?.login || "");
+  }, [user?.login]);
+
+  async function save() {
+    setErr("");
+    if (!/^[a-z0-9_.]{3,32}$/.test(login)) {
+      setErr(t("settings.loginErr"));
+      return;
+    }
+    if (password.length < 6) {
+      setErr(t("settings.passwordErr"));
+      return;
+    }
+    setSaving(true);
+    try {
+      await setCredentials(login, password);
+      await reload();
+      setPassword("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch (e: any) {
+      if (e?.response?.status === 409) setErr(t("settings.loginTaken"));
+      else setErr(e?.response?.data?.detail || t("common.error"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="section-title">{t("settings.credentials")}</div>
+      <div className="sheet__pad">
+        <p style={{ color: "var(--hint)", fontSize: 13, margin: "0 0 4px" }}>
+          {t("settings.credentialsHint")}
+        </p>
+        <div className="field">
+          <label>{t("settings.loginLabel")}</label>
+          <input
+            value={login}
+            onChange={(e) => setLogin(e.target.value.toLowerCase())}
+            placeholder={t("settings.loginPh")}
+            autoCapitalize="none"
+          />
+        </div>
+        <div className="field">
+          <label>{t("settings.passwordLabel")}</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={t("settings.passwordPh")}
+            autoComplete="new-password"
+          />
+        </div>
+        {err && <div className="form-error">{err}</div>}
+        <button className="btn btn--primary" onClick={save} disabled={saving}>
+          {saved ? t("settings.credentialsSaved") : t("common.save")}
         </button>
       </div>
     </>

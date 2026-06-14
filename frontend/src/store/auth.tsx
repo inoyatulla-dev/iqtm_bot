@@ -1,10 +1,13 @@
 import {
   createContext, useContext, useEffect, useState, type ReactNode,
 } from "react";
-import { authenticate, boardColumnsApi, depsApi, updateLang } from "../api/client";
+import {
+  authenticate, boardColumnsApi, clearToken, depsApi, fetchMe, getToken,
+  loginWithCredentials, updateLang,
+} from "../api/client";
 import type { BoardColumn, Department, User } from "../api/types";
 import { I18nProvider, type Lang } from "../i18n";
-import { tg } from "../telegram";
+import { getInitData, tg } from "../telegram";
 
 interface AuthState {
   user: User | null;
@@ -12,9 +15,12 @@ interface AuthState {
   columns: BoardColumn[];
   loading: boolean;
   error: string | null;
+  needsLogin: boolean;
   isBoss: boolean;
   isObserver: boolean;
   reload: () => void;
+  loginWeb: (login: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthCtx = createContext<AuthState>(null!);
@@ -33,22 +39,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [columns, setColumns] = useState<BoardColumn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [lang, setLangState] = useState<Lang>(detectLang());
+
+  async function applyUser(u: User) {
+    setUser(u);
+    if (u.lang) setLangState(u.lang as Lang);
+    if (u.status === "active") {
+      const [deps, columns] = await Promise.all([depsApi.list(), boardColumnsApi.list()]);
+      setDeps(deps);
+      setColumns(columns);
+    }
+  }
 
   async function load() {
     setLoading(true);
     setError(null);
+    setNeedsLogin(false);
     try {
-      const { user } = await authenticate();
-      setUser(user);
-      if (user.lang) setLangState(user.lang as Lang);
-      if (user.status === "active") {
-        const [deps, columns] = await Promise.all([depsApi.list(), boardColumnsApi.list()]);
-        setDeps(deps);
-        setColumns(columns);
+      if (getInitData()) {
+        const { user } = await authenticate();
+        await applyUser(user);
+      } else if (getToken()) {
+        const user = await fetchMe();
+        await applyUser(user);
+      } else {
+        setNeedsLogin(true);
       }
     } catch (e: any) {
-      setError(e?.response?.data?.detail || e.message || "Xatolik");
+      if (getToken() && !getInitData()) {
+        clearToken();
+        setNeedsLogin(true);
+      } else {
+        setError(e?.response?.data?.detail || e.message || "Xatolik");
+      }
     } finally {
       setLoading(false);
     }
@@ -57,6 +81,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     load();
   }, []);
+
+  async function loginWeb(login: string, password: string) {
+    const { user } = await loginWithCredentials(login, password);
+    await applyUser(user);
+    setNeedsLogin(false);
+  }
+
+  function logout() {
+    clearToken();
+    setUser(null);
+    setDeps([]);
+    setColumns([]);
+    setNeedsLogin(true);
+  }
 
   function setLang(l: Lang) {
     setLangState(l);
@@ -67,10 +105,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthCtx.Provider
       value={{
-        user, deps, columns, loading, error,
+        user, deps, columns, loading, error, needsLogin,
         isBoss: user?.role === "boss",
         isObserver: user?.role === "observer",
         reload: load,
+        loginWeb,
+        logout,
       }}
     >
       <I18nProvider lang={lang} setLang={setLang}>

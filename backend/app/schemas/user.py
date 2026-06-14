@@ -19,6 +19,7 @@ class UserOut(BaseModel):
     birthday: date | None = None
     birthday_in_days: int | None = None
     custom_emoji: str | None = None
+    login: str | None = None
     created_at: datetime | None = None
 
 

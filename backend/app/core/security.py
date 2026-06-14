@@ -4,9 +4,11 @@ Oqim:
   Mini App → initData → /auth/telegram → tekshiriladi → JWT beriladi
   Keyingi so'rovlar → Authorization: Bearer <JWT>
 """
+import binascii
 import hashlib
 import hmac
 import json
+import os
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl
@@ -17,6 +19,9 @@ from app.config import settings
 
 # initData necha soniyagacha amal qiladi (eskirgan ma'lumotni rad etish)
 INIT_DATA_MAX_AGE = 24 * 3600  # 24 soat
+
+# Login/parol uchun PBKDF2 iteratsiya soni
+PASSWORD_ITERATIONS = 260_000
 
 
 def validate_init_data(init_data: str) -> dict:
@@ -76,3 +81,22 @@ def decode_access_token(token: str) -> dict:
         )
     except jwt.PyJWTError as e:
         raise ValueError(f"Token noto'g'ri: {e}")
+
+
+def hash_password(password: str) -> str:
+    """Parolni PBKDF2-HMAC-SHA256 bilan xeshlaydi: 'iteratsiya$salt$hash' (hex)."""
+    salt = os.urandom(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, PASSWORD_ITERATIONS)
+    return f"{PASSWORD_ITERATIONS}${binascii.hexlify(salt).decode()}${binascii.hexlify(digest).decode()}"
+
+
+def verify_password(password: str, stored: str) -> bool:
+    """Parolni saqlangan xesh bilan solishtiradi."""
+    try:
+        iterations_s, salt_hex, digest_hex = stored.split("$")
+        salt = binascii.unhexlify(salt_hex)
+        expected = binascii.unhexlify(digest_hex)
+    except (ValueError, binascii.Error):
+        return False
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, int(iterations_s))
+    return hmac.compare_digest(digest, expected)

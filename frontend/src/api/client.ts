@@ -7,10 +7,21 @@ import type {
 
 export const api = axios.create({ baseURL: "/api" });
 
-let token: string | null = null;
+const TOKEN_STORAGE_KEY = "iqtm_token";
+let token: string | null = localStorage.getItem(TOKEN_STORAGE_KEY);
 
 export function setToken(t: string) {
   token = t;
+  localStorage.setItem(TOKEN_STORAGE_KEY, t);
+}
+
+export function getToken(): string | null {
+  return token;
+}
+
+export function clearToken() {
+  token = null;
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
 api.interceptors.request.use((config) => {
@@ -24,6 +35,24 @@ export async function authenticate(): Promise<{ token: string; user: User }> {
     init_data: getInitData(),
   });
   setToken(data.token);
+  return data;
+}
+
+export async function loginWithCredentials(
+  login: string, password: string
+): Promise<{ token: string; user: User }> {
+  const { data } = await api.post("/auth/login", { login, password });
+  setToken(data.token);
+  return data;
+}
+
+export async function setCredentials(login: string, password: string): Promise<User> {
+  const { data } = await api.post<User>("/auth/credentials", { login, password });
+  return data;
+}
+
+export async function fetchMe(): Promise<User> {
+  const { data } = await api.get<User>("/auth/me");
   return data;
 }
 

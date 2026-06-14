@@ -82,11 +82,19 @@ async def init_models() -> None:
             "ALTER TABLE users ADD COLUMN birthday DATE",
             "ALTER TABLE users ADD COLUMN custom_emoji VARCHAR(8)",
             "ALTER TABLE projects ADD COLUMN deadline DATE",
+            "ALTER TABLE users ADD COLUMN login VARCHAR(32)",
+            "ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)",
         ]:
             try:
                 await conn.exec_driver_sql(stmt)
             except Exception:
                 pass  # ustun allaqachon mavjud
+        try:
+            await conn.exec_driver_sql(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_login ON users(login)"
+            )
+        except Exception:
+            pass
     logger.info("Jadvallar tayyor.")
 
 

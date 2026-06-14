@@ -14,6 +14,16 @@ class AuthResponse(BaseModel):
     user: UserOut
 
 
+class LoginRequest(BaseModel):
+    login: str
+    password: str
+
+
+class CredentialsUpdate(BaseModel):
+    login: str
+    password: str
+
+
 class ProfileUpdate(BaseModel):
     first_name: str
     last_name: str = ""

@@ -11,10 +11,11 @@ import { MonitoringPage } from "./pages/MonitoringPage";
 import { StatsPage } from "./pages/StatsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { RegisterForm } from "./pages/RegisterForm";
+import { LoginPage } from "./pages/LoginPage";
 import { Logo } from "./components/Logo";
 
 export function App() {
-  const { user, loading, error, isBoss } = useAuth();
+  const { user, loading, error, needsLogin, isBoss } = useAuth();
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("board");
   const [pendingCount, setPendingCount] = useState(0);
@@ -36,6 +37,10 @@ export function App() {
         <div style={{ color: "var(--hint)" }}>{t("common.loading")}</div>
       </div>
     );
+  }
+
+  if (needsLogin) {
+    return <LoginPage />;
   }
 
   if (error) {

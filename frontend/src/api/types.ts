@@ -15,6 +15,7 @@ export interface User {
   birthday?: string | null;
   birthday_in_days?: number | null;
   custom_emoji?: string | null;
+  login?: string | null;
   created_at?: string;
 }
 
