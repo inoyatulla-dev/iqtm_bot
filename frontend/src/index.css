@@ -14,11 +14,26 @@
   --line: rgba(148, 163, 184, 0.18);
   --surface: rgba(255, 255, 255, 0.04);
   --radius: 16px;
+  /* Native elementlar (sana/vaqt piker, select, scrollbar) doim qorong'u
+     mavzuda chizilsin — aks holda brauzer ularni oq fonda qora rangda
+     chizadi (qurilma/OS mavzusidan qat'i nazar). */
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Native <button> rangi brauzer/OS bo'yicha "buttontext" (odatda qora)ga
+   teng bo'ladi va mavzuga bog'liq bo'lmaydi — shuning uchun ayrim
+   qurilmalarda tugma matni/ikonasi qora bo'lib qolardi. Global reset bilan
+   hamma joyda bir xil (mavzu rangidagi) ko'rinishni ta'minlaymiz. */
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
 }
 
 html,
@@ -30,6 +45,14 @@ body,
   overflow: hidden;
   background: var(--secondary-bg);
   color: var(--text);
+}
+
+/* ── Native input ikonalari (sana/vaqt) — ko'k accent rangga moslash ── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(199deg) brightness(100%) contrast(96%);
+  cursor: pointer;
 }
 
 body {

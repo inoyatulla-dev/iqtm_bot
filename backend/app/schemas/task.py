@@ -5,6 +5,13 @@ from pydantic import BaseModel, ConfigDict
 from app.core.constants import TaskType
 
 
+class AssigneeOut(BaseModel):
+    id: int
+    name: str
+    photo: str | None = None
+    emoji: str | None = None
+
+
 class TaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -16,6 +23,7 @@ class TaskOut(BaseModel):
     masul_name: str | None = None
     masul_photo: str | None = None
     masul_emoji: str | None = None
+    assignees: list[AssigneeOut] = []
     created_by: int
     deadline: datetime | None = None
     status: str
@@ -24,6 +32,7 @@ class TaskOut(BaseModel):
     project_name: str | None = None
     is_overdue: bool = False
     attachments_count: int = 0
+    comments_count: int = 0
     created_at: datetime | None = None
 
 
@@ -32,6 +41,7 @@ class TaskCreate(BaseModel):
     description: str | None = None
     dep_id: str | None = None
     masul_id: int | None = None
+    assignee_ids: list[int] | None = None
     deadline: datetime | None = None
     type: TaskType = TaskType.STANDALONE
     project_id: int | None = None
@@ -42,7 +52,9 @@ class TaskUpdate(BaseModel):
     description: str | None = None
     dep_id: str | None = None
     masul_id: int | None = None
+    assignee_ids: list[int] | None = None
     deadline: datetime | None = None
+    project_id: int | None = None
 
 
 class TaskStatusUpdate(BaseModel):

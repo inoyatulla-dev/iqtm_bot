@@ -1,30 +1,47 @@
 import { useEffect, useRef, useState } from "react";
-import { CornerUpLeft, FolderKanban, Image, Paperclip, X } from "lucide-react";
-import { attachmentsApi, commentsApi, tasksApi, usersApi } from "../api/client";
-import type { Attachment, BoardColumn, Comment, Task, User } from "../api/types";
+import { Clock, CornerUpLeft, FolderKanban, Image, Paperclip, X } from "lucide-react";
+import { attachmentsApi, commentsApi, projectsApi, tasksApi, usersApi } from "../api/client";
+import type { Attachment, BoardColumn, Comment, Project, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { EmojiIcon } from "../utils/emojiIcon";
 import { formatDateTime } from "../utils/datetime";
+import { ClockPicker } from "../components/tasks/ClockPicker";
+import { ProjectPicker } from "../components/tasks/ProjectPicker";
+import { AssigneePicker } from "../components/tasks/AssigneePicker";
 
 interface Props {
   task: Task | null; // null = yangi
   isBoss: boolean;
   isObserver?: boolean;
+  /** Ochilishi bilan darhol "Bajarildi" tasdiqlash+izoh ekraniga o'tadi (svayp tezkor amali) */
+  autoConfirmDone?: boolean;
   onClose: () => void;
   onSaved: () => void;
   onStatusChanged?: (task: Task) => void;
 }
 
-export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusChanged }: Props) {
+export function TaskForm({
+  task, isBoss, isObserver, autoConfirmDone, onClose, onSaved, onStatusChanged,
+}: Props) {
   const { deps, columns, user, timezone } = useAuth();
   const { t } = useI18n();
   const [name, setName] = useState(task?.name || "");
   const [desc, setDesc] = useState(task?.description || "");
   const [depId, setDepId] = useState(task?.dep_id || "");
-  const [masulId, setMasulId] = useState(task?.masul_id ? String(task.masul_id) : "");
-  const [deadline, setDeadline] = useState(task?.deadline ? task.deadline.slice(0, 16) : "");
+  const [assigneeIds, setAssigneeIds] = useState<number[]>(() => {
+    if (task?.assignees?.length) return task.assignees.map((a) => a.id);
+    return task?.masul_id ? [task.masul_id] : [];
+  });
+  const [dueDate, setDueDate] = useState(task?.deadline ? task.deadline.slice(0, 10) : "");
+  const [dueTime, setDueTime] = useState(() => {
+    const t = task?.deadline ? task.deadline.slice(11, 16) : "";
+    return t === "00:00" ? "" : t;
+  });
+  const [clockOpen, setClockOpen] = useState(false);
+  const [projectId, setProjectId] = useState<number | null>(task?.project_id ?? null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [workers, setWorkers] = useState<User[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -54,6 +71,21 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
   }, [isBoss]);
 
   useEffect(() => {
+    projectsApi.list().then(setProjects).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (autoConfirmDone && task) {
+      const doneCol = columns.find((c) => c.is_done);
+      if (doneCol) {
+        setPendingDone(doneCol);
+        setDoneComment("");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (task) {
       commentsApi.list(task.id).then(setComments);
       attachmentsApi.list(task.id).then(setAttachments);
@@ -76,17 +108,19 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
     setSaving(true);
     setErr("");
     try {
+      const deadline = dueDate ? `${dueDate}T${dueTime || "00:00"}` : null;
       const body: Partial<Task> = {
         name: name.trim(),
         description: desc.trim() || null,
-        deadline: deadline || null,
+        deadline,
         dep_id: depId || null,
+        project_id: projectId,
       };
       if (task) {
-        body.masul_id = masulId ? Number(masulId) : null;
+        if (isBoss) body.assignee_ids = assigneeIds;
         await tasksApi.update(task.id, body);
       } else if (isBoss) {
-        body.masul_id = masulId ? Number(masulId) : null;
+        body.assignee_ids = assigneeIds;
         body.type = "standalone";
         await tasksApi.create(body);
       } else {
@@ -258,24 +292,60 @@ export function TaskForm({ task, isBoss, isObserver, onClose, onSaved, onStatusC
             </div>
             <div className="field">
               <label>{t("task.masul")}</label>
-              <select value={masulId} onChange={(e) => setMasulId(e.target.value)}>
-                <option value="">{t("task.unassigned")}</option>
-                {workers.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+              <AssigneePicker
+                workers={workers}
+                value={assigneeIds}
+                onChange={setAssigneeIds}
+                disabled={!canEdit}
+              />
             </div>
           </>
         )}
+        <div className="deadline-fields">
+          <div className="field">
+            <label>{t("task.deadline")}</label>
+            <input
+              type="date"
+              value={dueDate}
+              disabled={!canEdit}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label>{t("task.time")}</label>
+            <button
+              type="button"
+              className="time-btn"
+              disabled={!canEdit || !dueDate}
+              onClick={() => setClockOpen(true)}
+            >
+              <Clock size={15} />
+              {dueTime || t("task.timePh")}
+              {dueTime && canEdit && (
+                <X
+                  size={14}
+                  className="time-btn__clear"
+                  onClick={(e) => { e.stopPropagation(); setDueTime(""); }}
+                />
+              )}
+            </button>
+          </div>
+        </div>
+        {clockOpen && (
+          <ClockPicker
+            value={dueTime}
+            onCancel={() => setClockOpen(false)}
+            onConfirm={(v) => { setDueTime(v); setClockOpen(false); }}
+          />
+        )}
+
         <div className="field">
-          <label>{t("task.deadline")}</label>
-          <input
-            type="datetime-local"
-            value={deadline}
+          <label>{t("task.project")}</label>
+          <ProjectPicker
+            projects={projects}
+            value={projectId}
+            onChange={setProjectId}
             disabled={!canEdit}
-            onChange={(e) => setDeadline(e.target.value)}
           />
         </div>
 

@@ -39,6 +39,13 @@ export interface BoardColumn {
   notify: boolean;
 }
 
+export interface Assignee {
+  id: number;
+  name: string;
+  photo?: string | null;
+  emoji?: string | null;
+}
+
 export interface Task {
   id: number;
   name: string;
@@ -48,6 +55,9 @@ export interface Task {
   masul_name?: string | null;
   masul_photo?: string | null;
   masul_emoji?: string | null;
+  assignees?: Assignee[];
+  /** Faqat yuborish uchun (create/update body) */
+  assignee_ids?: number[];
   created_by: number;
   deadline: string | null;
   status: string;
@@ -56,6 +66,7 @@ export interface Task {
   project_name?: string | null;
   is_overdue: boolean;
   attachments_count: number;
+  comments_count?: number;
   created_at?: string;
 }
 

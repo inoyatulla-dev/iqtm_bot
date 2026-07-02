@@ -4,16 +4,16 @@ import uuid
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import RedirectResponse, StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from app import notifications as notify
 from app.api.deps import CurrentUser, SessionDep
 from app.core import permissions
 from app.core.constants import TaskType
-from app.models import Attachment, Comment, Log, Project, Task, User
+from app.models import Attachment, Comment, Log, Project, Task, TaskAssignee, User
 from app.schemas.attachment import AttachmentOut
 from app.schemas.comment import CommentCreate, CommentOut
-from app.schemas.task import TaskCreate, TaskOut, TaskStatusUpdate, TaskUpdate
+from app.schemas.task import AssigneeOut, TaskCreate, TaskOut, TaskStatusUpdate, TaskUpdate
 from app.services import board_service, settings_service, task_service
 from app.services.upload_service import delete_file, file_extension, save_file
 
@@ -60,8 +60,16 @@ async def update_task(
     task = await _get_or_404(session, task_id)
     if not permissions.can_edit_task(user, task):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Tahrirlashga ruxsat yo'q")
-    for field, value in body.model_dump(exclude_unset=True).items():
+    data = body.model_dump(exclude_unset=True)
+    assignee_ids = data.pop("assignee_ids", None)
+    masul_in = "masul_id" in data
+    masul_val = data.pop("masul_id", None)
+    for field, value in data.items():
         setattr(task, field, value)
+    if assignee_ids is not None or masul_in:
+        await task_service.set_assignees(
+            session, task, masul_val if masul_in else task.masul_id, assignee_ids
+        )
     session.add(Log(user_id=user.id, action=f"Vazifa tahrirlandi: #{task.id}"))
     done_keys = await board_service.get_done_keys(session)
     return (await _to_out_batch(session, [task], done_keys))[0]
@@ -88,6 +96,9 @@ async def delete_task(task_id: int, user: CurrentUser, session: SessionDep):
     if not permissions.can_delete_task(user, task):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "O'chirishga ruxsat yo'q")
     session.add(Log(user_id=user.id, action=f"Vazifa o'chirildi: #{task.id}"))
+    await session.execute(
+        delete(TaskAssignee).where(TaskAssignee.task_id == task.id)
+    )
     await session.delete(task)
 
 
@@ -240,14 +251,29 @@ async def _get_or_404(session: SessionDep, task_id: int) -> Task:
 async def _to_out_batch(
     session: SessionDep, tasks: list[Task], done_keys: set[str]
 ) -> list[TaskOut]:
-    masul_ids = {t.masul_id for t in tasks if t.masul_id}
-    info = await _author_info(session, masul_ids)
+    task_ids = [t.id for t in tasks]
+
+    # Har bir vazifaning mas'ullari (assignees)
+    assignees_by_task: dict[int, list[int]] = {}
+    if task_ids:
+        rows = await session.execute(
+            select(TaskAssignee.task_id, TaskAssignee.user_id).where(
+                TaskAssignee.task_id.in_(task_ids)
+            )
+        )
+        for tid, uid in rows.all():
+            assignees_by_task.setdefault(tid, []).append(uid)
+
+    user_ids = {t.masul_id for t in tasks if t.masul_id}
+    for ids in assignees_by_task.values():
+        user_ids.update(ids)
+    info = await _author_info(session, user_ids)
 
     project_ids = {t.project_id for t in tasks if t.project_id}
     project_names = await _project_names(session, project_ids)
 
     counts: dict[int, int] = {}
-    task_ids = [t.id for t in tasks]
+    comment_counts: dict[int, int] = {}
     if task_ids:
         result = await session.execute(
             select(Attachment.task_id, func.count())
@@ -255,6 +281,12 @@ async def _to_out_batch(
             .group_by(Attachment.task_id)
         )
         counts = dict(result.all())
+        result = await session.execute(
+            select(Comment.task_id, func.count())
+            .where(Comment.task_id.in_(task_ids))
+            .group_by(Comment.task_id)
+        )
+        comment_counts = dict(result.all())
 
     out_list = []
     for task in tasks:
@@ -264,8 +296,19 @@ async def _to_out_batch(
         out.masul_name = masul_info[0] if masul_info else None
         out.masul_photo = masul_info[1] if masul_info else None
         out.masul_emoji = masul_info[2] if masul_info else None
+
+        # Assignees — asosiy mas'ul birinchi bo'lsin
+        ids = assignees_by_task.get(task.id, [])
+        if task.masul_id and task.masul_id in ids:
+            ids = [task.masul_id] + [i for i in ids if i != task.masul_id]
+        out.assignees = [
+            AssigneeOut(id=i, name=info[i][0], photo=info[i][1], emoji=info[i][2])
+            for i in ids if i in info
+        ]
+
         out.project_name = project_names.get(task.project_id) if task.project_id else None
         out.attachments_count = counts.get(task.id, 0)
+        out.comments_count = comment_counts.get(task.id, 0)
         out_list.append(out)
     return out_list
 

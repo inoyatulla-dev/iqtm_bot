@@ -5,16 +5,51 @@ Guruh xabarlari va eslatma shu yerda boshqariladi (handlerlarda emas).
 import logging
 from datetime import datetime, time, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import notifications as notify
-from app.models import BoardColumn, Comment, Department, Log, Reminder, Task, User
+from app.models import BoardColumn, Comment, Department, Log, Reminder, Task, TaskAssignee, User
 from app.schemas.task import TaskCreate
 from app.services import board_service, settings_service
 from app.services.report_service import user_label
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_primary(masul_id: int | None, assignee_ids: list[int] | None) -> int | None:
+    """Asosiy mas'ulni aniqlash: ro'yxat berilgan bo'lsa — birinchisi."""
+    if assignee_ids is not None:
+        return assignee_ids[0] if assignee_ids else None
+    return masul_id
+
+
+async def set_assignees(
+    session: AsyncSession,
+    task: Task,
+    masul_id: int | None,
+    assignee_ids: list[int] | None,
+) -> list[int]:
+    """task_assignees jadvalini yangilaydi va task.masul_id ni asosiyga tenglaydi.
+
+    Qaytaradi: yakuniy mas'ullar ID ro'yxati (asosiy birinchi).
+    """
+    if assignee_ids is None:
+        # Ro'yxat berilmagan — masul_id atrofida qurib olamiz
+        ids = [masul_id] if masul_id else []
+    else:
+        # Tartibni saqlab, takrorlarni olib tashlaymiz
+        ids = list(dict.fromkeys(assignee_ids))
+
+    task.masul_id = ids[0] if ids else None
+
+    await session.execute(
+        delete(TaskAssignee).where(TaskAssignee.task_id == task.id)
+    )
+    for uid in ids:
+        session.add(TaskAssignee(task_id=task.id, user_id=uid))
+    await session.flush()
+    return ids
 
 
 async def _dep(session: AsyncSession, dep_id: str | None) -> Department | None:
@@ -54,7 +89,7 @@ async def create_task(
         name=data.name,
         description=data.description,
         dep_id=data.dep_id,
-        masul_id=data.masul_id,
+        masul_id=resolve_primary(data.masul_id, data.assignee_ids),
         created_by=created_by,
         deadline=data.deadline,
         type=data.type,
@@ -63,6 +98,8 @@ async def create_task(
     )
     session.add(task)
     await session.flush()  # task.id olish uchun
+
+    assignee_ids = await set_assignees(session, task, data.masul_id, data.assignee_ids)
 
     await _log(session, created_by, f"Vazifa yaratildi: #{task.id} {task.name}")
 
@@ -95,9 +132,9 @@ async def create_task(
             session, "new_task"
         )
         await notify.send_to_group(text, topic_id)
-    # Mas'ulga doim shaxsiy xabar (topshiriq berildi)
-    if masul:
-        await notify.send_dm(masul.id, text)
+    # Har bir mas'ulga shaxsiy xabar (topshiriq berildi)
+    for uid in assignee_ids:
+        await notify.send_dm(uid, text)
 
     return task
 
@@ -188,8 +225,13 @@ async def get_board_tasks(
 
     stmt = select(Task).where(Task.type != TaskType.PROJECT)
     if user.role not in (Role.BOSS, Role.OBSERVER):
+        assignee_exists = (
+            select(TaskAssignee.task_id)
+            .where(TaskAssignee.task_id == Task.id, TaskAssignee.user_id == user.id)
+            .exists()
+        )
         stmt = stmt.where(
-            (Task.masul_id == user.id) | (Task.created_by == user.id)
+            (Task.masul_id == user.id) | (Task.created_by == user.id) | assignee_exists
         )
     stmt = stmt.order_by(Task.created_at.desc())
     result = await session.execute(stmt)

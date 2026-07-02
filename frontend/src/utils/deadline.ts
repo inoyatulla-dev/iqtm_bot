@@ -29,6 +29,19 @@ export function formatDeadlineDate(value: string): string {
   return d.toLocaleString(undefined, opts);
 }
 
+const UZ_MONTHS_SHORT = [
+  "yanvar", "fevral", "mart", "aprel", "may", "iyun",
+  "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr",
+];
+
+/** Ixcham sana: "22 iyun" (mobil kartochkalar uchun) */
+export function formatDeadlineShort(value: string, lang: Lang): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  if (lang === "uz") return `${d.getDate()} ${UZ_MONTHS_SHORT[d.getMonth()]}`;
+  return d.toLocaleDateString(lang, { day: "numeric", month: "short" });
+}
+
 /** "3 kun qoldi" / "Bugun" / "5 kun kechikdi" */
 export function formatCountdown(value: string, lang: Lang): string {
   const target = new Date(value);

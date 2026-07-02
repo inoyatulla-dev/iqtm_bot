@@ -4,6 +4,7 @@ import { AlertTriangle, Clock, Paperclip, User } from "lucide-react";
 import type { Department, Task } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { formatCountdown, formatDeadlineDate } from "../../utils/deadline";
+import { AvatarStack } from "../tasks/parts";
 
 interface Props {
   task: Task;
@@ -35,18 +36,14 @@ export function TaskCard({ task, dep, onClick }: Props) {
         {task.type === "personal" && <User size={14} style={{ verticalAlign: "-2px", marginRight: 4 }} />}
         {task.name}
       </div>
-      {task.masul_name && (
+      {(task.assignees?.length || task.masul_name) && (
         <div className="task-card__assignee">
-          <span className="avatar-wrap" style={{ width: 20, height: 20 }}>
-            <span className="avatar" style={{ fontSize: 11 }}>
-              {task.masul_photo ? (
-                <img src={task.masul_photo} alt="" />
-              ) : (
-                task.masul_name.slice(0, 1).toUpperCase()
-              )}
-            </span>
-          </span>
+          <AvatarStack
+            people={task.assignees?.length ? task.assignees : [{ name: task.masul_name, photo: task.masul_photo }]}
+            size={20}
+          />
           {task.masul_name}
+          {task.assignees && task.assignees.length > 1 && ` +${task.assignees.length - 1}`}
         </div>
       )}
       <div className="task-card__meta">

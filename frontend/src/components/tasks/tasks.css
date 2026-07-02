@@ -1,0 +1,684 @@
+/* ════════════════════════════════════════════════════════
+   Vazifalar sahifasi — sarlavha, tab'lar, filtrlar, jadval
+   ════════════════════════════════════════════════════════ */
+.tasks-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.tasks-page .board { height: auto; flex: 1; }
+
+/* Sarlavha */
+.tasks-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 16px 6px;
+}
+.tasks-head__title h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.tasks-head__title p {
+  margin: 3px 0 0;
+  color: var(--hint);
+  font-size: 13px;
+}
+.tasks-head__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Korinish tablari */
+.view-tabs {
+  display: inline-flex;
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 2px;
+}
+.view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--hint);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.view-tab:hover { color: var(--text); }
+.view-tab.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn--new {
+  width: auto;
+  padding: 9px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn--sm {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Filtr paneli */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 8px 16px 4px;
+  padding: 12px 16px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-label {
+  color: var(--hint);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.filter-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  min-height: 38px;
+}
+select.filter-control { padding-right: 8px; }
+.filter-control:focus { outline: none; border-color: var(--accent); }
+.filter-search {
+  flex: 1;
+  min-width: 180px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 9px 12px;
+}
+.filter-search:focus { outline: none; border-color: var(--accent); }
+.filter-clear {
+  width: auto;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+/* Kalendar popover (Davr) */
+.date-filter { position: relative; }
+.date-filter__caret { transition: transform 0.15s; transform: rotate(90deg); }
+.date-filter__caret.open { transform: rotate(-90deg); }
+.date-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 288px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.date-pop__modes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.seg {
+  border: 1px solid var(--line);
+  background: var(--secondary-bg);
+  color: var(--hint);
+  border-radius: 9px;
+  padding: 7px 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.seg.active { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.12); }
+.date-pop__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.date-pop__nav span { font-size: 13.5px; font-weight: 700; }
+.date-pop__nav button {
+  background: transparent;
+  border: none;
+  color: var(--hint);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  display: inline-flex;
+}
+.date-pop__nav button:hover { background: var(--surface); color: var(--text); }
+.date-pop__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.date-pop__week span {
+  text-align: center;
+  font-size: 11px;
+  color: var(--hint);
+  font-weight: 600;
+}
+.date-pop__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.date-pop__months {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.date-cell {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  border-radius: 8px;
+  aspect-ratio: 1;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.date-cell.wide { aspect-ratio: auto; padding: 12px 0; }
+.date-cell:hover { background: var(--surface); }
+.date-cell.muted { color: var(--hint); opacity: 0.5; }
+.date-cell.today { color: var(--accent); font-weight: 700; }
+.date-cell.sel { background: var(--accent); color: var(--accent-text); font-weight: 700; }
+.date-pop__foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.date-pop__foot .btn { width: 100%; }
+
+/* Panel (Ro'yxat/Arxiv) */
+.tasks-panel { margin: 8px 16px 20px; }
+
+/* Arxiv statistikasi */
+.archive-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* Jadval */
+.tasks-table-wrap {
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.tasks-table thead th {
+  text-align: left;
+  color: var(--hint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.tasks-table tbody td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.tasks-table tbody tr:last-child td { border-bottom: none; }
+.tasks-table tbody tr { cursor: pointer; transition: background 0.1s; }
+.tasks-table tbody tr:hover { background: var(--surface); }
+.tt-name { display: flex; align-items: center; gap: 10px; }
+.tt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tt-title { font-weight: 600; }
+.tt-muted { color: var(--hint); }
+.tt-overdue { color: var(--danger); font-weight: 600; }
+.tt-masul { display: inline-flex; align-items: center; gap: 8px; }
+.tt-count { display: inline-flex; align-items: center; gap: 4px; color: var(--hint); }
+.muted-dash { color: var(--hint); }
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Avatar stack (ko'p mas'ul) */
+.avatar-stack { display: inline-flex; align-items: center; }
+.avatar-stack__item { display: inline-flex; border: 2px solid var(--secondary-bg); border-radius: 50%; }
+.avatar-stack__more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-elev);
+  border: 2px solid var(--secondary-bg);
+  color: var(--hint);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Jadval past qismi */
+.table-empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--hint);
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.table-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  border-top: 1px solid var(--line);
+}
+.table-foot__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--hint);
+}
+.table-foot__size select {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 4px 8px;
+  font-size: 12.5px;
+}
+.pager { display: inline-flex; gap: 6px; margin-left: auto; }
+.pager__btn {
+  min-width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pager__btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+/* Deadline: sana + vaqt */
+.deadline-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.time-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 15px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.time-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.time-btn__clear { margin-left: auto; color: var(--hint); }
+
+/* Ko'p mas'ul tanlash */
+.asg-picker { display: flex; flex-direction: column; gap: 10px; }
+.asg-picker__head { display: flex; justify-content: flex-end; }
+.asg-picker__count { color: var(--accent); font-size: 12.5px; font-weight: 600; }
+.asg-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.asg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px 4px 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.asg-chip__x {
+  display: inline-flex;
+  background: transparent;
+  border: none;
+  color: var(--hint);
+  cursor: pointer;
+  padding: 0;
+}
+.asg-picker__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--hint);
+}
+.asg-picker__search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+.asg-picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.asg-picker__empty { padding: 16px; text-align: center; color: var(--hint); font-size: 13px; }
+.asg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.asg-row:hover { border-color: var(--hint); }
+.asg-row.on { border-color: var(--accent); background: rgba(59,130,246,0.10); }
+.asg-row__body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.asg-row__name { font-size: 14px; font-weight: 600; }
+.asg-row__sub { font-size: 12px; color: var(--hint); }
+.asg-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-text);
+  flex-shrink: 0;
+}
+.asg-check.on { background: var(--accent); border-color: var(--accent); }
+
+/* Loyiha tanlash */
+.proj-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--secondary-bg);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 11px 14px;
+}
+.proj-selected__body { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.proj-selected__clear {
+  background: transparent;
+  border: none;
+  color: var(--hint);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 2px;
+}
+.proj-picker {
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.proj-picker__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--hint);
+}
+.proj-picker__search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+.proj-picker__list { max-height: 168px; overflow-y: auto; }
+.proj-picker__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-size: 14px;
+  padding: 11px 14px;
+  cursor: pointer;
+}
+.proj-picker__item:last-child { border-bottom: none; }
+.proj-picker__item:hover { background: var(--surface); }
+.proj-picker__empty { padding: 16px; text-align: center; color: var(--hint); font-size: 13px; }
+
+/* Clock picker (soat tanlash) */
+.clock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.clock-modal {
+  width: 300px;
+  max-width: 100%;
+  background: var(--bg-elev);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+.clock-modal__head {
+  background: var(--accent);
+  color: var(--accent-text);
+  text-align: center;
+  padding: 22px 0 18px;
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.clock-modal__seg { cursor: pointer; opacity: 0.5; }
+.clock-modal__seg.active { opacity: 1; }
+.clock-modal__label {
+  text-align: center;
+  color: var(--hint);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 16px 0 6px;
+}
+.clock-face {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 8px auto 16px;
+  border-radius: 50%;
+  background: var(--secondary-bg);
+}
+.clock-num {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.clock-num.active { background: var(--accent); color: var(--accent-text); }
+.clock-modal__foot {
+  display: flex;
+  gap: 10px;
+  padding: 0 18px 18px;
+}
+.clock-modal__foot .btn { flex: 1; }
+
+/* Mobil Ro'yxat: qidiruv + davr + tezkor filtrlar */
+.mobile-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 16px 4px;
+}
+.mobile-filter-bar__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mobile-filter-bar__row .filter-search { margin: 0; }
+.mobile-filter-bar__row .date-filter { flex-shrink: 0; }
+.mobile-filter-bar__row .date-filter .filter-control { white-space: nowrap; }
+.quick-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.quick-chips::-webkit-scrollbar { display: none; }
+.quick-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  background: var(--secondary-bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.quick-chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+/* Mobil Ro'yxat: svayp kartochkalar ro'yxati */
+.mobile-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 16px 20px;
+}
+.mtc-wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.mtc-actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  overflow: hidden;
+}
+.mtc-actions--left { left: 0; }
+.mtc-actions--right { right: 0; }
+.mtc-btn {
+  width: 76px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mtc-btn--edit { background: #f59e0b; }
+.mtc-btn--delete { background: var(--danger); }
+.mtc-btn--done { background: var(--ok); color: #08331c; }
+.mtc-btn--archive { background: #64748b; }
+.mtc-card {
+  position: relative;
+  cursor: pointer;
+  touch-action: pan-y;
+  user-select: none;
+  z-index: 1;
+}
+.mtc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+/* Mobil: jadval ustunlarini yashirish */
+@media (max-width: 767px) {
+  .hide-sm { display: none; }
+  .view-tab span { display: none; }
+  .view-tab { padding: 8px 11px; }
+  .archive-stats { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .filter-item { justify-content: space-between; }
+  .filter-control, .date-filter { width: 100%; }
+  .filter-clear { margin-left: 0; }
+  .date-pop { left: 0; right: 0; width: auto; }
+}
