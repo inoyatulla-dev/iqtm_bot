@@ -65,9 +65,12 @@ export interface Task {
   project_id: number | null;
   project_name?: string | null;
   is_overdue: boolean;
+  is_archived?: boolean;
   attachments_count: number;
   comments_count?: number;
   created_at?: string;
+  updated_at?: string;
+  done_at?: string | null;
 }
 
 export interface Comment {

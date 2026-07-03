@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   DndContext, DragEndEvent, PointerSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
-import { Archive, LayoutGrid, List, Plus, X } from "lucide-react";
+import { Archive, ArrowDownUp, LayoutGrid, List, Plus, X } from "lucide-react";
 import { tasksApi } from "../api/client";
 import type { Task } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -19,6 +19,8 @@ import "../components/tasks/tasks.css";
 
 type View = "board" | "list" | "archive";
 type QuickFilter = "all" | "mine" | "today" | "overdue" | "in_progress" | "done";
+type SortField = "created_at" | "updated_at" | "deadline" | "done_at";
+type SortDir = "asc" | "desc";
 
 const QUICK_FILTERS: { key: QuickFilter; label: string }[] = [
   { key: "all", label: "Hammasi" },
@@ -29,9 +31,24 @@ const QUICK_FILTERS: { key: QuickFilter; label: string }[] = [
   { key: "done", label: "Bajarilgan" },
 ];
 
+const SORT_FIELD_LABELS: Record<Exclude<SortField, "done_at">, string> = {
+  created_at: "Yaratilgan sana",
+  updated_at: "Yangilangan sana",
+  deadline: "Muddat",
+};
+
 function todayIso(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Berilgan maydon bo'yicha tartiblaydi; qiymati yo'q vazifalar oxirida qoladi. */
+function sortTasks(list: Task[], field: SortField, dir: SortDir): Task[] {
+  const withVal = list.filter((t) => t[field]);
+  const withoutVal = list.filter((t) => !t[field]);
+  withVal.sort((a, b) => new Date(a[field] as string).getTime() - new Date(b[field] as string).getTime());
+  if (dir === "desc") withVal.reverse();
+  return [...withVal, ...withoutVal];
 }
 
 export function BoardPage() {
@@ -51,6 +68,9 @@ export function BoardPage() {
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
   const [search, setSearch] = useState("");
   const [restoringId, setRestoringId] = useState<number | null>(null);
+  const [sortField, setSortField] = useState<Exclude<SortField, "done_at">>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [archiveDir, setArchiveDir] = useState<SortDir>("desc");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -134,15 +154,21 @@ export function BoardPage() {
   );
   const activeCount = useMemo(() => tasks.filter((t) => !doneKeys.has(t.status)).length, [tasks, doneKeys]);
 
-  const boardTasks = filtered;
-  const listTasks = filtered;
-  const archiveTasks = filtered.filter((t) => doneKeys.has(t.status));
+  // Arxivlangan (24 soatdan ortiq "bajarilgan" holatda turgan) vazifalar Doska/Ro'yxatdan
+  // yashiriladi — faqat Arxiv bo'limida ko'rinadi.
+  const activeTasks = useMemo(() => filtered.filter((t) => !t.is_archived), [filtered]);
+  const boardTasks = useMemo(() => sortTasks(activeTasks, sortField, sortDir), [activeTasks, sortField, sortDir]);
+  const listTasks = boardTasks;
+  const archiveTasks = useMemo(
+    () => sortTasks(filtered.filter((t) => t.is_archived), "done_at", archiveDir),
+    [filtered, archiveDir]
+  );
 
   const thisYear = new Date().getFullYear();
   const thisMonth = new Date().getMonth();
-  const doneAll = tasks.filter((t) => doneKeys.has(t.status));
-  const doneYear = doneAll.filter((t) => { const d = taskDate(t); return d && new Date(d).getFullYear() === thisYear; });
-  const doneMonth = doneYear.filter((t) => { const d = taskDate(t); return d && new Date(d).getMonth() === thisMonth; });
+  const doneAll = tasks.filter((t) => t.is_archived);
+  const doneYear = doneAll.filter((t) => { const d = t.done_at || taskDate(t); return d && new Date(d).getFullYear() === thisYear; });
+  const doneMonth = doneYear.filter((t) => { const d = t.done_at || taskDate(t); return d && new Date(d).getMonth() === thisMonth; });
 
   const hasFilter = range.mode !== "all" || empId !== "all" || statusKey !== "all" || quickFilter !== "all" || !!search.trim();
   function clearFilters() {
@@ -278,13 +304,46 @@ export function BoardPage() {
               ))}
             </select>
           </div>
+          {(view === "board" || view === "list") && (
+            <div className="filter-item">
+              <span className="filter-label">Saralash</span>
+              <select
+                className="filter-control"
+                value={sortField}
+                onChange={(e) => setSortField(e.target.value as Exclude<SortField, "done_at">)}
+              >
+                {Object.entries(SORT_FIELD_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+              <button
+                className="btn btn--ghost sort-dir-btn"
+                onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+              >
+                <ArrowDownUp size={15} />
+                {sortDir === "desc" ? "Yangi birinchi" : "Eski birinchi"}
+              </button>
+            </div>
+          )}
           {view === "archive" && (
-            <input
-              className="filter-search"
-              placeholder="Vazifa yoki loyiha qidirish…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <>
+              <input
+                className="filter-search"
+                placeholder="Vazifa yoki loyiha qidirish…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <div className="filter-item">
+                <span className="filter-label">Saralash</span>
+                <button
+                  className="btn btn--ghost sort-dir-btn"
+                  onClick={() => setArchiveDir((d) => (d === "desc" ? "asc" : "desc"))}
+                >
+                  <ArrowDownUp size={15} />
+                  {archiveDir === "desc" ? "Eng yangi" : "Eng eski"}
+                </button>
+              </div>
+            </>
           )}
           {hasFilter && (
             <button className="btn btn--ghost filter-clear" onClick={clearFilters}>

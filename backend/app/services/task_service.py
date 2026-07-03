@@ -143,6 +143,8 @@ async def change_status(
     session: AsyncSession, task: Task, column: BoardColumn, actor: User
 ) -> Task:
     task.status = column.key
+    # "Yakuniy" ustunga kirganda arxiv sanog'i boshlanadi; chiqib ketsa — bekor bo'ladi
+    task.done_at = datetime.now() if column.is_done else None
     await _log(session, actor.id, f"Vazifa holati: #{task.id} → {column.key}")
 
     dep = await _dep(session, task.dep_id)

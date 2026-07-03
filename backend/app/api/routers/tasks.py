@@ -292,6 +292,7 @@ async def _to_out_batch(
     for task in tasks:
         out = TaskOut.model_validate(task)
         out.is_overdue = board_service.is_overdue(task, done_keys)
+        out.is_archived = board_service.is_archived(task, done_keys)
         masul_info = info.get(task.masul_id) if task.masul_id else None
         out.masul_name = masul_info[0] if masul_info else None
         out.masul_photo = masul_info[1] if masul_info else None

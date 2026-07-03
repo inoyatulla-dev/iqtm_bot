@@ -31,9 +31,12 @@ class TaskOut(BaseModel):
     project_id: int | None = None
     project_name: str | None = None
     is_overdue: bool = False
+    is_archived: bool = False
     attachments_count: int = 0
     comments_count: int = 0
     created_at: datetime | None = None
+    updated_at: datetime | None = None
+    done_at: datetime | None = None
 
 
 class TaskCreate(BaseModel):

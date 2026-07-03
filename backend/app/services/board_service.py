@@ -3,12 +3,15 @@
 Vazifa holati endi qattiq enum emas, shuning uchun "bajarilgan/kechikkan" kabi
 hisoblar shu yerdagi yordamchilar orqali (BoardColumn.is_done) aniqlanadi.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import BoardColumn, Task
+
+# Vazifa "yakuniy" ustunda shuncha soat turgach — avtomatik arxivga o'tadi
+ARCHIVE_AFTER_HOURS = 24
 
 
 async def list_columns(session: AsyncSession) -> list[BoardColumn]:
@@ -44,4 +47,13 @@ def is_overdue(task: Task, done_keys: set[str]) -> bool:
         task.deadline is not None
         and task.status not in done_keys
         and task.deadline < datetime.now()
+    )
+
+
+def is_archived(task: Task, done_keys: set[str]) -> bool:
+    """Arxivlangan: "yakuniy" ustunda ARCHIVE_AFTER_HOURS soatdan ortiq turgan."""
+    return (
+        task.status in done_keys
+        and task.done_at is not None
+        and task.done_at < datetime.now() - timedelta(hours=ARCHIVE_AFTER_HOURS)
     )

@@ -38,3 +38,5 @@ class Task(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, onupdate=datetime.now
     )
+    # "Yakuniy" ustunga o'tgan vaqt — shundan 24 soat o'tgach vazifa arxivga ko'chadi
+    done_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)

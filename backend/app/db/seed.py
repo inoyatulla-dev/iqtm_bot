@@ -84,6 +84,7 @@ async def init_models() -> None:
             "ALTER TABLE projects ADD COLUMN deadline DATE",
             "ALTER TABLE users ADD COLUMN login VARCHAR(32)",
             "ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)",
+            "ALTER TABLE tasks ADD COLUMN done_at DATETIME",
         ]:
             try:
                 await conn.exec_driver_sql(stmt)
@@ -92,6 +93,16 @@ async def init_models() -> None:
         try:
             await conn.exec_driver_sql(
                 "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_login ON users(login)"
+            )
+        except Exception:
+            pass
+        # done_at endi qo'shildi — allaqachon "yakuniy" ustundagi eski vazifalar uchun
+        # updated_at asosida bir martalik to'ldirish (aks holda hech qachon arxivlanmaydi)
+        try:
+            await conn.exec_driver_sql(
+                "UPDATE tasks SET done_at = updated_at "
+                "WHERE done_at IS NULL "
+                "AND status IN (SELECT key FROM board_columns WHERE is_done = 1)"
             )
         except Exception:
             pass

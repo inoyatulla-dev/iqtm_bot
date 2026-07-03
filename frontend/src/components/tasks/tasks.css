@@ -137,6 +137,15 @@ select.filter-control { padding-right: 8px; }
   gap: 5px;
   margin-left: auto;
 }
+.sort-dir-btn {
+  width: auto;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  font-size: 13px;
+}
 
 /* Kalendar popover (Davr) */
 .date-filter { position: relative; }
