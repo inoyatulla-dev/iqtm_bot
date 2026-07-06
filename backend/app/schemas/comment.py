@@ -10,6 +10,7 @@ class CommentOut(BaseModel):
     task_id: int
     user_id: int
     user_name: str = "—"          # _comment_out() to'ldiradi
+    user_photo: str | None = None  # _comment_out() to'ldiradi
     text: str
     target_user_id: int | None = None
     target_name: str | None = None  # _comment_out() to'ldiradi

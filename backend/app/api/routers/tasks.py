@@ -113,9 +113,9 @@ async def list_comments(task_id: int, user: CurrentUser, session: SessionDep):
     )
     comments = list(result.scalars().all())
     ids = {c.user_id for c in comments} | {c.target_user_id for c in comments if c.target_user_id}
-    names = await _author_names(session, ids)
+    info = await _author_info(session, ids)
     texts = {c.id: c.text for c in comments}
-    return [_comment_out(c, names, texts) for c in comments]
+    return [_comment_out(c, info, texts) for c in comments]
 
 
 @router.post(
@@ -142,9 +142,9 @@ async def add_comment(
     session.add(comment)
     await session.flush()
     await task_service.notify_comment(session, task, user, text, body.target_user_id)
-    names = await _author_names(session, {user.id, body.target_user_id} - {None})
+    info = await _author_info(session, {user.id, body.target_user_id} - {None})
     texts = {body.parent_id: parent_text} if body.parent_id else {}
-    return _comment_out(comment, names, texts)
+    return _comment_out(comment, info, texts)
 
 
 # ── Biriktirmalar (fayllar) ──────────────────────────────
@@ -347,12 +347,17 @@ async def _author_info(
 
 
 def _comment_out(
-    comment: Comment, names: dict[int, str], texts: dict[int, str] | None = None
+    comment: Comment,
+    info: dict[int, tuple[str, str | None, str | None]],
+    texts: dict[int, str] | None = None,
 ) -> CommentOut:
     out = CommentOut.model_validate(comment)
-    out.user_name = names.get(comment.user_id, "—")
+    author = info.get(comment.user_id)
+    out.user_name = author[0] if author else "—"
+    out.user_photo = author[1] if author else None
     if comment.target_user_id:
-        out.target_name = names.get(comment.target_user_id)
+        target = info.get(comment.target_user_id)
+        out.target_name = target[0] if target else None
     if comment.parent_id and texts:
         rt = texts.get(comment.parent_id, "")
         out.reply_to = (rt[:60] + "…") if len(rt) > 60 else rt

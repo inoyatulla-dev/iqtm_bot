@@ -78,6 +78,7 @@ export interface Comment {
   task_id: number;
   user_id: number;
   user_name: string;
+  user_photo?: string | null;
   text: string;
   target_user_id?: number | null;
   target_name?: string | null;

@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertTriangle, Clock, CornerUpLeft, FolderKanban, Image, Paperclip, Pencil, X,
+  AlertTriangle, Check, ChevronDown, Clock, CornerUpLeft, Download, FolderKanban,
+  Image, Paperclip, Pencil, Trash2, UploadCloud, X,
 } from "lucide-react";
 import { attachmentsApi, commentsApi, projectsApi, tasksApi, usersApi } from "../api/client";
 import type { Attachment, BoardColumn, Comment, Project, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
-import { Sheet, ActionRow } from "../components/Sheet";
+import { Sheet } from "../components/Sheet";
 import { EmojiIcon } from "../utils/emojiIcon";
 import { formatDateTime } from "../utils/datetime";
 import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
 import { ClockPicker } from "../components/tasks/ClockPicker";
 import { ProjectPicker } from "../components/tasks/ProjectPicker";
 import { AssigneePicker } from "../components/tasks/AssigneePicker";
-import { AvatarStack, StatusPill } from "../components/tasks/parts";
+import { Avatar, AvatarStack, StatusPill } from "../components/tasks/parts";
 
 interface Props {
   task: Task | null; // null = yangi
@@ -68,9 +69,11 @@ export function TaskForm({
   // ── Biriktirmalar ──
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [viewImage, setViewImage] = useState<{ name: string; src: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isBoss) usersApi.list("active").then(setWorkers);
@@ -90,6 +93,22 @@ export function TaskForm({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!statusOpen) return;
+    function onDoc(e: MouseEvent) {
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) setStatusOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setStatusOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [statusOpen]);
 
   useEffect(() => {
     if (task) {
@@ -218,9 +237,8 @@ export function TaskForm({
     }
   }
 
-  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!task || !file) return;
+  async function uploadFile(file: File) {
+    if (!task) return;
     setUploading(true);
     setErr("");
     try {
@@ -230,8 +248,20 @@ export function TaskForm({
       setErr(e?.response?.data?.detail || t("common.error"));
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
+  }
+
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
+    e.target.value = "";
+  }
+
+  function onDropFile(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadFile(file);
   }
 
   async function removeAttachment(a: Attachment) {
@@ -266,43 +296,137 @@ export function TaskForm({
     setViewImage(null);
   }
 
+  const currentColumn = columns.find((c) => c.key === task?.status);
+
+  const sheetTitle =
+    mode === "view" && task ? (
+      <span className="task-view__title-row">
+        <span className="task-view__title-text">{task.name}</span>
+        <span className="task-view__id-badge">#{task.id}</span>
+      </span>
+    ) : task ? (
+      `#${task.id}`
+    ) : (
+      t("task.new")
+    );
+
+  const sheetSubtitle =
+    mode === "view" && task ? (
+      <span className="task-view__subtitle-row">
+        {task.project_name && (
+          <span className="chip chip--dep">
+            <FolderKanban size={12} /> {task.project_name}
+          </span>
+        )}
+        {dep && (
+          <span className="chip chip--dep">
+            <span className="dep-dot" style={{ background: dep.color }} />
+            {dep.name}
+          </span>
+        )}
+        {task.deadline && (
+          <span className={`chip${task.is_overdue ? " chip--overdue" : ""}`}>
+            {task.is_overdue ? <AlertTriangle size={12} /> : <Clock size={12} />}
+            {formatDeadlineDate(task.deadline)} · {formatCountdown(task.deadline, lang)}
+          </span>
+        )}
+      </span>
+    ) : task?.project_name ? (
+      <><FolderKanban size={14} /> {task.project_name}</>
+    ) : undefined;
+
+  const stickyAction =
+    mode === "view" && task && canEdit ? (
+      <button className="btn btn--primary task-view__edit-btn" onClick={() => setMode("edit")}>
+        <Pencil size={16} /> {t("task.edit")}
+      </button>
+    ) : undefined;
+
   return (
     <Sheet
-      title={task ? `#${task.id}` : t("task.new")}
-      subtitle={task?.project_name ? <><FolderKanban size={14} /> {task.project_name}</> : undefined}
+      title={sheetTitle}
+      subtitle={sheetSubtitle}
+      stickyAction={stickyAction}
       onClose={onClose}
     >
       {mode === "view" && task && (
-        <div className="sheet__pad task-view">
-          <div className="task-view__name">{task.name}</div>
-          {task.description && <p className="task-view__desc">{task.description}</p>}
-          <div className="task-view__meta">
-            {dep && (
-              <span className="chip chip--dep">
-                <span className="dep-dot" style={{ background: dep.color }} />
-                {dep.name}
-              </span>
-            )}
-            {task.deadline && (
-              <span className={`chip${task.is_overdue ? " chip--overdue" : ""}`}>
-                {task.is_overdue ? <AlertTriangle size={12} /> : <Clock size={12} />}{" "}
-                {formatDeadlineDate(task.deadline)} · {formatCountdown(task.deadline, lang)}
-              </span>
-            )}
-          </div>
-          <div className="field">
-            <label>{t("task.assignees")}</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <AvatarStack people={assigneePeople} size={30} />
-              <span style={{ fontSize: 13, color: "var(--hint)" }}>
+        <div className="task-view">
+          {task.description && (
+            <div className="task-view__card">
+              <p className="task-view__desc">{task.description}</p>
+            </div>
+          )}
+
+          <div className="task-view__card">
+            <div className="task-view__card-label">{t("task.assignees")}</div>
+            <div className="task-view__assignees">
+              <AvatarStack people={assigneePeople} size={36} max={5} />
+              <span className="task-view__assignee-names">
                 {assigneePeople.map((p) => p.name).join(", ") || t("task.unassigned")}
               </span>
             </div>
           </div>
-          {canEdit && (
-            <button className="btn btn--ghost" onClick={() => setMode("edit")}>
-              <Pencil size={15} /> {t("task.edit")}
-            </button>
+
+          {canChangeStatus && (
+            <div className="task-view__card" ref={statusRef}>
+              <div className="task-view__card-label">{t("task.statusSection")}</div>
+              <div className="status-dd">
+                <button
+                  type="button"
+                  className="status-dd__trigger"
+                  aria-haspopup="listbox"
+                  aria-expanded={statusOpen}
+                  onClick={() => setStatusOpen((v) => !v)}
+                >
+                  <StatusPill column={currentColumn} />
+                  <span className="status-dd__hint">{t("task.changeStatus")}</span>
+                  <ChevronDown size={16} className={`status-dd__chev${statusOpen ? " open" : ""}`} />
+                </button>
+                {statusOpen && (
+                  <div className="status-dd__menu">
+                    {targetColumns.map((col) => (
+                      <button
+                        key={col.key}
+                        className={`status-dd__item${task.status === col.key ? " active" : ""}`}
+                        onClick={() => {
+                          changeStatus(col);
+                          if (!col.is_done) setStatusOpen(false);
+                        }}
+                      >
+                        <EmojiIcon emoji={col.emoji} color={col.color} size={18} />
+                        <span>{col.name}</span>
+                        {task.status === col.key && <Check size={16} className="status-dd__check" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {pendingDone && (
+                <div className="task-view__done-confirm">
+                  <div style={{ fontWeight: 600 }}>{t("task.confirmDoneTitle")}</div>
+                  <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
+                    {t("task.confirmDoneHint")}
+                  </p>
+                  <textarea
+                    value={doneComment}
+                    placeholder={t("comment.placeholder")}
+                    onChange={(e) => setDoneComment(e.target.value)}
+                  />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => setPendingDone(null)}
+                      disabled={statusBusy}
+                    >
+                      {t("common.cancel")}
+                    </button>
+                    <button className="btn btn--primary" onClick={confirmDone} disabled={statusBusy}>
+                      {t("task.confirmDoneBtn")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -424,101 +548,65 @@ export function TaskForm({
         </div>
       )}
 
-      {mode === "view" && task && canChangeStatus && (
-        <>
-          <div className="section-title">{t("task.statusSection")}</div>
-          <div className="sheet__pad task-view__status-row">
-            <StatusPill column={columns.find((c) => c.key === task.status)} />
-            <button className="btn btn--ghost btn--sm" onClick={() => setStatusOpen((v) => !v)}>
-              {t("task.changeStatus")}
-            </button>
-          </div>
-          {statusOpen && (
-            <div style={{ borderTop: "1px solid var(--line)" }}>
-              {targetColumns.map((col) => (
-                <ActionRow
-                  key={col.key}
-                  icon={<EmojiIcon emoji={col.emoji} color={col.color} size={20} />}
-                  label={col.name}
-                  checked={task.status === col.key}
-                  onClick={() => {
-                    changeStatus(col);
-                    if (!col.is_done) setStatusOpen(false);
-                  }}
-                />
-              ))}
-            </div>
-          )}
-          {pendingDone && (
-            <div className="sheet__pad">
-              <div style={{ fontWeight: 600 }}>{t("task.confirmDoneTitle")}</div>
-              <p style={{ color: "var(--hint)", fontSize: 13, margin: 0 }}>
-                {t("task.confirmDoneHint")}
-              </p>
-              <textarea
-                value={doneComment}
-                placeholder={t("comment.placeholder")}
-                onChange={(e) => setDoneComment(e.target.value)}
-              />
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  className="btn btn--ghost"
-                  onClick={() => setPendingDone(null)}
-                  disabled={statusBusy}
-                >
-                  {t("common.cancel")}
-                </button>
-                <button className="btn btn--primary" onClick={confirmDone} disabled={statusBusy}>
-                  {t("task.confirmDoneBtn")}
-                </button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
       {mode === "view" && task && (
         <>
           <div className="section-title">{t("task.attachments")}</div>
           <div className="sheet__pad">
-            <div className="attachment-list">
+            <div className="file-cards">
               {attachments.length === 0 && (
                 <div className="comment-empty">{t("task.attachmentEmpty")}</div>
               )}
               {attachments.map((a) => {
                 const isImage = a.mime_type?.startsWith("image/");
                 return (
-                  <div className="attachment" key={a.id}>
-                    {isImage ? (
+                  <div className="file-card" key={a.id}>
+                    <div
+                      className="file-card__thumb"
+                      onClick={isImage ? () => openImage(a) : undefined}
+                      style={{ cursor: isImage ? "pointer" : "default" }}
+                    >
+                      {isImage && a.url ? (
+                        <img src={a.url} alt={a.file_name} />
+                      ) : isImage ? (
+                        <Image size={20} />
+                      ) : (
+                        <Paperclip size={20} />
+                      )}
+                    </div>
+                    <div className="file-card__body">
+                      <div className="file-card__name">{a.file_name}</div>
+                      <div className="file-card__meta">
+                        {formatFileSize(a.size)}
+                        {a.created_at && <> · {formatDeadlineDate(a.created_at)}</>}
+                      </div>
+                    </div>
+                    <div className="file-card__actions">
+                      {isImage && (
+                        <button
+                          className="file-card__icon-btn"
+                          aria-label={t("task.filePreview")}
+                          onClick={() => openImage(a)}
+                        >
+                          <Image size={15} />
+                        </button>
+                      )}
                       <button
-                        className="attachment__name attachment__link"
-                        onClick={() => openImage(a)}
-                      >
-                        <Image size={14} style={{ verticalAlign: "middle", marginRight: 4 }} /> {a.file_name}
-                      </button>
-                    ) : a.url ? (
-                      <a
-                        className="attachment__name"
-                        href={a.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <Paperclip size={14} style={{ verticalAlign: "middle", marginRight: 4 }} /> {a.file_name}
-                      </a>
-                    ) : (
-                      <button
-                        className="attachment__name attachment__link"
+                        className="file-card__icon-btn"
+                        aria-label={t("task.fileDownload")}
                         onClick={() => downloadAttachment(a)}
                       >
-                        <Paperclip size={14} style={{ verticalAlign: "middle", marginRight: 4 }} /> {a.file_name}
+                        <Download size={15} />
                       </button>
-                    )}
-                    <span className="attachment__size">{formatFileSize(a.size)}</span>
-                    {(isBoss || a.uploaded_by === user?.id) && (
-                      <button className="attachment__remove" onClick={() => removeAttachment(a)}>
-                        <X size={14} />
-                      </button>
-                    )}
+                      {(isBoss || a.uploaded_by === user?.id) && (
+                        <button
+                          className="file-card__icon-btn file-card__icon-btn--danger"
+                          aria-label={t("task.attachmentDelete")}
+                          onClick={() => removeAttachment(a)}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -539,13 +627,25 @@ export function TaskForm({
                   style={{ display: "none" }}
                   onChange={onFileChange}
                 />
+                <div
+                  className={`dropzone${dragOver ? " dragover" : ""}`}
+                  onClick={() => fileRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={onDropFile}
+                >
+                  <UploadCloud size={22} />
+                  <span>
+                    {uploading ? t("task.attachmentUploading") : t("task.dropzoneHint")}
+                  </span>
+                </div>
                 <div className="report-row">
                   <button
                     className="btn btn--ghost"
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading}
                   >
-                    {uploading ? t("task.attachmentUploading") : t("task.attachmentUpload")}
+                    {t("task.attachmentUpload")}
                   </button>
                   <button
                     className="btn btn--ghost"
@@ -563,71 +663,39 @@ export function TaskForm({
           <>
           <div className="section-title">{t("comment.title")}</div>
           <div className="sheet__pad">
-            <div className="comment-list">
+            <div className="chat">
               {comments.length === 0 && <div className="comment-empty">{t("comment.empty")}</div>}
               {comments.map((c) => (
-                <div className="comment" key={c.id}>
-                  <div className="comment__head">
-                    <span className="comment__author">
-                      {c.user_name}
-                      {c.target_name ? ` → ${c.target_name}` : ""}
-                    </span>
-                    <span>{formatDateTime(c.created_at, timezone)}</span>
-                  </div>
-                  {c.reply_to && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 12,
-                        color: "var(--hint)",
-                        borderLeft: "2px solid var(--line)",
-                        paddingLeft: 8,
-                        margin: "2px 0",
-                      }}
-                    >
-                      <CornerUpLeft size={12} /> {c.reply_to}
+                <div className="chat__msg" key={c.id}>
+                  <Avatar name={c.user_name} photo={c.user_photo} size={32} />
+                  <div className="chat__bubble">
+                    <div className="chat__bubble-head">
+                      <span className="chat__author">
+                        {c.user_name}
+                        {c.target_name ? ` → ${c.target_name}` : ""}
+                      </span>
+                      <span className="chat__time">{formatDateTime(c.created_at, timezone)}</span>
                     </div>
-                  )}
-                  <div className="comment__text">{c.text}</div>
-                  <button
-                    onClick={() => setReplyTo(c)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--accent)",
-                      fontSize: 12,
-                      cursor: "pointer",
-                      padding: "2px 0",
-                    }}
-                  >
-                    {t("comment.reply")}
-                  </button>
+                    {c.reply_to && (
+                      <div className="chat__reply-quote">
+                        <CornerUpLeft size={12} /> {c.reply_to}
+                      </div>
+                    )}
+                    <div className="chat__text">{c.text}</div>
+                    <button className="chat__reply-btn" onClick={() => setReplyTo(c)}>
+                      {t("comment.reply")}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
 
             {replyTo && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: "var(--secondary-bg)",
-                  borderRadius: 8,
-                  padding: "6px 10px",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--hint)" }}>
+              <div className="chat__replying">
+                <span>
                   <CornerUpLeft size={14} /> {replyTo.user_name}: {replyTo.text.slice(0, 40)}
                 </span>
-                <button
-                  onClick={() => setReplyTo(null)}
-                  style={{ display: "flex", alignItems: "center", background: "none", border: "none", color: "var(--hint)", cursor: "pointer" }}
-                >
+                <button onClick={() => setReplyTo(null)} aria-label={t("common.cancel")}>
                   <X size={14} />
                 </button>
               </div>

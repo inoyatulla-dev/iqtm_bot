@@ -2,13 +2,15 @@ import type { ReactNode } from "react";
 import { Check, X } from "lucide-react";
 
 interface SheetProps {
-  title?: string;
+  title?: ReactNode;
   subtitle?: ReactNode;
+  /** Sarlavha ostida, skroll qilinganda ham ko'rinib turadigan asosiy amal (masalan "Tahrirlash") */
+  stickyAction?: ReactNode;
   onClose: () => void;
   children: ReactNode;
 }
 
-export function Sheet({ title, subtitle, onClose, children }: SheetProps) {
+export function Sheet({ title, subtitle, stickyAction, onClose, children }: SheetProps) {
   return (
     <div className="sheet-overlay">
       <div className="sheet">
@@ -17,13 +19,14 @@ export function Sheet({ title, subtitle, onClose, children }: SheetProps) {
           <button className="sheet__close" onClick={onClose} aria-label="Yopish">
             <X size={16} />
           </button>
+          {title && (
+            <div className="sheet__title">
+              {title}
+              {subtitle && <div className="sheet__subtitle">{subtitle}</div>}
+            </div>
+          )}
+          {stickyAction && <div className="sheet__sticky-action">{stickyAction}</div>}
         </div>
-        {title && (
-          <div className="sheet__title">
-            {title}
-            {subtitle && <div className="sheet__subtitle">{subtitle}</div>}
-          </div>
-        )}
         {children}
       </div>
     </div>

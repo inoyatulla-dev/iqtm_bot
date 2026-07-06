@@ -382,28 +382,174 @@ body {
 }
 
 /* ── Vazifa ko'rish rejimi (TaskForm view mode) ──────── */
-.task-view__name {
-  font-size: 18px;
+
+/* Sarlavha: nom + #ID badge, subtitle chip qatori */
+.task-view__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.task-view__title-text {
+  font-size: 19px;
   font-weight: 700;
   color: var(--text);
 }
-.task-view__desc {
-  margin: 8px 0 0;
+.task-view__id-badge {
+  font-size: 12px;
+  font-weight: 600;
   color: var(--hint);
-  font-size: 14px;
-  white-space: pre-wrap;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 2px 8px;
 }
-.task-view__meta {
+.task-view__subtitle-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 12px;
+  margin-top: 4px;
 }
-.task-view__status-row {
+
+/* Skroll qilinganda ham ko'rinib turadigan "Tahrirlash" tugmasi */
+.task-view__edit-btn {
+  width: 100%;
+}
+
+/* Bo'lim (card) tuzilmasi */
+.task-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px 4px;
+}
+.task-view__card {
+  background: var(--secondary-bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.task-view__card-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--hint);
+  margin-bottom: 8px;
+}
+.task-view__desc {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+/* Biriktirilgan xodimlar */
+.task-view__assignees {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-top: 0;
+  gap: 12px;
+}
+.task-view__assignee-names {
+  font-size: 13px;
+  color: var(--hint);
+}
+
+/* Status — dropdown */
+.status-dd {
+  position: relative;
+}
+.status-dd__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--text);
+  min-height: 44px;
+  transition: border-color 0.15s ease;
+}
+.status-dd__trigger:hover {
+  border-color: var(--accent);
+}
+.status-dd__hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--hint);
+}
+.status-dd__chev {
+  color: var(--hint);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.status-dd__chev.open {
+  transform: rotate(180deg);
+}
+.status-dd__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  animation: dropdownIn 0.2s ease;
+}
+.status-dd__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.status-dd__item:hover {
+  background: var(--surface);
+}
+.status-dd__item.active {
+  background: rgba(59, 130, 246, 0.14);
+  font-weight: 600;
+}
+.status-dd__check {
+  margin-left: auto;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.task-view__done-confirm {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* ── FAB ────────────────────────────────────────────── */
@@ -453,8 +599,6 @@ body {
   position: sticky;
   top: 0;
   z-index: 5;
-  display: flex;
-  justify-content: center;
   background: var(--bg);
   border-radius: 20px 20px 0 0;
 }
@@ -501,6 +645,11 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sheet__sticky-action {
+  padding: 0 20px 12px;
 }
 
 /* Tugmali qatorlar (raqam yozish o'rniga) */
@@ -1328,39 +1477,7 @@ body {
   }
 }
 
-/* ── Izohlar ────────────────────────────────────────── */
-.comment-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-
-.comment {
-  background: var(--bg);
-  border-radius: 14px;
-  padding: 10px 14px;
-}
-
-.comment__head {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--hint);
-  margin-bottom: 4px;
-}
-
-.comment__author {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.comment__text {
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
+/* ── Izohlar (chat) ─────────────────────────────────── */
 .comment-empty {
   color: var(--hint);
   font-size: 13px;
@@ -1368,66 +1485,224 @@ body {
   padding: 10px 0;
 }
 
-/* ── Biriktirmalar ──────────────────────────────────── */
-.attachment-list {
+.chat {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 10px;
 }
 
-.attachment {
+.chat__msg {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+}
+
+.chat__bubble {
+  flex: 1;
+  min-width: 0;
   background: var(--bg);
-  border-radius: 12px;
+  border-radius: 14px;
+  border-top-left-radius: 4px;
   padding: 8px 12px;
 }
 
-.attachment__name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px;
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.attachment__link {
-  background: none;
-  border: none;
-  padding: 0;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.attachment__size {
+.chat__bubble-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 12px;
   color: var(--hint);
-  flex: 0 0 auto;
+  margin-bottom: 3px;
 }
 
-.attachment__remove {
-  background: none;
-  border: none;
-  color: var(--danger);
-  font-size: 14px;
-  cursor: pointer;
-  padding: 2px 4px;
-  flex: 0 0 auto;
+.chat__author {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chat__time {
+  flex-shrink: 0;
+}
+
+.chat__reply-quote {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--hint);
+  border-left: 2px solid var(--line);
+  padding-left: 8px;
+  margin: 2px 0;
+}
+
+.chat__text {
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat__reply-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0 0;
+}
+
+.chat__replying {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--secondary-bg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.chat__replying span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--hint);
+}
+
+.chat__replying button {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--hint);
+  cursor: pointer;
 }
 
 .comment-input {
   display: flex;
   gap: 8px;
   align-items: flex-end;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  padding-top: 8px;
+  padding-bottom: max(4px, env(safe-area-inset-bottom));
+}
+
+/* ── Fayl kartalari ─────────────────────────────────── */
+.file-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 10px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.file-card:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.file-card__thumb {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--secondary-bg);
+  color: var(--hint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-card__name {
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-card__meta {
+  font-size: 12px;
+  color: var(--hint);
+}
+
+.file-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.file-card__icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--hint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.file-card__icon-btn:hover {
+  background: var(--secondary-bg);
+  color: var(--text);
+}
+
+.file-card__icon-btn--danger:hover {
+  color: var(--danger);
+}
+
+/* ── Yuklash dropzone ───────────────────────────────── */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  border: 1.5px dashed var(--line);
+  border-radius: 14px;
+  padding: 20px 16px;
+  color: var(--hint);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  margin-bottom: 8px;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.06);
+  color: var(--accent);
 }
 
 /* ── Rasm ko'rish (in-app image viewer) ─────────────── */
@@ -1750,7 +2025,7 @@ body {
   }
 
   .sheet {
-    width: 520px;
+    width: 580px;
     max-width: calc(100vw - 280px);
     border-radius: 20px;
     max-height: 88vh;
@@ -1783,7 +2058,7 @@ body {
   }
 
   .sheet {
-    width: 560px;
+    width: 640px;
   }
 }
 
@@ -1814,7 +2089,7 @@ body {
   }
 
   .sheet {
-    width: 620px;
+    width: 720px;
   }
 }
 
