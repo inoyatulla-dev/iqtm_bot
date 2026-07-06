@@ -47,8 +47,8 @@ export function ClockPicker({ value, onCancel, onConfirm }: Props) {
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="clock-overlay" onClick={onCancel}>
-      <div className="clock-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="clock-overlay">
+      <div className="clock-modal">
         <div className="clock-modal__head">
           <div className="clock-modal__time">
             <span
