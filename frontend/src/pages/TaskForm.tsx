@@ -351,6 +351,7 @@ export function TaskForm({
     >
       {mode === "view" && task && (
         <div className="task-view">
+          {err && <div className="form-error">{err}</div>}
           {task.description && (
             <div className="task-view__card">
               <p className="task-view__desc">{task.description}</p>
