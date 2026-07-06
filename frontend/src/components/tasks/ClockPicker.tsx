@@ -10,13 +10,16 @@ interface Props {
 const R = 88; // radiusi (clock-face 220px, markaz 110)
 const CENTER = 110;
 
-/** Analog soat picker — avval soat, keyin daqiqa tanlanadi. */
+/** Analog soat picker — avval soat, keyin daqiqa tanlanadi (12 soatlik + AM/PM). */
 export function ClockPicker({ value, onCancel, onConfirm }: Props) {
   const init = /^\d{1,2}:\d{2}$/.test(value) ? value : "09:00";
   const [h, m] = init.split(":").map(Number);
-  const [hour, setHour] = useState(h);
+  const [hour, setHour] = useState(h); // 24 soatlik format (0-23) — saqlanadigan qiymat
   const [minute, setMinute] = useState(m);
   const [stage, setStage] = useState<"hour" | "minute">("hour");
+
+  const period: "AM" | "PM" = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
 
   const nums = stage === "hour"
     ? Array.from({ length: 12 }, (_, i) => i + 1) // 1..12
@@ -24,17 +27,21 @@ export function ClockPicker({ value, onCancel, onConfirm }: Props) {
 
   function pick(n: number) {
     if (stage === "hour") {
-      setHour(n === 12 ? 12 : n);
+      setHour(period === "AM" ? (n === 12 ? 0 : n) : (n === 12 ? 12 : n + 12));
       setStage("minute");
     } else {
       setMinute(n);
     }
   }
 
+  function pickPeriod(p: "AM" | "PM") {
+    if (p === period) return;
+    setHour((prev) => (p === "PM" ? prev + 12 : prev - 12));
+  }
+
   // Tanlangan qiymatning strelka burchagini hisoblash
-  const activeVal = stage === "hour" ? (hour === 0 ? 12 : hour) : minute;
   const activeIdx = stage === "hour"
-    ? (hour % 12 === 0 ? 11 : hour % 12 - 1)
+    ? (displayHour === 12 ? 11 : displayHour - 1)
     : Math.round(minute / 5) % 12;
 
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -43,19 +50,37 @@ export function ClockPicker({ value, onCancel, onConfirm }: Props) {
     <div className="clock-overlay" onClick={onCancel}>
       <div className="clock-modal" onClick={(e) => e.stopPropagation()}>
         <div className="clock-modal__head">
-          <span
-            className={`clock-modal__seg${stage === "hour" ? " active" : ""}`}
-            onClick={() => setStage("hour")}
-          >
-            {pad(hour)}
-          </span>
-          <span> : </span>
-          <span
-            className={`clock-modal__seg${stage === "minute" ? " active" : ""}`}
-            onClick={() => setStage("minute")}
-          >
-            {pad(minute)}
-          </span>
+          <div className="clock-modal__time">
+            <span
+              className={`clock-modal__seg${stage === "hour" ? " active" : ""}`}
+              onClick={() => setStage("hour")}
+            >
+              {pad(displayHour)}
+            </span>
+            <span> : </span>
+            <span
+              className={`clock-modal__seg${stage === "minute" ? " active" : ""}`}
+              onClick={() => setStage("minute")}
+            >
+              {pad(minute)}
+            </span>
+          </div>
+          <div className="clock-modal__ampm">
+            <button
+              type="button"
+              className={`clock-modal__ampm-btn${period === "AM" ? " active" : ""}`}
+              onClick={() => pickPeriod("AM")}
+            >
+              AM
+            </button>
+            <button
+              type="button"
+              className={`clock-modal__ampm-btn${period === "PM" ? " active" : ""}`}
+              onClick={() => pickPeriod("PM")}
+            >
+              PM
+            </button>
+          </div>
         </div>
         <div className="clock-modal__label">
           {stage === "hour" ? "Soatni tanlang" : "Daqiqani tanlang"}
@@ -69,7 +94,7 @@ export function ClockPicker({ value, onCancel, onConfirm }: Props) {
             const x = CENTER + R * Math.cos(angle);
             const y = CENTER + R * Math.sin(angle);
             const isActive = stage === "hour"
-              ? (hour % 12 === n % 12)
+              ? (displayHour === n)
               : (minute === n);
             return (
               <div

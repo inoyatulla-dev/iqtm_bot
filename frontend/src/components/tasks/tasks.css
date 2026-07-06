@@ -541,14 +541,40 @@ select.filter-control { padding-right: 8px; }
 .clock-modal__head {
   background: var(--accent);
   color: var(--accent-text);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
   padding: 22px 0 18px;
+}
+.clock-modal__time {
   font-size: 44px;
   font-weight: 800;
   letter-spacing: 2px;
 }
 .clock-modal__seg { cursor: pointer; opacity: 0.5; }
 .clock-modal__seg.active { opacity: 1; }
+.clock-modal__ampm {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.clock-modal__ampm-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 9px;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.clock-modal__ampm-btn.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.22);
+}
 .clock-modal__label {
   text-align: center;
   color: var(--hint);
