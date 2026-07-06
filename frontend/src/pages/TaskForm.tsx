@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock, CornerUpLeft, FolderKanban, Image, Paperclip, X } from "lucide-react";
+import {
+  AlertTriangle, Clock, CornerUpLeft, FolderKanban, Image, Paperclip, Pencil, X,
+} from "lucide-react";
 import { attachmentsApi, commentsApi, projectsApi, tasksApi, usersApi } from "../api/client";
 import type { Attachment, BoardColumn, Comment, Project, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
@@ -7,9 +9,11 @@ import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { EmojiIcon } from "../utils/emojiIcon";
 import { formatDateTime } from "../utils/datetime";
+import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
 import { ClockPicker } from "../components/tasks/ClockPicker";
 import { ProjectPicker } from "../components/tasks/ProjectPicker";
 import { AssigneePicker } from "../components/tasks/AssigneePicker";
+import { AvatarStack, StatusPill } from "../components/tasks/parts";
 
 interface Props {
   task: Task | null; // null = yangi
@@ -26,7 +30,9 @@ export function TaskForm({
   task, isBoss, isObserver, autoConfirmDone, onClose, onSaved, onStatusChanged,
 }: Props) {
   const { deps, columns, user, timezone } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [mode, setMode] = useState<"view" | "edit">(task ? "view" : "edit");
+  const [statusOpen, setStatusOpen] = useState(false);
   const [name, setName] = useState(task?.name || "");
   const [desc, setDesc] = useState(task?.description || "");
   const [depId, setDepId] = useState(task?.dep_id || "");
@@ -97,8 +103,15 @@ export function TaskForm({
     !!task &&
     (isBoss ||
       task.masul_id === user?.id ||
+      !!task.assignees?.some((a) => a.id === user?.id) ||
       (task.type === "personal" && task.created_by === user?.id));
   const targetColumns = columns.filter((c) => isBoss || !c.is_done);
+  const dep = deps.find((d) => d.id === task?.dep_id);
+  const assigneePeople = task?.assignees?.length
+    ? task.assignees
+    : task?.masul_name
+      ? [{ name: task.masul_name, photo: task.masul_photo }]
+      : [];
 
   async function save() {
     if (name.trim().length < 3) {
@@ -173,6 +186,7 @@ export function TaskForm({
       const updated = await tasksApi.setStatus(task.id, pendingDone.key);
       onStatusChanged?.(updated);
       setPendingDone(null);
+      setStatusOpen(false);
     } catch (e: any) {
       setErr(e?.response?.data?.detail || t("common.error"));
     } finally {
@@ -258,130 +272,183 @@ export function TaskForm({
       subtitle={task?.project_name ? <><FolderKanban size={14} /> {task.project_name}</> : undefined}
       onClose={onClose}
     >
-      <div className="sheet__pad">
-        <div className="field">
-          <label>{t("task.name")}</label>
-          <input
-            value={name}
-            placeholder={t("task.namePh")}
-            disabled={!canEdit}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label>{t("task.desc")}</label>
-          <textarea
-            value={desc}
-            placeholder={t("task.descPh")}
-            disabled={!canEdit}
-            onChange={(e) => setDesc(e.target.value)}
-          />
-        </div>
-        {isBoss && (
-          <>
-            <div className="field">
-              <label>{t("task.dept")}</label>
-              <select value={depId} onChange={(e) => setDepId(e.target.value)}>
-                <option value="">{t("task.unassigned")}</option>
-                {deps.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>{t("task.masul")}</label>
-              <AssigneePicker
-                workers={workers}
-                value={assigneeIds}
-                onChange={setAssigneeIds}
-                disabled={!canEdit}
-              />
-            </div>
-          </>
-        )}
-        <div className="deadline-fields">
+      {mode === "view" && task && (
+        <div className="sheet__pad task-view">
+          <div className="task-view__name">{task.name}</div>
+          {task.description && <p className="task-view__desc">{task.description}</p>}
+          <div className="task-view__meta">
+            {dep && (
+              <span className="chip chip--dep">
+                <span className="dep-dot" style={{ background: dep.color }} />
+                {dep.name}
+              </span>
+            )}
+            {task.deadline && (
+              <span className={`chip${task.is_overdue ? " chip--overdue" : ""}`}>
+                {task.is_overdue ? <AlertTriangle size={12} /> : <Clock size={12} />}{" "}
+                {formatDeadlineDate(task.deadline)} · {formatCountdown(task.deadline, lang)}
+              </span>
+            )}
+          </div>
           <div className="field">
-            <label>{t("task.deadline")}</label>
+            <label>{t("task.assignees")}</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <AvatarStack people={assigneePeople} size={30} />
+              <span style={{ fontSize: 13, color: "var(--hint)" }}>
+                {assigneePeople.map((p) => p.name).join(", ") || t("task.unassigned")}
+              </span>
+            </div>
+          </div>
+          {canEdit && (
+            <button className="btn btn--ghost" onClick={() => setMode("edit")}>
+              <Pencil size={15} /> {t("task.edit")}
+            </button>
+          )}
+        </div>
+      )}
+
+      {mode === "edit" && (
+        <div className="sheet__pad">
+          <div className="field">
+            <label>{t("task.name")}</label>
             <input
-              type="date"
-              value={dueDate}
+              value={name}
+              placeholder={t("task.namePh")}
               disabled={!canEdit}
-              onChange={(e) => setDueDate(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="field">
-            <label>{t("task.time")}</label>
-            <button
-              type="button"
-              className="time-btn"
-              disabled={!canEdit || !dueDate}
-              onClick={() => setClockOpen(true)}
-            >
-              <Clock size={15} />
-              {dueTime || t("task.timePh")}
-              {dueTime && canEdit && (
-                <X
-                  size={14}
-                  className="time-btn__clear"
-                  onClick={(e) => { e.stopPropagation(); setDueTime(""); }}
-                />
-              )}
-            </button>
+            <label>{t("task.desc")}</label>
+            <textarea
+              value={desc}
+              placeholder={t("task.descPh")}
+              disabled={!canEdit}
+              onChange={(e) => setDesc(e.target.value)}
+            />
           </div>
+          {isBoss && (
+            <>
+              <div className="field">
+                <label>{t("task.dept")}</label>
+                <select value={depId} onChange={(e) => setDepId(e.target.value)}>
+                  <option value="">{t("task.unassigned")}</option>
+                  {deps.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>{t("task.masul")}</label>
+                <AssigneePicker
+                  workers={workers}
+                  value={assigneeIds}
+                  onChange={setAssigneeIds}
+                  disabled={!canEdit}
+                />
+              </div>
+            </>
+          )}
+          <div className="deadline-fields">
+            <div className="field">
+              <label>{t("task.deadline")}</label>
+              <input
+                type="date"
+                value={dueDate}
+                disabled={!canEdit}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>{t("task.time")}</label>
+              <button
+                type="button"
+                className="time-btn"
+                disabled={!canEdit || !dueDate}
+                onClick={() => setClockOpen(true)}
+              >
+                <Clock size={15} />
+                {dueTime || t("task.timePh")}
+                {dueTime && canEdit && (
+                  <X
+                    size={14}
+                    className="time-btn__clear"
+                    onClick={(e) => { e.stopPropagation(); setDueTime(""); }}
+                  />
+                )}
+              </button>
+            </div>
+          </div>
+          {clockOpen && (
+            <ClockPicker
+              value={dueTime}
+              onCancel={() => setClockOpen(false)}
+              onConfirm={(v) => { setDueTime(v); setClockOpen(false); }}
+            />
+          )}
+
+          <div className="field">
+            <label>{t("task.project")}</label>
+            <ProjectPicker
+              projects={projects}
+              value={projectId}
+              onChange={setProjectId}
+              disabled={!canEdit}
+            />
+          </div>
+
+          {err && <div className="form-error">{err}</div>}
+
+          {canEdit && (
+            <button className="btn btn--primary" onClick={save} disabled={saving}>
+              {saving ? t("task.saving") : t("common.save")}
+            </button>
+          )}
+          {task && (
+            <button className="btn btn--ghost" onClick={() => setMode("view")} disabled={saving}>
+              {t("common.cancel")}
+            </button>
+          )}
+          {task && canEdit && !confirmDel && (
+            <button className="btn btn--danger" onClick={() => setConfirmDel(true)}>
+              {t("task.delete")}
+            </button>
+          )}
+          {confirmDel && (
+            <button className="btn btn--danger" onClick={remove}>
+              {t("task.confirmDelete")}
+            </button>
+          )}
         </div>
-        {clockOpen && (
-          <ClockPicker
-            value={dueTime}
-            onCancel={() => setClockOpen(false)}
-            onConfirm={(v) => { setDueTime(v); setClockOpen(false); }}
-          />
-        )}
+      )}
 
-        <div className="field">
-          <label>{t("task.project")}</label>
-          <ProjectPicker
-            projects={projects}
-            value={projectId}
-            onChange={setProjectId}
-            disabled={!canEdit}
-          />
-        </div>
-
-        {err && <div className="form-error">{err}</div>}
-
-        {canEdit && (
-          <button className="btn btn--primary" onClick={save} disabled={saving}>
-            {saving ? t("task.saving") : t("common.save")}
-          </button>
-        )}
-        {task && canEdit && !confirmDel && (
-          <button className="btn btn--danger" onClick={() => setConfirmDel(true)}>
-            {t("task.delete")}
-          </button>
-        )}
-        {confirmDel && (
-          <button className="btn btn--danger" onClick={remove}>
-            {t("task.confirmDelete")}
-          </button>
-        )}
-      </div>
-
-      {task && canChangeStatus && (
+      {mode === "view" && task && canChangeStatus && (
         <>
           <div className="section-title">{t("task.statusSection")}</div>
-          <div style={{ borderTop: "1px solid var(--line)" }}>
-            {targetColumns.map((col) => (
-              <ActionRow
-                key={col.key}
-                icon={<EmojiIcon emoji={col.emoji} color={col.color} size={20} />}
-                label={col.name}
-                checked={task.status === col.key}
-                onClick={() => changeStatus(col)}
-              />
-            ))}
+          <div className="sheet__pad task-view__status-row">
+            <StatusPill column={columns.find((c) => c.key === task.status)} />
+            <button className="btn btn--ghost btn--sm" onClick={() => setStatusOpen((v) => !v)}>
+              {t("task.changeStatus")}
+            </button>
           </div>
+          {statusOpen && (
+            <div style={{ borderTop: "1px solid var(--line)" }}>
+              {targetColumns.map((col) => (
+                <ActionRow
+                  key={col.key}
+                  icon={<EmojiIcon emoji={col.emoji} color={col.color} size={20} />}
+                  label={col.name}
+                  checked={task.status === col.key}
+                  onClick={() => {
+                    changeStatus(col);
+                    if (!col.is_done) setStatusOpen(false);
+                  }}
+                />
+              ))}
+            </div>
+          )}
           {pendingDone && (
             <div className="sheet__pad">
               <div style={{ fontWeight: 600 }}>{t("task.confirmDoneTitle")}</div>
@@ -410,7 +477,7 @@ export function TaskForm({
         </>
       )}
 
-      {task && (
+      {mode === "view" && task && (
         <>
           <div className="section-title">{t("task.attachments")}</div>
           <div className="sheet__pad">

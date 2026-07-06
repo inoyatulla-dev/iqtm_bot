@@ -94,10 +94,13 @@ export function BoardPage() {
     [columns]
   );
 
-  // Filtr uchun xodimlar ro'yxati — vazifalardagi noyob mas'ullardan
+  // Filtr uchun xodimlar ro'yxati — vazifalardagi noyob mas'ul va biriktirilganlardan
   const employees = useMemo(() => {
     const map = new Map<number, string>();
-    for (const t of tasks) if (t.masul_id && t.masul_name) map.set(t.masul_id, t.masul_name);
+    for (const t of tasks) {
+      if (t.masul_id && t.masul_name) map.set(t.masul_id, t.masul_name);
+      for (const a of t.assignees || []) map.set(a.id, a.name);
+    }
     return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [tasks]);
 
@@ -137,7 +140,12 @@ export function BoardPage() {
 
   function matches(t: Task): boolean {
     if (!inRange(t)) return false;
-    if (empId !== "all" && String(t.masul_id) !== empId) return false;
+    if (
+      empId !== "all" &&
+      String(t.masul_id) !== empId &&
+      !t.assignees?.some((a) => String(a.id) === empId)
+    )
+      return false;
     if (statusKey !== "all" && t.status !== statusKey) return false;
     if (!matchesQuick(t)) return false;
     if (search.trim()) {

@@ -381,6 +381,31 @@ body {
   display: inline-block;
 }
 
+/* ── Vazifa ko'rish rejimi (TaskForm view mode) ──────── */
+.task-view__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.task-view__desc {
+  margin: 8px 0 0;
+  color: var(--hint);
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+.task-view__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.task-view__status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0;
+}
+
 /* ── FAB ────────────────────────────────────────────── */
 .fab {
   position: fixed;

@@ -31,7 +31,7 @@ async def list_tasks(user: CurrentUser, session: SessionDep):
 @router.get("/{task_id}", response_model=TaskOut)
 async def get_task(task_id: int, user: CurrentUser, session: SessionDep):
     task = await _get_or_404(session, task_id)
-    if not permissions.can_view_task(user, task):
+    if not permissions.can_view_task(user, task, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
     done_keys = await board_service.get_done_keys(session)
     return (await _to_out_batch(session, [task], done_keys))[0]
@@ -83,7 +83,7 @@ async def update_status(
     column = await board_service.get_column(session, body.status)
     if not column:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ustun topilmadi")
-    if not permissions.can_change_status(user, task, column):
+    if not permissions.can_change_status(user, task, column, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Holatni o'zgartirishga ruxsat yo'q")
     await task_service.change_status(session, task, column, user)
     done_keys = await board_service.get_done_keys(session)
@@ -106,7 +106,7 @@ async def delete_task(task_id: int, user: CurrentUser, session: SessionDep):
 @router.get("/{task_id}/comments", response_model=list[CommentOut])
 async def list_comments(task_id: int, user: CurrentUser, session: SessionDep):
     task = await _get_or_404(session, task_id)
-    if not permissions.can_view_task(user, task):
+    if not permissions.can_view_task(user, task, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
     result = await session.execute(
         select(Comment).where(Comment.task_id == task_id).order_by(Comment.created_at)
@@ -125,7 +125,7 @@ async def add_comment(
     task_id: int, body: CommentCreate, user: CurrentUser, session: SessionDep
 ):
     task = await _get_or_404(session, task_id)
-    if not permissions.can_view_task(user, task):
+    if not permissions.can_view_task(user, task, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
     text = body.text.strip()
     if not text:
@@ -151,7 +151,7 @@ async def add_comment(
 @router.get("/{task_id}/attachments", response_model=list[AttachmentOut])
 async def list_attachments(task_id: int, user: CurrentUser, session: SessionDep):
     task = await _get_or_404(session, task_id)
-    if not permissions.can_view_task(user, task):
+    if not permissions.can_view_task(user, task, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
     result = await session.execute(
         select(Attachment).where(Attachment.task_id == task_id).order_by(Attachment.created_at)
@@ -168,7 +168,7 @@ async def upload_attachment(
     task_id: int, user: CurrentUser, session: SessionDep, file: UploadFile = File(...)
 ):
     task = await _get_or_404(session, task_id)
-    if not permissions.can_view_task(user, task):
+    if not permissions.can_view_task(user, task, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
 
     max_mb = await settings_service.get_max_file_mb(session)
@@ -200,7 +200,7 @@ async def delete_attachment(
     task_id: int, attachment_id: int, user: CurrentUser, session: SessionDep
 ):
     task = await _get_or_404(session, task_id)
-    if not permissions.can_view_task(user, task):
+    if not permissions.can_view_task(user, task, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
     attachment = await session.get(Attachment, attachment_id)
     if not attachment or attachment.task_id != task_id:
@@ -219,7 +219,7 @@ async def download_attachment(
     """Faylni yuklab olish — mahalliy bo'lsa /uploads ga yo'naltiradi,
     arxivlangan bo'lsa Telegramdan oqim sifatida uzatadi."""
     task = await _get_or_404(session, task_id)
-    if not permissions.can_view_task(user, task):
+    if not permissions.can_view_task(user, task, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
     attachment = await session.get(Attachment, attachment_id)
     if not attachment or attachment.task_id != task_id:
@@ -245,6 +245,11 @@ async def _get_or_404(session: SessionDep, task_id: int) -> Task:
     task = await session.get(Task, task_id)
     if not task:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Vazifa topilmadi")
+    # Ruxsat tekshiruvlari uchun — barcha biriktirilgan xodimlar (faqat asosiy mas'ul emas)
+    result = await session.execute(
+        select(TaskAssignee.user_id).where(TaskAssignee.task_id == task_id)
+    )
+    task.assignee_ids = set(result.scalars().all())
     return task
 
 
