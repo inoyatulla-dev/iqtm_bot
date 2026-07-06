@@ -1,11 +1,13 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Clock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { projectsApi, tasksApi, usersApi } from "../api/client";
 import type { ProjectDetail, ProjectStatus, ProjectTaskCreate, Task, User } from "../api/types";
 import { useAuth } from "../store/auth";
 import { useI18n } from "../i18n";
 import { Sheet, ActionRow } from "../components/Sheet";
 import { TaskForm } from "./TaskForm";
+import { ClockPicker } from "../components/tasks/ClockPicker";
+import { AssigneePicker } from "../components/tasks/AssigneePicker";
 import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
 import { EmojiIcon } from "../utils/emojiIcon";
 
@@ -32,7 +34,10 @@ export function ProjectsPage() {
   const [editSaving, setEditSaving] = useState(false);
 
   const [taskName, setTaskName] = useState("");
-  const [taskMasul, setTaskMasul] = useState<number | "">("");
+  const [taskAssigneeIds, setTaskAssigneeIds] = useState<number[]>([]);
+  const [taskDueDate, setTaskDueDate] = useState("");
+  const [taskDueTime, setTaskDueTime] = useState("");
+  const [taskClockOpen, setTaskClockOpen] = useState(false);
   const [taskSaving, setTaskSaving] = useState(false);
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -54,7 +59,7 @@ export function ProjectsPage() {
 
   function ensureUsers() {
     if (isBoss && users.length === 0) {
-      usersApi.list().then(setUsers);
+      usersApi.list("active").then(setUsers);
     }
   }
 
@@ -119,7 +124,9 @@ export function ProjectsPage() {
 
   function openAddTask() {
     setTaskName("");
-    setTaskMasul("");
+    setTaskAssigneeIds([]);
+    setTaskDueDate("");
+    setTaskDueTime("");
     setView("addTask");
   }
 
@@ -129,7 +136,8 @@ export function ProjectsPage() {
     try {
       await tasksApi.create({
         name: taskName.trim(),
-        masul_id: taskMasul === "" ? null : taskMasul,
+        assignee_ids: taskAssigneeIds,
+        deadline: taskDueDate ? `${taskDueDate}T${taskDueTime || "00:00"}` : null,
         type: "standalone",
         project_id: sel.id,
       });
@@ -335,16 +343,44 @@ export function ProjectsPage() {
             </div>
             <div className="field">
               <label>{t("task.masul")}</label>
-              <select
-                value={taskMasul}
-                onChange={(e) => setTaskMasul(e.target.value ? Number(e.target.value) : "")}
-              >
-                <option value="">{t("projects.unassigned")}</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
+              <AssigneePicker workers={users} value={taskAssigneeIds} onChange={setTaskAssigneeIds} />
             </div>
+            <div className="deadline-fields">
+              <div className="field">
+                <label>{t("task.deadline")}</label>
+                <input
+                  type="date"
+                  value={taskDueDate}
+                  onChange={(e) => setTaskDueDate(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>{t("task.time")}</label>
+                <button
+                  type="button"
+                  className="time-btn"
+                  disabled={!taskDueDate}
+                  onClick={() => setTaskClockOpen(true)}
+                >
+                  <Clock size={15} />
+                  {taskDueTime || t("task.timePh")}
+                  {taskDueTime && (
+                    <X
+                      size={14}
+                      className="time-btn__clear"
+                      onClick={(e) => { e.stopPropagation(); setTaskDueTime(""); }}
+                    />
+                  )}
+                </button>
+              </div>
+            </div>
+            {taskClockOpen && (
+              <ClockPicker
+                value={taskDueTime}
+                onCancel={() => setTaskClockOpen(false)}
+                onConfirm={(v) => { setTaskDueTime(v); setTaskClockOpen(false); }}
+              />
+            )}
             <button className="btn btn--primary" onClick={submitAddTask} disabled={taskSaving}>
               {taskSaving ? t("task.saving") : t("projects.addTask")}
             </button>
