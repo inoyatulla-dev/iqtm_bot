@@ -1,55 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Eye,
-  MessageSquare, RefreshCw, Archive as ArchiveIcon, Bell,
-} from "lucide-react";
+import { ArrowLeft, Eye, Archive as ArchiveIcon } from "lucide-react";
 import { notificationsApi } from "../api/client";
 import type { AppNotification } from "../api/types";
 import { useI18n } from "../i18n";
 import { formatTimeAgo } from "../utils/datetime";
+import { NOTIF_TYPE_META, DEFAULT_NOTIF_META, summarizeNotification } from "../utils/notificationMeta";
 import "../components/tasks/tasks.css";
 import "./notifications.css";
 
 type MainTab = "incoming" | "archive";
 type TypeFilter = "all" | "task" | "comment";
-type IconType = typeof Bell;
 
 const PAGE_SIZES = [6, 10, 20, 50];
 
-const TYPE_META: Record<string, { title: string; icon: IconType; cls: string }> = {
-  task_assigned: { title: "Yangi vazifa tayinlandi", icon: ClipboardList, cls: "accent" },
-  status_change: { title: "Vazifa holati o'zgardi", icon: RefreshCw, cls: "accent" },
-  done: { title: "Vazifa tasdiqlandi", icon: CheckCircle2, cls: "ok" },
-  comment: { title: "Yangi izoh", icon: MessageSquare, cls: "accent2" },
-  reminder: { title: "Vazifa muddati yaqinlashmoqda", icon: AlertTriangle, cls: "danger" },
-};
-const DEFAULT_META = { title: "Bildirishnoma", icon: Bell, cls: "accent" };
-
 function typeBucket(type: string): Exclude<TypeFilter, "all"> {
   return type === "comment" ? "comment" : "task";
-}
-
-function stripHtml(s: string): string {
-  return s.replace(/<[^>]+>/g, "");
-}
-
-/** Qatordagi yetakchi emoji-belgilarni olib tashlaydi (harf/raqamgacha). */
-function stripLeadingEmoji(line: string): string {
-  let s = line.trim();
-  for (;;) {
-    const m = /^(\S+)\s+(.*)$/.exec(s);
-    if (!m) break;
-    if (/[\p{L}\p{N}]/u.test(m[1])) break;
-    s = m[2];
-  }
-  return s;
-}
-
-/** Xabar matnini bitta ixcham tavsif qatoriga birlashtiradi (birinchi — sarlavha
- * qatori — tashlab yuboriladi, chunki u allaqachon karta sarlavhasida ko'rsatiladi). */
-function buildSummary(n: AppNotification): string {
-  const lines = stripHtml(n.text).split("\n").map((l) => l.trim()).filter(Boolean);
-  return lines.slice(1).map(stripLeadingEmoji).filter(Boolean).join(" · ");
 }
 
 interface Props {
@@ -193,7 +158,7 @@ export function NotificationsPage({ onOpenTask, onBack, onChanged }: Props) {
         {pageItems.length > 0 && (
           <div className="notif-list">
             {pageItems.map((n) => {
-              const meta = TYPE_META[n.type] ?? DEFAULT_META;
+              const meta = NOTIF_TYPE_META[n.type] ?? DEFAULT_NOTIF_META;
               const Icon = meta.icon;
               return (
                 <div className="notif-row" key={n.id}>
@@ -205,7 +170,7 @@ export function NotificationsPage({ onOpenTask, onBack, onChanged }: Props) {
                       <span className="notif-row__title">{meta.title}</span>
                       {!n.is_read && <span className="notif-row__dot" />}
                     </div>
-                    <div className="notif-row__desc">{buildSummary(n)}</div>
+                    <div className="notif-row__desc">{summarizeNotification(n)}</div>
                     <div className="notif-row__time">{formatTimeAgo(n.created_at, lang)}</div>
                   </div>
                   <div className="notif-row__actions">
