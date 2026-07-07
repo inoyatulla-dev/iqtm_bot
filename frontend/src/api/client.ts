@@ -266,6 +266,7 @@ export const notificationsApi = {
     api.get<{ count: number }>("/notifications/unread-count").then((r) => r.data.count),
   markRead: (id: number) => api.post(`/notifications/${id}/read`),
   markAllRead: () => api.post("/notifications/read-all"),
+  archive: (id: number) => api.post(`/notifications/${id}/archive`),
 };
 
 // ── Hisobotlar ─────────────────────────────────────────

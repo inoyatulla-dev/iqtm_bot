@@ -12,4 +12,5 @@ class NotificationOut(BaseModel):
     task_name: str | None = None
     text: str
     is_read: bool
+    is_archived: bool = False
     created_at: datetime

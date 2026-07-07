@@ -112,6 +112,7 @@ export interface AppNotification {
   task_name?: string | null;
   text: string;
   is_read: boolean;
+  is_archived: boolean;
   created_at: string;
 }
 

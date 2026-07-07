@@ -33,8 +33,6 @@ const uz: Dict = {
   "tabs.settings": "Sozlamalar",
 
   "notif.title": "Bildirishnomalar",
-  "notif.markAll": "Barchasini o'qilgan qilish",
-  "notif.empty": "Bildirishnomalar yo'q",
 
   "role.boss": "Admin",
   "role.worker": "Xodim",
@@ -362,8 +360,6 @@ const ru: Dict = {
   "tabs.settings": "Настройки",
 
   "notif.title": "Уведомления",
-  "notif.markAll": "Отметить все как прочитанные",
-  "notif.empty": "Нет уведомлений",
 
   "role.boss": "Админ",
   "role.worker": "Сотрудник",
@@ -691,8 +687,6 @@ const en: Dict = {
   "tabs.settings": "Settings",
 
   "notif.title": "Notifications",
-  "notif.markAll": "Mark all as read",
-  "notif.empty": "No notifications",
 
   "role.boss": "Admin",
   "role.worker": "Worker",

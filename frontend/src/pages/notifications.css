@@ -1,0 +1,121 @@
+/* ── Bildirishnomalar sahifasi ────────────────────────── */
+.notif-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--hint);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.notif-page__back:hover { color: var(--text); }
+
+.notif-page__empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--hint);
+  font-size: 13.5px;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-bottom: 10px;
+}
+
+.notif-item__icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif-item__icon--accent { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
+.notif-item__icon--ok { background: rgba(74, 222, 128, 0.15); color: var(--ok); }
+.notif-item__icon--accent2 { background: rgba(139, 92, 246, 0.15); color: var(--accent-2); }
+.notif-item__icon--danger { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+
+.notif-item__body { flex: 1; min-width: 0; }
+
+.notif-item__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.notif-item__title { font-weight: 700; font-size: 14px; }
+.notif-item__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.notif-item__text {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--hint);
+  line-height: 1.4;
+}
+
+.notif-item__time {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--hint);
+  opacity: 0.8;
+}
+
+.notif-item__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.notif-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.notif-pager__info { font-size: 12.5px; color: var(--hint); }
+.notif-pager__size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--hint);
+}
+.notif-pager__size .filter-control { min-height: 30px; padding: 4px 8px; }
+.notif-pager__pages { display: flex; gap: 6px; }
+.notif-pager__page {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.notif-pager__page.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+@media (max-width: 640px) {
+  .notif-item { flex-wrap: wrap; }
+  .notif-item__actions { flex-direction: row; margin-left: 50px; }
+}

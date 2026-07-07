@@ -19,11 +19,14 @@ interface Props {
   onTab: (t: Tab) => void;
   user: User;
   pendingCount?: number;
-  onOpenTask: (taskId: number) => void;
+  unreadNotifications: number;
+  onOpenNotifications: () => void;
   children: ReactNode;
 }
 
-export function Layout({ tab, onTab, user, pendingCount, onOpenTask, children }: Props) {
+export function Layout({
+  tab, onTab, user, pendingCount, unreadNotifications, onOpenNotifications, children,
+}: Props) {
   const { t } = useI18n();
   const isBoss = user.role === "boss";
   const isObserver = user.role === "observer";
@@ -67,7 +70,7 @@ export function Layout({ tab, onTab, user, pendingCount, onOpenTask, children }:
             <Logo />
           </div>
           <div className="app-header__right">
-            <NotificationBell onOpenTask={onOpenTask} />
+            <NotificationBell unread={unreadNotifications} onClick={onOpenNotifications} />
             <div className="app-header__user">
               <div className="name">{user.name}</div>
               <div className="role">{t(`role.${user.role}`)}</div>

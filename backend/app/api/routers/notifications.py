@@ -32,3 +32,8 @@ async def mark_read(notif_id: int, user: CurrentUser, session: SessionDep):
 @router.post("/read-all", status_code=status.HTTP_204_NO_CONTENT)
 async def mark_all_read(user: CurrentUser, session: SessionDep):
     await notification_service.mark_all_read(session, user.id)
+
+
+@router.post("/{notif_id}/archive", status_code=status.HTTP_204_NO_CONTENT)
+async def archive(notif_id: int, user: CurrentUser, session: SessionDep):
+    await notification_service.set_archived(session, user.id, notif_id)

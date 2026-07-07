@@ -18,7 +18,7 @@ async def notify_user(
 
 
 async def list_for_user(
-    session: AsyncSession, user_id: int, limit: int = 50
+    session: AsyncSession, user_id: int, limit: int = 300
 ) -> list[tuple[Notification, str | None]]:
     result = await session.execute(
         select(Notification, Task.name)
@@ -52,4 +52,13 @@ async def mark_all_read(session: AsyncSession, user_id: int) -> None:
         update(Notification)
         .where(Notification.user_id == user_id, Notification.is_read == False)  # noqa: E712
         .values(is_read=True)
+    )
+
+
+async def set_archived(session: AsyncSession, user_id: int, notif_id: int) -> None:
+    """Arxivlash — o'qilgan deb ham belgilanadi (ko'rilgan/hal qilingan hisoblanadi)."""
+    await session.execute(
+        update(Notification)
+        .where(Notification.id == notif_id, Notification.user_id == user_id)
+        .values(is_archived=True, is_read=True)
     )
