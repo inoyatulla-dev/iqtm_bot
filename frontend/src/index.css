@@ -410,8 +410,9 @@ body {
   margin-top: 4px;
 }
 
-/* Skroll qilinganda ham ko'rinib turadigan "Tahrirlash" tugmasi — ixcham, o'ngga tekislangan */
-.task-view__edit-btn {
+/* Skroll qilinganda ham ko'rinib turadigan "Tahrirlash" tugmasi — ixcham, o'ngga tekislangan.
+   .btn bazaviy klassi keyinroq width:100% belgilagani uchun ustunlik uchun ikki klass birga. */
+.btn.task-view__edit-btn {
   width: auto;
   padding: 7px 16px;
   font-size: 13px;
