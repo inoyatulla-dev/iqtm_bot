@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, Clock, ClipboardList, Eye, FileText, Hash,
-  MessageSquare, RefreshCw, Archive as ArchiveIcon, Bell, User,
+  AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Eye,
+  MessageSquare, RefreshCw, Archive as ArchiveIcon, Bell,
 } from "lucide-react";
 import { notificationsApi } from "../api/client";
 import type { AppNotification } from "../api/types";
@@ -45,28 +45,11 @@ function stripLeadingEmoji(line: string): string {
   return s;
 }
 
-function iconForRow(line: string): IconType {
-  const l = line.toLowerCase();
-  if (
-    l.startsWith("mas'ul") || l.startsWith("bajaruvchi") || l.startsWith("o'zgartirdi") ||
-    l.startsWith("qo'ygan") || l.startsWith("tekshirdi")
-  )
-    return User;
-  if (l.startsWith("muddat")) return Clock;
-  return FileText;
-}
-
-/** Xabar matnini karta "Body" qatorlariga ajratadi: birinchi (sarlavha) qatordan
- * tashqari har bir qator, yetakchi emoji ikonka bilan almashtirilib. */
-function parseBodyRows(n: AppNotification): { icon: IconType; text: string }[] {
+/** Xabar matnini bitta ixcham tavsif qatoriga birlashtiradi (birinchi — sarlavha
+ * qatori — tashlab yuboriladi, chunki u allaqachon karta sarlavhasida ko'rsatiladi). */
+function buildSummary(n: AppNotification): string {
   const lines = stripHtml(n.text).split("\n").map((l) => l.trim()).filter(Boolean);
-  const rows: { icon: IconType; text: string }[] = [];
-  if (n.task_id) rows.push({ icon: Hash, text: `ID: #${n.task_id}` });
-  for (const line of lines.slice(1)) {
-    const text = stripLeadingEmoji(line);
-    if (text) rows.push({ icon: iconForRow(text), text });
-  }
-  return rows;
+  return lines.slice(1).map(stripLeadingEmoji).filter(Boolean).join(" · ");
 }
 
 interface Props {
@@ -207,55 +190,43 @@ export function NotificationsPage({ onOpenTask, onBack, onChanged }: Props) {
             {mainTab === "incoming" ? "Bildirishnomalar yo'q" : "Arxiv bo'sh"}
           </div>
         )}
-        {pageItems.map((n) => {
-          const meta = TYPE_META[n.type] ?? DEFAULT_META;
-          const Icon = meta.icon;
-          const rows = parseBodyRows(n);
-          return (
-            <div className="notif-card" key={n.id}>
-              <div className="notif-card__header">
-                <div className={`notif-card__icon notif-card__icon--${meta.cls}`}>
-                  <Icon size={18} />
-                </div>
-                <span className="notif-card__title">{meta.title}</span>
-                {!n.is_read && <span className="notif-card__dot" />}
-              </div>
-              {rows.length > 0 && (
-                <>
-                  <div className="notif-card__divider" />
-                  <div className="notif-card__body">
-                    {rows.map((row, i) => (
-                      <div className="notif-card__row" key={i}>
-                        <row.icon size={14} className="notif-card__row-icon" />
-                        <span>{row.text}</span>
-                      </div>
-                    ))}
+        {pageItems.length > 0 && (
+          <div className="notif-list">
+            {pageItems.map((n) => {
+              const meta = TYPE_META[n.type] ?? DEFAULT_META;
+              const Icon = meta.icon;
+              return (
+                <div className="notif-row" key={n.id}>
+                  <div className={`notif-row__icon notif-row__icon--${meta.cls}`}>
+                    <Icon size={18} />
                   </div>
-                </>
-              )}
-              <div className="notif-card__divider" />
-              <div className="notif-card__footer">
-                <span className="notif-card__time">
-                  <Clock size={13} /> {formatTimeAgo(n.created_at, lang)}
-                </span>
-                <div className="notif-card__actions">
-                  {mainTab === "incoming" && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      onClick={() => archive(n)}
-                    >
-                      <ArchiveIcon size={14} /> Arxivlash
+                  <div className="notif-row__body">
+                    <div className="notif-row__title-line">
+                      <span className="notif-row__title">{meta.title}</span>
+                      {!n.is_read && <span className="notif-row__dot" />}
+                    </div>
+                    <div className="notif-row__desc">{buildSummary(n)}</div>
+                    <div className="notif-row__time">{formatTimeAgo(n.created_at, lang)}</div>
+                  </div>
+                  <div className="notif-row__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => view(n)}>
+                      <Eye size={14} /> Ko'rish
                     </button>
-                  )}
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => view(n)}>
-                    <Eye size={14} /> Ko'rish
-                  </button>
+                    {mainTab === "incoming" && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => archive(n)}
+                      >
+                        <ArchiveIcon size={14} /> Arxivlash
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
 
         {total > 0 && (
           <div className="notif-pager">
