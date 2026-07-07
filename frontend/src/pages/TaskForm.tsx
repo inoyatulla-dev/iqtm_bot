@@ -391,7 +391,7 @@ export function TaskForm({
                         className={`status-dd__item${task.status === col.key ? " active" : ""}`}
                         onClick={() => {
                           changeStatus(col);
-                          if (!col.is_done) setStatusOpen(false);
+                          setStatusOpen(false);
                         }}
                       >
                         <EmojiIcon emoji={col.emoji} color={col.color} size={18} />

@@ -605,6 +605,11 @@ body {
   z-index: 5;
   background: var(--bg);
   border-radius: 20px 20px 0 0;
+  /* Ba'zi WebView'larda sticky elementlar ostidan skroll qilinayotgan
+     tarkib "sizib chiqishi" mumkin — mustaqil composite qatlam hosil
+     qilib buni oldini olamiz. */
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 .sheet__close {
