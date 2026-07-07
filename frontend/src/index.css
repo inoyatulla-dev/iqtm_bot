@@ -602,7 +602,7 @@ body {
 .sheet__top {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 6;
   background: var(--bg);
   border-radius: 20px 20px 0 0;
   /* Ba'zi WebView'larda sticky elementlar ostidan skroll qilinayotgan
