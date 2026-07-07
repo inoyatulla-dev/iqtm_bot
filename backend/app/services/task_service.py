@@ -89,16 +89,22 @@ async def get_assignee_ids(session: AsyncSession, task_id: int) -> list[int]:
     return list(result.scalars().all())
 
 
+async def _assignee_mentions(session: AsyncSession, task: Task) -> str:
+    """Vazifaga biriktirilgan BARCHA xodimlarning nomlari, vergul bilan ajratilgan."""
+    ids = await get_assignee_ids(session, task.id)
+    mentions = [_mention(await _user(session, uid)) for uid in ids]
+    return ", ".join(mentions) if mentions else "—"
+
+
 async def _assignment_text(session: AsyncSession, task: Task) -> str:
     dep = await _dep(session, task.dep_id)
-    masul = await _user(session, task.masul_id)
     tpl = await settings_service.get_template(session, "new_task")
     return settings_service.render_template(
         tpl,
         id=task.id,
         department=_dep_label(dep),
         name=task.name,
-        assignee=_mention(masul),
+        assignee=await _assignee_mentions(session, task),
         deadline=_fmt_deadline(task.deadline),
         description=task.description or "—",
     )
@@ -169,7 +175,6 @@ async def change_status(
     await _log(session, actor.id, f"Vazifa holati: #{task.id} → {column.key}")
 
     dep = await _dep(session, task.dep_id)
-    masul = await _user(session, task.masul_id)
 
     if column.is_done:
         event = "done"
@@ -186,7 +191,7 @@ async def change_status(
             id=task.id,
             department=_dep_label(dep),
             name=task.name,
-            assignee=_mention(masul),
+            assignee=await _assignee_mentions(session, task),
             creator=_mention(creator),
             checker=actor.name,
             comment=last_comment.text if last_comment else "—",

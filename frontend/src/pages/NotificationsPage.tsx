@@ -116,6 +116,22 @@ export function NotificationsPage({ onOpenTask, onBack, onChanged }: Props) {
           <p>{unreadCount} ta o'qilmagan</p>
         </div>
         <div className="tasks-head__actions">
+          <div className="view-tabs">
+            <button
+              type="button"
+              className={`view-tab${mainTab === "incoming" ? " active" : ""}`}
+              onClick={() => setMainTab("incoming")}
+            >
+              Kelganlar
+            </button>
+            <button
+              type="button"
+              className={`view-tab${mainTab === "archive" ? " active" : ""}`}
+              onClick={() => setMainTab("archive")}
+            >
+              Arxiv
+            </button>
+          </div>
           {unreadCount > 0 && (
             <button type="button" className="btn btn--ghost btn--sm" onClick={markAllRead}>
               Barchasini o'qilgan qilish
@@ -125,22 +141,6 @@ export function NotificationsPage({ onOpenTask, onBack, onChanged }: Props) {
       </div>
 
       <div className="filter-bar">
-        <div className="view-tabs">
-          <button
-            type="button"
-            className={`view-tab${mainTab === "incoming" ? " active" : ""}`}
-            onClick={() => setMainTab("incoming")}
-          >
-            Kelganlar
-          </button>
-          <button
-            type="button"
-            className={`view-tab${mainTab === "archive" ? " active" : ""}`}
-            onClick={() => setMainTab("archive")}
-          >
-            Arxiv
-          </button>
-        </div>
         <div className="filter-item">
           <span className="filter-label">Tur:</span>
           <div className="quick-chips">

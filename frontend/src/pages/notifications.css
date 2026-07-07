@@ -115,7 +115,12 @@
   color: var(--accent-text);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .notif-item { flex-wrap: wrap; }
-  .notif-item__actions { flex-direction: row; margin-left: 50px; }
+  .notif-item__actions {
+    flex-direction: row;
+    width: 100%;
+    margin-left: 50px;
+    margin-top: 8px;
+  }
 }
