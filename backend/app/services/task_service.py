@@ -90,10 +90,15 @@ async def get_assignee_ids(session: AsyncSession, task_id: int) -> list[int]:
 
 
 async def _assignee_mentions(session: AsyncSession, task: Task) -> str:
-    """Vazifaga biriktirilgan BARCHA xodimlarning nomlari, vergul bilan ajratilgan."""
+    """Vazifaga biriktirilgan xodimlar: bittasi bo'lsa oddiy matn, bir nechtasi
+    bo'lsa har biri o'z qatorida, raqamlangan holda ko'rsatiladi."""
     ids = await get_assignee_ids(session, task.id)
     mentions = [_mention(await _user(session, uid)) for uid in ids]
-    return ", ".join(mentions) if mentions else "—"
+    if not mentions:
+        return "—"
+    if len(mentions) == 1:
+        return mentions[0]
+    return "\n" + "\n".join(f"{i}. {m}" for i, m in enumerate(mentions, 1))
 
 
 async def _assignment_text(session: AsyncSession, task: Task) -> str:

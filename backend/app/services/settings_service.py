@@ -43,7 +43,7 @@ DEFAULT_TEMPLATES: dict[str, str] = {
         "📌 <b>Yangi vazifa #{id}</b>\n"
         "🏢 {department}\n"
         "📝 {name}\n"
-        "👤 Mas'ul: {assignee}\n"
+        "👤 Mas'ul(lar): {assignee}\n"
         "⏰ Muddat: {deadline}\n"
         "📄 {description}"
     ),
@@ -58,7 +58,7 @@ DEFAULT_TEMPLATES: dict[str, str] = {
         "✅ <b>Vazifa tasdiqlandi #{id}</b>\n"
         "🏢 {department}\n"
         "📝 {name}\n"
-        "👤 Bajaruvchi: {assignee}\n"
+        "👤 Bajaruvchi(lar): {assignee}\n"
         "📣 Qo'ygan: {creator}\n"
         "🔎 Tekshirdi: {checker}\n"
         "💬 {comment}"
