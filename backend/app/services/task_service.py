@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import notifications as notify
 from app.models import BoardColumn, Comment, Department, Log, Reminder, Task, TaskAssignee, User
 from app.schemas.task import TaskCreate
-from app.services import board_service, settings_service
+from app.services import board_service, notification_service, settings_service
 from app.services.report_service import user_label
 
 logger = logging.getLogger(__name__)
@@ -82,6 +82,37 @@ async def _log(session: AsyncSession, user_id: int, action: str) -> None:
     session.add(Log(user_id=user_id, action=action))
 
 
+async def get_assignee_ids(session: AsyncSession, task_id: int) -> list[int]:
+    result = await session.execute(
+        select(TaskAssignee.user_id).where(TaskAssignee.task_id == task_id)
+    )
+    return list(result.scalars().all())
+
+
+async def _assignment_text(session: AsyncSession, task: Task) -> str:
+    dep = await _dep(session, task.dep_id)
+    masul = await _user(session, task.masul_id)
+    tpl = await settings_service.get_template(session, "new_task")
+    return settings_service.render_template(
+        tpl,
+        id=task.id,
+        department=_dep_label(dep),
+        name=task.name,
+        assignee=_mention(masul),
+        deadline=_fmt_deadline(task.deadline),
+        description=task.description or "—",
+    )
+
+
+async def reassign_notify(session: AsyncSession, task: Task, added_ids: set[int]) -> None:
+    """Vazifaga qayta tahrirlashda yangi qo'shilgan xodimlarga xabar (DM + ilova ichi)."""
+    if not added_ids:
+        return
+    text = await _assignment_text(session, task)
+    for uid in added_ids:
+        await notification_service.notify_user(session, uid, "task_assigned", text, task.id)
+
+
 async def create_task(
     session: AsyncSession, data: TaskCreate, created_by: int
 ) -> Task:
@@ -112,19 +143,9 @@ async def create_task(
 
     # Guruhga e'lon (commit'dan keyin ID kerak emas, lekin nomlar kerak)
     dep = await _dep(session, task.dep_id)
-    masul = await _user(session, task.masul_id)
     await session.flush()
 
-    tpl = await settings_service.get_template(session, "new_task")
-    text = settings_service.render_template(
-        tpl,
-        id=task.id,
-        department=_dep_label(dep),
-        name=task.name,
-        assignee=_mention(masul),
-        deadline=_fmt_deadline(task.deadline),
-        description=task.description or "—",
-    )
+    text = await _assignment_text(session, task)
 
     initial_col = await board_service.get_column(session, task.status)
     if not initial_col or initial_col.notify:
@@ -132,9 +153,9 @@ async def create_task(
             session, "new_task"
         )
         await notify.send_to_group(text, topic_id)
-    # Har bir mas'ulga shaxsiy xabar (topshiriq berildi)
+    # Har bir mas'ulga shaxsiy xabar (topshiriq berildi) — DM + ilova ichi
     for uid in assignee_ids:
-        await notify.send_dm(uid, text)
+        await notification_service.notify_user(session, uid, "task_assigned", text, task.id)
 
     return task
 
@@ -187,8 +208,10 @@ async def change_status(
             session, event
         )
         await notify.send_to_group(text, topic_id)
-        if masul and masul.id != actor.id:
-            await notify.send_dm(masul.id, text)
+        assignee_ids = await get_assignee_ids(session, task.id)
+        for uid in assignee_ids:
+            if uid != actor.id:
+                await notification_service.notify_user(session, uid, event, text, task.id)
     return task
 
 
@@ -199,14 +222,16 @@ async def notify_comment(
     text: str,
     target_user_id: int | None = None,
 ) -> None:
-    """Izoh qoldirilganda DM yuborish.
+    """Izoh qoldirilganda bildirishnoma (DM + ilova ichi).
 
-    target_user_id berilgan bo'lsa — faqat o'shaga; aks holda mas'ul + yaratuvchiga.
+    target_user_id berilgan bo'lsa — faqat o'shaga; aks holda barcha
+    biriktirilgan xodimlar + yaratuvchiga (muallifdan tashqari).
     """
     if target_user_id:
         recipients = {target_user_id} - {author.id}
     else:
-        recipients = {task.masul_id, task.created_by} - {author.id, None}
+        assignee_ids = await get_assignee_ids(session, task.id)
+        recipients = set(assignee_ids) | {task.created_by} - {author.id, None}
     if not recipients:
         return
     msg = (
@@ -216,7 +241,7 @@ async def notify_comment(
         f"{text}"
     )
     for uid in recipients:
-        await notify.send_dm(uid, msg)
+        await notification_service.notify_user(session, uid, "comment", msg, task.id)
 
 
 async def get_board_tasks(

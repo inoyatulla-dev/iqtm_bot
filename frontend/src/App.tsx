@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { usersApi } from "./api/client";
+import { tasksApi, usersApi } from "./api/client";
+import type { Task } from "./api/types";
 import { useAuth } from "./store/auth";
 import { useI18n } from "./i18n";
 import { Layout, type Tab } from "./components/Layout";
@@ -13,12 +14,22 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { RegisterForm } from "./pages/RegisterForm";
 import { LoginPage } from "./pages/LoginPage";
 import { Logo } from "./components/Logo";
+import { TaskForm } from "./pages/TaskForm";
 
 export function App() {
-  const { user, loading, error, needsLogin, isBoss } = useAuth();
+  const { user, loading, error, needsLogin, isBoss, isObserver } = useAuth();
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("board");
   const [pendingCount, setPendingCount] = useState(0);
+  const [notifTask, setNotifTask] = useState<Task | null>(null);
+
+  async function openTaskFromNotification(taskId: number) {
+    try {
+      setNotifTask(await tasksApi.get(taskId));
+    } catch {
+      /* jim */
+    }
+  }
 
   const refreshPending = useCallback(() => {
     if (isBoss) {
@@ -69,7 +80,7 @@ export function App() {
   }
 
   return (
-    <Layout tab={tab} onTab={setTab} user={user} pendingCount={pendingCount}>
+    <Layout tab={tab} onTab={setTab} user={user} pendingCount={pendingCount} onOpenTask={openTaskFromNotification}>
       {tab === "board" && <BoardPage />}
       {tab === "applications" && <ArizalarPage onChange={refreshPending} />}
       {tab === "users" && <UsersPage />}
@@ -77,6 +88,16 @@ export function App() {
       {tab === "monitoring" && <MonitoringPage />}
       {tab === "stats" && <StatsPage />}
       {tab === "settings" && <SettingsPage />}
+      {notifTask && (
+        <TaskForm
+          task={notifTask}
+          isBoss={isBoss}
+          isObserver={isObserver}
+          onClose={() => setNotifTask(null)}
+          onSaved={() => setNotifTask(null)}
+          onStatusChanged={(updated) => setNotifTask(updated)}
+        />
+      )}
     </Layout>
   );
 }

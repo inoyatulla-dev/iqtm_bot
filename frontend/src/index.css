@@ -109,9 +109,136 @@ body {
   gap: 8px;
 }
 
+.app-header__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .app-header__user {
   text-align: right;
   line-height: 1.2;
+}
+
+/* ── Bildirishnoma qo'ng'irog'i ─────────────────────── */
+.notif-bell {
+  position: relative;
+}
+
+.notif-bell__btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.notif-bell__btn:hover {
+  background: var(--surface);
+}
+
+.notif-bell__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.notif-bell__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-width: 88vw;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notif-bell__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.notif-bell__markall {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.notif-bell__list {
+  overflow-y: auto;
+}
+
+.notif-bell__empty {
+  padding: 24px 14px;
+  text-align: center;
+  color: var(--hint);
+  font-size: 13px;
+}
+
+.notif-bell__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.notif-bell__item:last-child {
+  border-bottom: none;
+}
+
+.notif-bell__item:hover {
+  background: var(--surface);
+}
+
+.notif-bell__item.unread {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.notif-bell__item.unread .notif-bell__text {
+  font-weight: 600;
+}
+
+.notif-bell__text {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.notif-bell__time {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--hint);
 }
 
 .app-header__user .name {

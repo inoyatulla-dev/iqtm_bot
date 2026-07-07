@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getInitData } from "../telegram";
 import type {
-  Attachment, BoardColumn, Comment, DashboardData, Department, Project, ProjectDetail,
-  ProjectTaskCreate, RatingRow, StatusCounts, Task, Topic, User,
+  AppNotification, Attachment, BoardColumn, Comment, DashboardData, Department, Project,
+  ProjectDetail, ProjectTaskCreate, RatingRow, StatusCounts, Task, Topic, User,
 } from "./types";
 
 export const api = axios.create({ baseURL: "/api" });
@@ -81,6 +81,7 @@ export async function updateLang(lang: string): Promise<void> {
 // ── Tasks ──────────────────────────────────────────────
 export const tasksApi = {
   list: () => api.get<Task[]>("/tasks").then((r) => r.data),
+  get: (id: number) => api.get<Task>(`/tasks/${id}`).then((r) => r.data),
   create: (body: Partial<Task>) =>
     api.post<Task>("/tasks", body).then((r) => r.data),
   update: (id: number, body: Partial<Task>) =>
@@ -256,6 +257,15 @@ export const projectsApi = {
   update: (id: number, body: Partial<Project>) =>
     api.patch<Project>(`/projects/${id}`, body).then((r) => r.data),
   remove: (id: number) => api.delete(`/projects/${id}`),
+};
+
+// ── Bildirishnomalar ────────────────────────────────────
+export const notificationsApi = {
+  list: () => api.get<AppNotification[]>("/notifications").then((r) => r.data),
+  unreadCount: () =>
+    api.get<{ count: number }>("/notifications/unread-count").then((r) => r.data.count),
+  markRead: (id: number) => api.post(`/notifications/${id}/read`),
+  markAllRead: () => api.post("/notifications/read-all"),
 };
 
 // ── Hisobotlar ─────────────────────────────────────────

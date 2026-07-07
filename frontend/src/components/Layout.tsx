@@ -3,6 +3,7 @@ import { BarChart3, FolderKanban, Inbox, LayoutGrid, Settings, TrendingUp, Users
 import type { User } from "../api/types";
 import { useI18n } from "../i18n";
 import { Logo } from "./Logo";
+import { NotificationBell } from "./NotificationBell";
 
 export type Tab =
   | "board"
@@ -18,10 +19,11 @@ interface Props {
   onTab: (t: Tab) => void;
   user: User;
   pendingCount?: number;
+  onOpenTask: (taskId: number) => void;
   children: ReactNode;
 }
 
-export function Layout({ tab, onTab, user, pendingCount, children }: Props) {
+export function Layout({ tab, onTab, user, pendingCount, onOpenTask, children }: Props) {
   const { t } = useI18n();
   const isBoss = user.role === "boss";
   const isObserver = user.role === "observer";
@@ -64,9 +66,12 @@ export function Layout({ tab, onTab, user, pendingCount, children }: Props) {
           <div className="app-header__brand">
             <Logo />
           </div>
-          <div className="app-header__user">
-            <div className="name">{user.name}</div>
-            <div className="role">{t(`role.${user.role}`)}</div>
+          <div className="app-header__right">
+            <NotificationBell onOpenTask={onOpenTask} />
+            <div className="app-header__user">
+              <div className="name">{user.name}</div>
+              <div className="role">{t(`role.${user.role}`)}</div>
+            </div>
           </div>
         </header>
         <div className="app-content">{children}</div>

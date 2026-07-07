@@ -5,6 +5,7 @@ from app.api.routers import (
     auth,
     board_columns,
     departments,
+    notifications,
     projects,
     reports,
     settings,
@@ -17,6 +18,7 @@ from app.api.routers import (
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth.router)
 api_router.include_router(tasks.router)
+api_router.include_router(notifications.router)
 api_router.include_router(users.router)
 api_router.include_router(departments.router)
 api_router.include_router(board_columns.router)

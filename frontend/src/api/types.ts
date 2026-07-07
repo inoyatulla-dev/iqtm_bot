@@ -105,6 +105,16 @@ export interface Topic {
   topic_id: number;
 }
 
+export interface AppNotification {
+  id: number;
+  type: string;
+  task_id: number | null;
+  task_name?: string | null;
+  text: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 export interface StatusCounts {
   counts: Record<string, number>;
   overdue: number;

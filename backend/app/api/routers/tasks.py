@@ -67,9 +67,11 @@ async def update_task(
     for field, value in data.items():
         setattr(task, field, value)
     if assignee_ids is not None or masul_in:
-        await task_service.set_assignees(
+        old_ids = set(task.assignee_ids)
+        new_ids = await task_service.set_assignees(
             session, task, masul_val if masul_in else task.masul_id, assignee_ids
         )
+        await task_service.reassign_notify(session, task, set(new_ids) - old_ids)
     session.add(Log(user_id=user.id, action=f"Vazifa tahrirlandi: #{task.id}"))
     done_keys = await board_service.get_done_keys(session)
     return (await _to_out_batch(session, [task], done_keys))[0]

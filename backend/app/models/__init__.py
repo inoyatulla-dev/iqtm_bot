@@ -4,6 +4,7 @@ from app.models.board_column import BoardColumn
 from app.models.comment import Comment
 from app.models.department import Department
 from app.models.misc import Log, Reminder, Setting
+from app.models.notification import Notification
 from app.models.project import Project, ProjectStage
 from app.models.task import Task
 from app.models.task_assignee import TaskAssignee
@@ -24,4 +25,5 @@ __all__ = [
     "Log",
     "Setting",
     "Topic",
+    "Notification",
 ]

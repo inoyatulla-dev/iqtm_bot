@@ -9,7 +9,7 @@ from app import notifications as notify
 from app.core.constants import TaskType, UserStatus
 from app.db.base import SessionFactory
 from app.models import Department, Reminder, Task, User
-from app.services import board_service, settings_service, task_service
+from app.services import board_service, notification_service, settings_service, task_service
 from app.services.backup_service import backup_database
 from app.services.storage_service import archive_overflow_files
 
@@ -36,8 +36,9 @@ async def check_reminders():
                 name=task.name,
                 deadline=task_service._fmt_deadline(task.deadline),
             )
-            if task.masul_id:
-                await notify.send_dm(task.masul_id, text)
+            assignee_ids = await task_service.get_assignee_ids(session, task.id)
+            for uid in assignee_ids:
+                await notification_service.notify_user(session, uid, "reminder", text, task.id)
             dep = await session.get(Department, task.dep_id) if task.dep_id else None
             topic_id = (dep.topic_id if dep else None) or await settings_service.get_routed_topic(
                 session, "reminder"
