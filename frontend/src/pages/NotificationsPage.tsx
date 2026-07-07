@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Eye, MessageSquare,
-  RefreshCw, Archive as ArchiveIcon, Bell,
+  AlertTriangle, ArrowLeft, CheckCircle2, Clock, ClipboardList, Eye, FileText, Hash,
+  MessageSquare, RefreshCw, Archive as ArchiveIcon, Bell, User,
 } from "lucide-react";
 import { notificationsApi } from "../api/client";
 import type { AppNotification } from "../api/types";
@@ -12,10 +12,11 @@ import "./notifications.css";
 
 type MainTab = "incoming" | "archive";
 type TypeFilter = "all" | "task" | "comment";
+type IconType = typeof Bell;
 
 const PAGE_SIZES = [6, 10, 20, 50];
 
-const TYPE_META: Record<string, { title: string; icon: typeof Bell; cls: string }> = {
+const TYPE_META: Record<string, { title: string; icon: IconType; cls: string }> = {
   task_assigned: { title: "Yangi vazifa tayinlandi", icon: ClipboardList, cls: "accent" },
   status_change: { title: "Vazifa holati o'zgardi", icon: RefreshCw, cls: "accent" },
   done: { title: "Vazifa tasdiqlandi", icon: CheckCircle2, cls: "ok" },
@@ -30,6 +31,42 @@ function typeBucket(type: string): Exclude<TypeFilter, "all"> {
 
 function stripHtml(s: string): string {
   return s.replace(/<[^>]+>/g, "");
+}
+
+/** Qatordagi yetakchi emoji-belgilarni olib tashlaydi (harf/raqamgacha). */
+function stripLeadingEmoji(line: string): string {
+  let s = line.trim();
+  for (;;) {
+    const m = /^(\S+)\s+(.*)$/.exec(s);
+    if (!m) break;
+    if (/[\p{L}\p{N}]/u.test(m[1])) break;
+    s = m[2];
+  }
+  return s;
+}
+
+function iconForRow(line: string): IconType {
+  const l = line.toLowerCase();
+  if (
+    l.startsWith("mas'ul") || l.startsWith("bajaruvchi") || l.startsWith("o'zgartirdi") ||
+    l.startsWith("qo'ygan") || l.startsWith("tekshirdi")
+  )
+    return User;
+  if (l.startsWith("muddat")) return Clock;
+  return FileText;
+}
+
+/** Xabar matnini karta "Body" qatorlariga ajratadi: birinchi (sarlavha) qatordan
+ * tashqari har bir qator, yetakchi emoji ikonka bilan almashtirilib. */
+function parseBodyRows(n: AppNotification): { icon: IconType; text: string }[] {
+  const lines = stripHtml(n.text).split("\n").map((l) => l.trim()).filter(Boolean);
+  const rows: { icon: IconType; text: string }[] = [];
+  if (n.task_id) rows.push({ icon: Hash, text: `ID: #${n.task_id}` });
+  for (const line of lines.slice(1)) {
+    const text = stripLeadingEmoji(line);
+    if (text) rows.push({ icon: iconForRow(text), text });
+  }
+  return rows;
 }
 
 interface Props {
@@ -173,32 +210,48 @@ export function NotificationsPage({ onOpenTask, onBack, onChanged }: Props) {
         {pageItems.map((n) => {
           const meta = TYPE_META[n.type] ?? DEFAULT_META;
           const Icon = meta.icon;
+          const rows = parseBodyRows(n);
           return (
-            <div className="notif-item" key={n.id}>
-              <div className={`notif-item__icon notif-item__icon--${meta.cls}`}>
-                <Icon size={18} />
-              </div>
-              <div className="notif-item__body">
-                <div className="notif-item__title-row">
-                  <span className="notif-item__title">{meta.title}</span>
-                  {!n.is_read && <span className="notif-item__dot" />}
+            <div className="notif-card" key={n.id}>
+              <div className="notif-card__header">
+                <div className={`notif-card__icon notif-card__icon--${meta.cls}`}>
+                  <Icon size={18} />
                 </div>
-                <div className="notif-item__text">{stripHtml(n.text)}</div>
-                <div className="notif-item__time">{formatTimeAgo(n.created_at, lang)}</div>
+                <span className="notif-card__title">{meta.title}</span>
+                {!n.is_read && <span className="notif-card__dot" />}
               </div>
-              <div className="notif-item__actions">
-                <button type="button" className="btn btn--ghost btn--sm" onClick={() => view(n)}>
-                  <Eye size={14} /> Ko'rish
-                </button>
-                {mainTab === "incoming" && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => archive(n)}
-                  >
-                    <ArchiveIcon size={14} /> Arxivlash
+              {rows.length > 0 && (
+                <>
+                  <div className="notif-card__divider" />
+                  <div className="notif-card__body">
+                    {rows.map((row, i) => (
+                      <div className="notif-card__row" key={i}>
+                        <row.icon size={14} className="notif-card__row-icon" />
+                        <span>{row.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              <div className="notif-card__divider" />
+              <div className="notif-card__footer">
+                <span className="notif-card__time">
+                  <Clock size={13} /> {formatTimeAgo(n.created_at, lang)}
+                </span>
+                <div className="notif-card__actions">
+                  {mainTab === "incoming" && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => archive(n)}
+                    >
+                      <ArchiveIcon size={14} /> Arxivlash
+                    </button>
+                  )}
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => view(n)}>
+                    <Eye size={14} /> Ko'rish
                   </button>
-                )}
+                </div>
               </div>
             </div>
           );
