@@ -11,7 +11,7 @@ import { haptic } from "../telegram";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { Column } from "../components/board/Column";
 import { TaskCard } from "../components/board/TaskCard";
-import { DateFilter, ALL_TIME, type DateRange } from "../components/tasks/DateFilter";
+import { DateFilter, ALL_TIME, formatRange, type DateRange } from "../components/tasks/DateFilter";
 import { TasksTable } from "../components/tasks/TasksTable";
 import { MobileTaskList } from "../components/tasks/MobileTaskList";
 import { TaskForm } from "./TaskForm";
@@ -105,6 +105,9 @@ export function BoardPage() {
   }, [tasks]);
 
   function taskDate(t: Task): string | null {
+    // Arxivda davr filtri bajarilgan sanaga (done_at) bo'yicha ishlaydi,
+    // Doska/Ro'yxatda esa muddat/yaratilgan sana bo'yicha.
+    if (view === "archive") return t.done_at || null;
     return t.deadline || t.created_at || null;
   }
   function inRange(t: Task): boolean {
@@ -158,7 +161,7 @@ export function BoardPage() {
 
   const filtered = useMemo(
     () => tasks.filter(matches),
-    [tasks, range, empId, statusKey, quickFilter, search]
+    [tasks, range, empId, statusKey, quickFilter, search, view]
   );
   const activeCount = useMemo(() => tasks.filter((t) => !doneKeys.has(t.status)).length, [tasks, doneKeys]);
 
@@ -172,11 +175,7 @@ export function BoardPage() {
     [filtered, archiveDir]
   );
 
-  const thisYear = new Date().getFullYear();
-  const thisMonth = new Date().getMonth();
   const doneAll = tasks.filter((t) => t.is_archived);
-  const doneYear = doneAll.filter((t) => { const d = t.done_at || taskDate(t); return d && new Date(d).getFullYear() === thisYear; });
-  const doneMonth = doneYear.filter((t) => { const d = t.done_at || taskDate(t); return d && new Date(d).getMonth() === thisMonth; });
 
   const hasFilter = range.mode !== "all" || empId !== "all" || statusKey !== "all" || quickFilter !== "all" || !!search.trim();
   function clearFilters() {
@@ -437,8 +436,10 @@ export function BoardPage() {
         <div className="tasks-panel">
           <div className="archive-stats">
             <div className="stat-card"><div className="stat-card__label">Jami arxiv</div><div className="stat-card__num">{doneAll.length}</div></div>
-            <div className="stat-card"><div className="stat-card__label">Bu yil</div><div className="stat-card__num" style={{ color: "var(--accent)" }}>{doneYear.length}</div></div>
-            <div className="stat-card"><div className="stat-card__label">Bu oy</div><div className="stat-card__num" style={{ color: "var(--ok)" }}>{doneMonth.length}</div></div>
+            <div className="stat-card">
+              <div className="stat-card__label">Tanlangan davrda ({formatRange(range)})</div>
+              <div className="stat-card__num" style={{ color: "var(--accent)" }}>{archiveTasks.length}</div>
+            </div>
           </div>
           <TasksTable
             tasks={archiveTasks}
