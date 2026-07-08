@@ -10,6 +10,7 @@ import { ClockPicker } from "../components/tasks/ClockPicker";
 import { AssigneePicker } from "../components/tasks/AssigneePicker";
 import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
 import { EmojiIcon } from "../utils/emojiIcon";
+import { progressColor } from "../utils/progress";
 
 export function ProjectsPage() {
   const { isBoss, isObserver, columns } = useAuth();
@@ -160,12 +161,6 @@ export function ProjectsPage() {
     } catch (e: any) {
       alert(e?.response?.data?.detail || t("common.error"));
     }
-  }
-
-  function progressColor(percent: number) {
-    if (percent >= 100) return "var(--ok)";
-    if (percent > 0) return "var(--accent)";
-    return "var(--warn)";
   }
 
   function renderTasks(tasks: ProjectDetail["tasks"]) {

@@ -86,6 +86,7 @@ async def init_models() -> None:
             "ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)",
             "ALTER TABLE tasks ADD COLUMN done_at DATETIME",
             "ALTER TABLE notifications ADD COLUMN is_archived BOOLEAN DEFAULT 0",
+            "ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0",
         ]:
             try:
                 await conn.exec_driver_sql(stmt)

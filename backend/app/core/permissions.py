@@ -76,6 +76,22 @@ def can_change_status(
     )
 
 
+def can_update_progress(
+    user: User, task: Task, assignee_ids: frozenset[int] = frozenset()
+) -> bool:
+    """Bajarilish darajasini (progress) o'zgartirish — statusdan mustaqil,
+    boshliq yoki mas'ul xodim(lar) uchun (holatdan qat'i nazar)."""
+    if is_observer(user):
+        return False
+    if is_boss(user):
+        return True
+    return (
+        task.masul_id == user.id
+        or user.id in assignee_ids
+        or (task.type == TaskType.PERSONAL and task.created_by == user.id)
+    )
+
+
 def can_delete_task(user: User, task: Task) -> bool:
     if is_observer(user):
         return False

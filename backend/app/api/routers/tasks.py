@@ -13,7 +13,9 @@ from app.core.constants import TaskType
 from app.models import Attachment, Comment, Log, Project, Task, TaskAssignee, User
 from app.schemas.attachment import AttachmentOut
 from app.schemas.comment import CommentCreate, CommentOut
-from app.schemas.task import AssigneeOut, TaskCreate, TaskOut, TaskStatusUpdate, TaskUpdate
+from app.schemas.task import (
+    AssigneeOut, TaskCreate, TaskOut, TaskProgressUpdate, TaskStatusUpdate, TaskUpdate,
+)
 from app.services import board_service, settings_service, task_service
 from app.services.upload_service import delete_file, file_extension, save_file
 
@@ -88,6 +90,18 @@ async def update_status(
     if not permissions.can_change_status(user, task, column, task.assignee_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Holatni o'zgartirishga ruxsat yo'q")
     await task_service.change_status(session, task, column, user)
+    done_keys = await board_service.get_done_keys(session)
+    return (await _to_out_batch(session, [task], done_keys))[0]
+
+
+@router.patch("/{task_id}/progress", response_model=TaskOut)
+async def update_progress(
+    task_id: int, body: TaskProgressUpdate, user: CurrentUser, session: SessionDep
+):
+    task = await _get_or_404(session, task_id)
+    if not permissions.can_update_progress(user, task, task.assignee_ids):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Ruxsat yo'q")
+    await task_service.update_progress(session, task, body.progress, user)
     done_keys = await board_service.get_done_keys(session)
     return (await _to_out_batch(session, [task], done_keys))[0]
 

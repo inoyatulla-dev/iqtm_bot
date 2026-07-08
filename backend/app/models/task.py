@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.constants import TaskType
@@ -38,5 +38,7 @@ class Task(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, onupdate=datetime.now
     )
-    # "Yakuniy" ustunga o'tgan vaqt — shundan 24 soat o'tgach vazifa arxivga ko'chadi
+    # "Yakuniy" ustunga o'tgan vaqt — ertasi kuni vazifa avtomatik arxivga ko'chadi
     done_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+    # Bajarilish darajasi (0-100%) — statusdan mustaqil, faqat ma'lumot uchun
+    progress: Mapped[int] = mapped_column(Integer, default=0)

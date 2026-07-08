@@ -337,6 +337,10 @@ body {
   align-items: center;
 }
 
+.task-card__progress {
+  margin-top: 10px;
+}
+
 .task-card__assignee {
   display: flex;
   align-items: center;
@@ -1219,6 +1223,56 @@ body {
 .progress-bar__fill {
   height: 100%;
   border-radius: 6px;
+  transition: width 0.2s;
+}
+
+/* ── Progress slider (vazifa bajarilish darajasi) ────── */
+.progress-slider__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.progress-slider__pct {
+  font-weight: 700;
+}
+.progress-slider__input {
+  width: 100%;
+  height: 20px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.progress-slider__input::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+.progress-slider__input::-moz-range-track {
+  height: 8px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+/* Bosh (thumb) rangi accent-color orqali beriladi (progressColor bilan inline
+   qo'yiladi) — brauzer buni tabiiy qo'llab-quvvatlaydi, alohida pseudo-element
+   kerak emas. */
+.progress-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin-top: -5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.progress-slider__input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 .project-tasks {

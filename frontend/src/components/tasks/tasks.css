@@ -288,6 +288,9 @@ select.filter-control { padding-right: 8px; }
 .tt-overdue { color: var(--danger); font-weight: 600; }
 .tt-masul { display: inline-flex; align-items: center; gap: 8px; }
 .tt-count { display: inline-flex; align-items: center; gap: 4px; color: var(--hint); }
+.tt-progress { display: flex; align-items: center; gap: 8px; min-width: 90px; }
+.tt-progress .progress-bar { flex: 1; min-width: 50px; }
+.tt-progress .tt-muted { font-size: 12px; flex-shrink: 0; }
 .muted-dash { color: var(--hint); }
 
 .status-pill {

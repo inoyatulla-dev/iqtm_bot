@@ -88,6 +88,8 @@ export const tasksApi = {
     api.patch<Task>(`/tasks/${id}`, body).then((r) => r.data),
   setStatus: (id: number, status: string) =>
     api.patch<Task>(`/tasks/${id}/status`, { status }).then((r) => r.data),
+  setProgress: (id: number, progress: number) =>
+    api.patch<Task>(`/tasks/${id}/progress`, { progress }).then((r) => r.data),
   remove: (id: number) => api.delete(`/tasks/${id}`),
 };
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Paperclip, RotateCcw } from "lucide-react";
 import type { BoardColumn, Department, Task } from "../../api/types";
 import { formatDeadlineDate } from "../../utils/deadline";
+import { progressColor } from "../../utils/progress";
 import { AvatarStack, StatusPill } from "./parts";
 
 function assigneePeople(task: Task) {
@@ -52,6 +53,7 @@ export function TasksTable({ tasks, columns, deps, variant, onOpen, onRestore, r
             <th>Vazifa</th>
             <th className="hide-sm">Loyiha</th>
             {archive ? <th className="hide-sm">Mas'ul</th> : <th className="hide-sm">Holat</th>}
+            {!archive && <th className="hide-sm">Progress</th>}
             <th className="hide-sm">{archive ? "Yakunlandi" : "Muddat"}</th>
             {!archive && <th className="hide-sm">Mas'ul</th>}
             <th style={{ textAlign: archive ? "right" : "center", width: archive ? 110 : 64 }}>
@@ -81,6 +83,19 @@ export function TasksTable({ tasks, columns, deps, variant, onOpen, onRestore, r
                   </td>
                 ) : (
                   <td className="hide-sm"><StatusPill column={col} /></td>
+                )}
+                {!archive && (
+                  <td className="hide-sm">
+                    <div className="tt-progress">
+                      <div className="progress-bar">
+                        <div
+                          className="progress-bar__fill"
+                          style={{ width: `${task.progress}%`, background: progressColor(task.progress) }}
+                        />
+                      </div>
+                      <span className="tt-muted">{task.progress}%</span>
+                    </div>
+                  </td>
                 )}
                 <td className={`hide-sm ${!archive && task.is_overdue ? "tt-overdue" : "tt-muted"}`}>
                   {archive

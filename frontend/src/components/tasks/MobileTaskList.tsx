@@ -5,6 +5,7 @@ import {
 import type { BoardColumn, Department, Task } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { formatCountdown, formatDeadlineShort } from "../../utils/deadline";
+import { progressColor } from "../../utils/progress";
 import { AvatarStack, StatusPill } from "./parts";
 
 const BTN_W = 76;
@@ -178,6 +179,14 @@ function SwipeCard({
           )}
           <span className="chip"><MessageCircle size={12} /> {task.comments_count ?? 0}</span>
         </div>
+        {task.progress > 0 && (
+          <div className="progress-bar task-card__progress">
+            <div
+              className="progress-bar__fill"
+              style={{ width: `${task.progress}%`, background: progressColor(task.progress) }}
+            />
+          </div>
+        )}
         <div className="mtc-foot">
           <StatusPill column={col} />
           <AvatarStack

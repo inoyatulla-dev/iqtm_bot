@@ -14,6 +14,7 @@ import { formatCountdown, formatDeadlineDate } from "../utils/deadline";
 import { ClockPicker } from "../components/tasks/ClockPicker";
 import { ProjectPicker } from "../components/tasks/ProjectPicker";
 import { AssigneePicker } from "../components/tasks/AssigneePicker";
+import { ProgressSlider } from "../components/tasks/ProgressSlider";
 import { Avatar, AvatarStack, StatusPill } from "../components/tasks/parts";
 
 interface Props {
@@ -192,6 +193,17 @@ export function TaskForm({
     }
   }
 
+  async function updateProgress(value: number) {
+    if (!task) return;
+    setErr("");
+    try {
+      const updated = await tasksApi.setProgress(task.id, value);
+      onStatusChanged?.(updated);
+    } catch (e: any) {
+      setErr(e?.response?.data?.detail || t("common.error"));
+    }
+  }
+
   async function confirmDone() {
     if (!task || !pendingDone) return;
     setStatusBusy(true);
@@ -366,6 +378,15 @@ export function TaskForm({
                 {assigneePeople.map((p) => p.name).join(", ") || t("task.unassigned")}
               </span>
             </div>
+          </div>
+
+          <div className="task-view__card">
+            <ProgressSlider
+              value={task.progress}
+              editable={canChangeStatus}
+              onCommit={updateProgress}
+              label={t("task.progress")}
+            />
           </div>
 
           {canChangeStatus && (

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.constants import TaskType
 
@@ -37,6 +37,7 @@ class TaskOut(BaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
     done_at: datetime | None = None
+    progress: int = 0
 
 
 class TaskCreate(BaseModel):
@@ -62,3 +63,7 @@ class TaskUpdate(BaseModel):
 
 class TaskStatusUpdate(BaseModel):
     status: str
+
+
+class TaskProgressUpdate(BaseModel):
+    progress: int = Field(ge=0, le=100)

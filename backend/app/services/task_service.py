@@ -171,6 +171,15 @@ async def create_task(
     return task
 
 
+async def update_progress(
+    session: AsyncSession, task: Task, progress: int, actor: User
+) -> Task:
+    """Bajarilish darajasini yangilaydi — statusga ta'sir qilmaydi, bildirishnoma yubormaydi."""
+    task.progress = progress
+    await _log(session, actor.id, f"Vazifa progresi: #{task.id} → {progress}%")
+    return task
+
+
 async def change_status(
     session: AsyncSession, task: Task, column: BoardColumn, actor: User
 ) -> Task:

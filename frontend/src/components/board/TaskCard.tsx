@@ -4,6 +4,7 @@ import { AlertTriangle, Clock, Paperclip, User } from "lucide-react";
 import type { Department, Task } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { formatCountdown, formatDeadlineDate } from "../../utils/deadline";
+import { progressColor } from "../../utils/progress";
 import { AvatarStack } from "../tasks/parts";
 
 interface Props {
@@ -62,6 +63,14 @@ export function TaskCard({ task, dep, onClick }: Props) {
           <span className="chip"><Paperclip size={12} /> {task.attachments_count}</span>
         )}
       </div>
+      {task.progress > 0 && (
+        <div className="progress-bar task-card__progress">
+          <div
+            className="progress-bar__fill"
+            style={{ width: `${task.progress}%`, background: progressColor(task.progress) }}
+          />
+        </div>
+      )}
     </div>
   );
 }
