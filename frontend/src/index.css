@@ -1245,25 +1245,27 @@ body {
   background: transparent;
   cursor: pointer;
 }
+/* Yo'lak (track) shaffof — to'ldirilgan/qolgan qismi <input>'ning o'zidagi
+   inline linear-gradient (progressColor bilan) orqali ko'rinadi. */
 .progress-slider__input::-webkit-slider-runnable-track {
   height: 8px;
   border-radius: 6px;
-  background: var(--surface);
+  background: transparent;
 }
 .progress-slider__input::-moz-range-track {
   height: 8px;
   border-radius: 6px;
-  background: var(--surface);
+  background: transparent;
 }
-/* Bosh (thumb) rangi accent-color orqali beriladi (progressColor bilan inline
-   qo'yiladi) — brauzer buni tabiiy qo'llab-quvvatlaydi, alohida pseudo-element
-   kerak emas. */
+/* Bosh (thumb) rangi <input>'ga inline qo'yilgan `color` (progressColor)
+   orqali — currentColor sifatida meros olinadi. */
 .progress-slider__input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
   height: 18px;
   border-radius: 50%;
+  background: currentColor;
   margin-top: -5px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
@@ -1271,6 +1273,7 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 50%;
+  background: currentColor;
   border: none;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }

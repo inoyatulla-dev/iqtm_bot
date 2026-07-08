@@ -39,7 +39,10 @@ export function ProgressSlider({ value, editable, onCommit, label = "Bajarilish 
           onTouchEnd={commit}
           onKeyUp={commit}
           className="progress-slider__input"
-          style={{ accentColor: progressColor(local) }}
+          style={{
+            color: progressColor(local),
+            background: `linear-gradient(to right, ${progressColor(local)} ${local}%, var(--surface) ${local}%)`,
+          }}
         />
       ) : (
         <div className="progress-bar">
